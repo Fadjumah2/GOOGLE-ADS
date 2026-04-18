@@ -223,15 +223,15 @@ curl -s https://www.trendexhub.com/api/gbp/getProfile \
 
 ---
 
-## Last Session Snapshot (auto-updated: 2026-04-18 18:27 UTC)
-- **Branch:** `main`
+## Last Session Snapshot (auto-updated: 2026-04-18 22:22 UTC)
+- **Branch:** `claude/add-new-chat-button-yFqz5`
 - **Last 5 commits:**
 ```
-37b2295 fix: rewrite getInsights to use GET with query params per BPP API spec
-9b86757 chore: auto-update CLAUDE.md session snapshot [2026-04-18 18:16 UTC]
-be7bfdb chore: auto-update CLAUDE.md session snapshot [2026-04-18 18:16 UTC]
-d555bf4 chore: auto-update CLAUDE.md session snapshot [2026-04-18 18:15 UTC]
-f7af55d chore: auto-update CLAUDE.md session snapshot [2026-04-18 18:14 UTC]
+279c735 feat: add New Chat button to AI chat header
+977799e chore: auto-update CLAUDE.md session snapshot [2026-04-18 18:27 UTC]
+6ed1183 Merge pull request #5 from Fadjumah/feat/action-hub-and-capabilities
+a12edb8 fix: resolve agent rate limiting by restoring history and fix unresponsive Edit Profile button
+a609e7c Merge pull request #4 from Fadjumah/feat/action-hub-and-capabilities
 ```
 - **Billing:** Activated and linked to project `468613454814` ✅
 - **APIs enabled:** My Business Reviews, Business Information, Account Management ✅
