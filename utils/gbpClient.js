@@ -168,7 +168,20 @@ const getProfile = async () => {
 
         if (!locationId) throw new Error('GBP_LOCATION_ID is not set.');
 
-        const url = `https://mybusinessbusinessinformation.googleapis.com/v1/locations/${locationId}?readMask=name,title,storefrontAddress,websiteUri,regularHours,phoneNumbers,categories,metadata,latlng,description`;
+        const readMask = [
+            'name',
+            'title',
+            'storefrontAddress',
+            'websiteUri',
+            'regularHours',
+            'phoneNumbers',
+            'categories',
+            'metadata',
+            'latlng',
+            'profile'
+        ].join(',');
+
+        const url = `https://mybusinessbusinessinformation.googleapis.com/v1/locations/${locationId}?readMask=${encodeURIComponent(readMask)}`;
 
         const response = await axios.get(url, {
             ...axiosConfig,
@@ -184,10 +197,74 @@ const getProfile = async () => {
 };
 
 /**
- * Fetches 28-day performance metrics using the multi-metric endpoint.
- * Metrics: impressions, calls, website clicks, directions, and bookings.
+ * Resolves a requested period into a concrete {startDate, endDate} range.
+ * Accepted options (in order of precedence):
+ *   - startDate + endDate: ISO strings (YYYY-MM-DD) or Date objects
+ *   - period: 'last7' | 'last28' | 'last90' | 'last180' | 'last365' |
+ *             'thisMonth' | 'lastMonth' | 'thisYear'
+ *   - days: positive integer (1..540) — rolling window ending today
+ * Defaults to last 28 days if nothing is supplied.
+ * Google's Business Profile Performance API supports ~18 months of history,
+ * so we cap `days` at 540.
  */
-const getInsights = async () => {
+const resolveInsightsRange = ({ startDate, endDate, period, days } = {}) => {
+    const MAX_DAYS = 540;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    if (startDate && endDate) {
+        const s = startDate instanceof Date ? startDate : new Date(startDate);
+        const e = endDate   instanceof Date ? endDate   : new Date(endDate);
+        if (isNaN(s) || isNaN(e)) throw new Error('Invalid startDate/endDate — use YYYY-MM-DD.');
+        if (s > e) throw new Error('startDate must be on or before endDate.');
+        return { startDate: s, endDate: e };
+    }
+
+    if (period) {
+        const e = new Date(today);
+        const s = new Date(today);
+        switch (period) {
+            case 'last7':      s.setDate(e.getDate() - 7);   return { startDate: s, endDate: e };
+            case 'last28':     s.setDate(e.getDate() - 28);  return { startDate: s, endDate: e };
+            case 'last90':     s.setDate(e.getDate() - 90);  return { startDate: s, endDate: e };
+            case 'last180':    s.setDate(e.getDate() - 180); return { startDate: s, endDate: e };
+            case 'last365':    s.setDate(e.getDate() - 365); return { startDate: s, endDate: e };
+            case 'thisMonth': {
+                const start = new Date(today.getFullYear(), today.getMonth(), 1);
+                return { startDate: start, endDate: e };
+            }
+            case 'lastMonth': {
+                const start = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+                const end   = new Date(today.getFullYear(), today.getMonth(), 0);
+                return { startDate: start, endDate: end };
+            }
+            case 'thisYear': {
+                const start = new Date(today.getFullYear(), 0, 1);
+                return { startDate: start, endDate: e };
+            }
+            default:
+                throw new Error(`Unknown period: ${period}`);
+        }
+    }
+
+    const n = Math.max(1, Math.min(MAX_DAYS, parseInt(days, 10) || 28));
+    const e = new Date(today);
+    const s = new Date(today);
+    s.setDate(e.getDate() - n);
+    return { startDate: s, endDate: e };
+};
+
+/**
+ * Fetches performance metrics for a configurable date range (default: last 28 days).
+ * Metrics: impressions, calls, website clicks, directions, and bookings.
+ *
+ * @param {Object} [options]
+ * @param {string|Date} [options.startDate] - ISO date (YYYY-MM-DD) or Date
+ * @param {string|Date} [options.endDate]   - ISO date (YYYY-MM-DD) or Date
+ * @param {string}      [options.period]    - named preset, see resolveInsightsRange
+ * @param {number}      [options.days]      - rolling window size, 1..540
+ */
+const getInsights = async (options = {}) => {
     try {
         await throttle();
         const accessToken = await getFreshAccessToken();
@@ -195,43 +272,40 @@ const getInsights = async () => {
 
         if (!locationId) throw new Error('GBP_LOCATION_ID is not set.');
 
-        const endDate = new Date();
-        const startDate = new Date();
-        startDate.setDate(endDate.getDate() - 28);
+        const { startDate, endDate } = resolveInsightsRange(options);
 
-        const url = `https://businessprofileperformance.googleapis.com/v1/locations/${locationId}:fetchMultiDailyMetricsTimeSeries`;
+        // fetchMultiDailyMetricsTimeSeries is a GET endpoint — all params go in the query string.
+        const metrics = [
+            'BUSINESS_IMPRESSIONS_DESKTOP_MAPS',
+            'BUSINESS_IMPRESSIONS_DESKTOP_SEARCH',
+            'BUSINESS_IMPRESSIONS_MOBILE_MAPS',
+            'BUSINESS_IMPRESSIONS_MOBILE_SEARCH',
+            'CALL_CLICKS',
+            'WEBSITE_CLICKS',
+            'BUSINESS_DIRECTION_REQUESTS'
+        ];
+        const params = new URLSearchParams();
+        metrics.forEach(m => params.append('dailyMetrics', m));
+        params.append('dailyRange.start_date.year',  startDate.getFullYear());
+        params.append('dailyRange.start_date.month', startDate.getMonth() + 1);
+        params.append('dailyRange.start_date.day',   startDate.getDate());
+        params.append('dailyRange.end_date.year',    endDate.getFullYear());
+        params.append('dailyRange.end_date.month',   endDate.getMonth() + 1);
+        params.append('dailyRange.end_date.day',     endDate.getDate());
 
-        const payload = {
-            dailyMetrics: [
-                'BUSINESS_IMPRESSIONS_DESKTOP_MAPS',
-                'BUSINESS_IMPRESSIONS_DESKTOP_SEARCH',
-                'BUSINESS_IMPRESSIONS_MOBILE_MAPS',
-                'BUSINESS_IMPRESSIONS_MOBILE_SEARCH',
-                'CALL_CLICKS',
-                'WEBSITE_CLICKS',
-                'DIRECTIONS_REQUESTS'
-            ],
-            dailyRange: {
-                start_date: {
-                    year: startDate.getFullYear(),
-                    month: startDate.getMonth() + 1,
-                    day: startDate.getDate()
-                },
-                end_date: {
-                    year: endDate.getFullYear(),
-                    month: endDate.getMonth() + 1,
-                    day: endDate.getDate()
-                }
-            }
-        };
+        const url = `https://businessprofileperformance.googleapis.com/v1/locations/${locationId}:fetchMultiDailyMetricsTimeSeries?${params.toString()}`;
 
-        const response = await axios.post(url, payload, {
+        const response = await axios.get(url, {
             ...axiosConfig,
             headers: { Authorization: `Bearer ${accessToken}` },
-            timeout: 10000
+            timeout: 15000
         });
 
-        return response.data;
+        const iso = (d) => d.toISOString().slice(0, 10);
+        return {
+            ...response.data,
+            range: { startDate: iso(startDate), endDate: iso(endDate) }
+        };
     } catch (error) {
         console.error('Failed to fetch insights:', error.message);
         return extractGBPError(error, 'GET_INSIGHTS');

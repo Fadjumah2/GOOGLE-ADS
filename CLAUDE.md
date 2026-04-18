@@ -223,17 +223,16 @@ curl -s https://www.trendexhub.com/api/gbp/getProfile \
 
 ---
 
-## Last Session Snapshot (auto-updated: 2026-04-18 00:40 UTC)
+## Last Session Snapshot (auto-updated: 2026-04-18 19:04 UTC)
 - **Branch:** `main`
-- **Account Correction:** Switched to the correct GitHub account: **Fadjumah**.
 - **Last 5 commits:**
 ```
-00db29c feat: synchronize with upstream and upgrade model to gemini-2.5-flash
-325f5c9 Fix Service Areas readMask and Attributes update logic
-c022e0a Fix syntax errors and improve dashboard loading robustness
-a5fec5f Implement missing GBP API features: Amenities, Special Hours, Service Areas, and Verification Status
-f9f769b Initial commit
+b2fb69c fix(profile): description lives at profile.description, not top-level
+306829a chore: auto-update CLAUDE.md session snapshot [2026-04-18 18:47 UTC]
+5830b53 fix(dashboard): surface real insight totals and stop silent profile failures
+1af8757 chore: auto-update CLAUDE.md session snapshot [2026-04-18 18:35 UTC]
+dea016d feat(insights): support arbitrary date ranges (period, days, startDate/endDate)
 ```
-- **Billing:** Activated and linked to project `your-project-id` ✅
+- **Billing:** Activated and linked to project `468613454814` ✅
 - **APIs enabled:** My Business Reviews, Business Information, Account Management ✅
 - **Next action:** Start server and test all endpoints — run `node server.js &` then `curl -s http://localhost:3000/api/gbp/getProfile`
