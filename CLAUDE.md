@@ -223,15 +223,15 @@ curl -s https://www.trendexhub.com/api/gbp/getProfile \
 
 ---
 
-## Last Session Snapshot (auto-updated: 2026-04-18 22:23 UTC)
+## Last Session Snapshot (auto-updated: 2026-04-18 22:32 UTC)
 - **Branch:** `main`
 - **Last 5 commits:**
 ```
+6dd8d1c fix: improve Performance API error handling and agent guidance
+b8f113c chore: auto-update CLAUDE.md session snapshot [2026-04-18 22:23 UTC]
 415715d chore: remove GEMINI.md from repo
 5d81362 chore: auto-update CLAUDE.md session snapshot [2026-04-18 22:23 UTC]
 f8622fc chore: auto-update CLAUDE.md session snapshot [2026-04-18 22:22 UTC]
-279c735 feat: add New Chat button to AI chat header
-977799e chore: auto-update CLAUDE.md session snapshot [2026-04-18 18:27 UTC]
 ```
 - **Billing:** Activated and linked to project `468613454814` ✅
 - **APIs enabled:** My Business Reviews, Business Information, Account Management ✅
