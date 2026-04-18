@@ -223,15 +223,15 @@ curl -s https://www.trendexhub.com/api/gbp/getProfile \
 
 ---
 
-## Last Session Snapshot (auto-updated: 2026-04-18 18:16 UTC)
+## Last Session Snapshot (auto-updated: 2026-04-18 18:35 UTC)
 - **Branch:** `main`
 - **Last 5 commits:**
 ```
+dea016d feat(insights): support arbitrary date ranges (period, days, startDate/endDate)
+37b2295 fix: rewrite getInsights to use GET with query params per BPP API spec
+9b86757 chore: auto-update CLAUDE.md session snapshot [2026-04-18 18:16 UTC]
 be7bfdb chore: auto-update CLAUDE.md session snapshot [2026-04-18 18:16 UTC]
 d555bf4 chore: auto-update CLAUDE.md session snapshot [2026-04-18 18:15 UTC]
-f7af55d chore: auto-update CLAUDE.md session snapshot [2026-04-18 18:14 UTC]
-39a426b fix: use camelCase startDate/endDate in getInsights payload
-00ea866 chore: auto-update CLAUDE.md session snapshot [2026-04-18 18:02 UTC]
 ```
 - **Billing:** Activated and linked to project `468613454814` ✅
 - **APIs enabled:** My Business Reviews, Business Information, Account Management ✅
