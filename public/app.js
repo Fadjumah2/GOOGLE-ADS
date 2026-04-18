@@ -1445,6 +1445,84 @@ const app = {
         }
     },
 
+    async fetchVerificationStatus() {
+        this.toast('Checking verification status…', 'info');
+        try {
+            const res = await fetch('/api/gbp/getVerificationStatus', { headers: this.apiHeaders() });
+            const data = await res.json();
+            if (data.success) {
+                const v = data.verification || {};
+                const verifications = v.verifications || [];
+                const status = verifications.length > 0 ? verifications[0].state : 'UNVERIFIED';
+                
+                $('modal-title').textContent = 'Verification Status';
+                $('modal-body').innerHTML = `
+                    <div style="text-align:center; padding: 20px 0;">
+                        <i data-lucide="${status === 'COMPLETED' ? 'shield-check' : 'shield-alert'}" 
+                           style="width:64px; height:64px; color:${status === 'COMPLETED' ? 'var(--success)' : 'var(--warn)'}; margin-bottom:16px;"></i>
+                        <h3 style="font-size:20px; margin-bottom:8px;">${status}</h3>
+                        <p style="color:var(--text-muted); font-size:14px; line-height:1.5;">
+                            ${status === 'COMPLETED' ? 'Your business profile is fully verified on Google.' : 'Your business profile may require additional verification steps.'}
+                        </p>
+                    </div>
+                    <div class="modal-footer" style="padding:0;">
+                        <button class="btn btn-primary" style="width:100%" onclick="app.closeModal()">Close</button>
+                    </div>
+                `;
+                this.openModal();
+            } else {
+                this.toast(data.message || 'Failed to fetch verification status.', 'error');
+            }
+        } catch (e) {
+            this.toast('Network error.', 'error');
+        }
+    },
+
+    async fetchAttributes() {
+        this.toast('Fetching business attributes…', 'info');
+        try {
+            const res = await fetch('/api/gbp/getAttributes', { headers: this.apiHeaders() });
+            const data = await res.json();
+            if (data.success) {
+                const attributes = data.attributes?.attributes || [];
+                
+                $('modal-title').textContent = 'Business Attributes';
+                if (!attributes.length) {
+                    $('modal-body').innerHTML = '<p class="muted">No attributes found for this location.</p>';
+                } else {
+                    $('modal-body').innerHTML = `
+                        <div style="max-height: 400px; overflow-y: auto; padding-right: 8px;">
+                            <table style="width:100%; font-size:13px; border-collapse: collapse;">
+                                <thead>
+                                    <tr style="text-align:left; border-bottom:1px solid var(--border);">
+                                        <th style="padding:8px 0;">Attribute</th>
+                                        <th style="padding:8px 0;">Value</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${attributes.map(a => `
+                                        <tr style="border-bottom:1px solid var(--border-light);">
+                                            <td style="padding:10px 0; color:var(--text-main); font-weight:500;">${this.esc(a.attributeId.replace(/_/g, ' '))}</td>
+                                            <td style="padding:10px 0; color:var(--text-muted);">${this.esc(a.values?.join(', ') || a.valueType || '—')}</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="modal-footer" style="padding:20px 0 0 0;">
+                            <button class="btn btn-primary" style="width:100%" onclick="app.closeModal()">Close</button>
+                        </div>
+                    `;
+                }
+                this.openModal();
+            } else {
+                this.toast(data.message || 'Failed to fetch attributes.', 'error');
+            }
+        } catch (e) {
+            this.toast('Network error.', 'error');
+        }
+    },
+
     openUploadMediaModal() {
         $('modal-title').textContent = 'Upload Media';
         $('modal-body').innerHTML = `

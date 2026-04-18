@@ -22,6 +22,8 @@ const handleGetServiceList = require('./api/gbp/getServiceList');
 const handleUpdateServiceList = require('./api/gbp/updateServiceList');
 const handleDeletePost = require('./api/gbp/deletePost');
 const handleGetLocations = require('./api/gbp/getLocations');
+const handleGetVerificationStatus = require('./api/gbp/getVerificationStatus');
+const handleGetAttributes = require('./api/gbp/getAttributes');
 const handleAgentChat = require('./api/agent/chat');
 const handleAutonomousPost = require('./api/agent/autonomousPost');
 const handleAutoReplyReviews = require('./api/agent/autoReplyReviews');
@@ -99,6 +101,8 @@ app.delete('/api/gbp/deleteMedia', requireApiKey, handleDeleteMedia);
 app.get('/api/gbp/getServiceList', requireApiKey, handleGetServiceList);
 app.patch('/api/gbp/updateServiceList', requireApiKey, handleUpdateServiceList);
 
+app.get('/api/gbp/getVerificationStatus', requireApiKey, handleGetVerificationStatus);
+app.get('/api/gbp/getAttributes', requireApiKey, handleGetAttributes);
 app.get('/api/gbp/debug/locations', requireApiKey, handleGetLocations);
 
 // AI Agent
