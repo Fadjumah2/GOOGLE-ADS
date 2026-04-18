@@ -1632,11 +1632,13 @@ select.form-control { cursor: pointer; }
     width: 24px;
     height: 24px;
     color: var(--indigo);
+    pointer-events: none;
 }
 
 .action-item span {
     font-size: 13px;
     font-weight: 500;
+    pointer-events: none;
 }
 
 .action-item:hover {
