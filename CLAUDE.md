@@ -223,15 +223,15 @@ curl -s https://www.trendexhub.com/api/gbp/getProfile \
 
 ---
 
-## Last Session Snapshot (auto-updated: 2026-04-18 18:15 UTC)
+## Last Session Snapshot (auto-updated: 2026-04-18 18:16 UTC)
 - **Branch:** `main`
 - **Last 5 commits:**
 ```
+d555bf4 chore: auto-update CLAUDE.md session snapshot [2026-04-18 18:15 UTC]
 f7af55d chore: auto-update CLAUDE.md session snapshot [2026-04-18 18:14 UTC]
 39a426b fix: use camelCase startDate/endDate in getInsights payload
 00ea866 chore: auto-update CLAUDE.md session snapshot [2026-04-18 18:02 UTC]
 109c39e Merge pull request #2 from Fadjumah/claude/fix-loading-bugs-9pqwg
-71dc499 fix: use apiHeaders() in Autopilot fetches instead of undefined this.state.apiKey
 ```
 - **Billing:** Activated and linked to project `468613454814` ✅
 - **APIs enabled:** My Business Reviews, Business Information, Account Management ✅
