@@ -2197,8 +2197,8 @@ const app = {
                     <span class="value">
                         ${dp.enabled ? `<span class="ap-pill ok">On</span>` : `<span class="ap-pill off">Off</span>`}
                         ${dp.dryRun ? ` <span class="ap-pill warn">Dry-run</span>` : ''}
-                        ${dp.postedToday === true ? ` <span class="ap-pill info">Posted today</span>` :
-                          dp.postedToday === false ? ` <span class="ap-pill warn">Not yet today</span>` : ''}
+                        ${dp.postedToday === true ? ` <span class="ap-pill info">Posted (within 48h)</span>` :
+                          dp.postedToday === false ? ` <span class="ap-pill warn">Not yet posted</span>` : ''}
                     </span>
                 </div>
                 <div class="ap-status-row">
@@ -2212,7 +2212,7 @@ const app = {
                     <span class="label">Last cycle</span>
                     <span class="value">${st.lastCycle ? new Date(st.lastCycle.ts).toLocaleString('en-GB') : 'never'}</span>
                 </div>
-                <p class="ap-footnote">Set <code>AUTOPILOT_ENABLED=false</code>, <code>AUTOPILOT_DAILY_POST=false</code>, or <code>AUTOPILOT_AUTO_REPLY=false</code> in the deployment env to toggle. Cron runs daily at 06:00 UTC.</p>
+                <p class="ap-footnote">Set <code>AUTOPILOT_ENABLED=false</code>, <code>AUTOPILOT_DAILY_POST=false</code>, or <code>AUTOPILOT_AUTO_REPLY=false</code> in the deployment env to toggle. Cron fires daily at 02:15 EAT (23:15 UTC) but posts only every 48 h — controlled by <code>POST_INTERVAL_HOURS</code>.</p>
             `;
         }
 
