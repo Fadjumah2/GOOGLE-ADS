@@ -168,7 +168,20 @@ const getProfile = async () => {
 
         if (!locationId) throw new Error('GBP_LOCATION_ID is not set.');
 
-        const url = `https://mybusinessbusinessinformation.googleapis.com/v1/locations/${locationId}?readMask=name,title,storefrontAddress,websiteUri,regularHours,phoneNumbers,categories,metadata,latlng,description`;
+        const readMask = [
+            'name',
+            'title',
+            'storefrontAddress',
+            'websiteUri',
+            'regularHours',
+            'phoneNumbers',
+            'categories',
+            'metadata',
+            'latlng',
+            'profile'
+        ].join(',');
+
+        const url = `https://mybusinessbusinessinformation.googleapis.com/v1/locations/${locationId}?readMask=${encodeURIComponent(readMask)}`;
 
         const response = await axios.get(url, {
             ...axiosConfig,

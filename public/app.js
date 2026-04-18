@@ -442,7 +442,7 @@ const app = {
             title: $('edit-title').value,
             phoneNumbers: { primaryPhone: $('edit-phone').value },
             websiteUri: $('edit-website').value,
-            description: $('edit-description').value,
+            profile: { description: $('edit-description').value },
             storefrontAddress: {
                 ...this.state.profile.address,
                 addressLines: [$('edit-address-1').value]
@@ -462,7 +462,7 @@ const app = {
             }
         };
 
-        const updateMask = 'title,phoneNumbers,websiteUri,description,storefrontAddress,regularHours';
+        const updateMask = 'title,phoneNumbers,websiteUri,profile.description,storefrontAddress,regularHours';
 
         this.toast('Updating profile…', 'info');
         try {

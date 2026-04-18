@@ -129,7 +129,7 @@ const normalizeProfile = (data) => {
       title: data.title || '',
       address: data.storefrontAddress || {},
       website: data.websiteUri || '',
-      description: data.description || '',
+      description: (data.profile && data.profile.description) || data.description || '',
       phone: data.phoneNumbers ? (data.phoneNumbers.primaryPhone || '') : '',
       categories: data.categories ? {
         primary: data.categories.primaryCategory ? data.categories.primaryCategory.displayName : '',
