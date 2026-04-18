@@ -212,12 +212,12 @@ const getInsights = async () => {
                 'DIRECTIONS_REQUESTS'
             ],
             dailyRange: {
-                start_date: {
+                startDate: {
                     year: startDate.getFullYear(),
                     month: startDate.getMonth() + 1,
                     day: startDate.getDate()
                 },
-                end_date: {
+                endDate: {
                     year: endDate.getFullYear(),
                     month: endDate.getMonth() + 1,
                     day: endDate.getDate()
