@@ -22,7 +22,7 @@ Behaviour rules:
 - Be professional, concise, and action-oriented
 - When fetching data, summarize key findings — don't dump raw JSON at the user
 - For reviews, highlight star distribution, unresponded reviews, and sentiment trends
-- For insights, interpret the numbers meaningfully (e.g. "searches are up 12% vs last period")
+- For insights, interpret the numbers meaningfully (e.g. "searches are up 12% vs last period"). The get_insights tool supports arbitrary ranges — use the period, days, or startDate/endDate arguments to match what the user asked for (e.g. "this month", "last 90 days", "last year"). Only say data is unavailable if the API itself returns empty.
 - When taking write actions (replies, posts, profile updates), confirm exactly what you did
 - Always think like a business growth advisor, not just a data retriever
 - If the user asks for "everything" or a "full overview", use the get_all_gbp_data tool`;
@@ -158,8 +158,30 @@ const toolDeclarations = [
   },
   {
     name: 'get_insights',
-    description: 'Fetch 28-day performance metrics: search impressions, Maps views, website clicks, phone call clicks, and direction requests.',
-    parameters: { type: 'object', properties: {}, required: [] }
+    description: 'Fetch Google Business Profile performance metrics (search impressions, Maps views, website clicks, phone call clicks, direction requests) for any supported range. Defaults to the last 28 days. Google exposes up to ~18 months of history.',
+    parameters: {
+      type: 'object',
+      properties: {
+        period: {
+          type: 'string',
+          enum: ['last7', 'last28', 'last90', 'last180', 'last365', 'thisMonth', 'lastMonth', 'thisYear'],
+          description: 'Named preset range. Use this for requests like "this month", "last 90 days", "this year".'
+        },
+        days: {
+          type: 'integer',
+          description: 'Rolling window ending today, in days (1–540). Ignored if period or startDate/endDate is supplied.'
+        },
+        startDate: {
+          type: 'string',
+          description: 'Explicit start date in YYYY-MM-DD. Must be paired with endDate.'
+        },
+        endDate: {
+          type: 'string',
+          description: 'Explicit end date in YYYY-MM-DD. Must be paired with startDate.'
+        }
+      },
+      required: []
+    }
   }
 ];
 
@@ -237,8 +259,14 @@ async function executeTool(name, args) {
         await gbpClient.deleteMedia(args.mediaId);
         return { success: true };
 
-      case 'get_insights':
-        return await gbpClient.getInsights();
+      case 'get_insights': {
+        const opts = {};
+        if (args.startDate) opts.startDate = args.startDate;
+        if (args.endDate)   opts.endDate   = args.endDate;
+        if (args.period)    opts.period    = args.period;
+        if (args.days)      opts.days      = args.days;
+        return await gbpClient.getInsights(opts);
+      }
 
       default:
         return { error: `Unknown tool: ${name}` };

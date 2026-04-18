@@ -184,10 +184,74 @@ const getProfile = async () => {
 };
 
 /**
- * Fetches 28-day performance metrics using the multi-metric endpoint.
- * Metrics: impressions, calls, website clicks, directions, and bookings.
+ * Resolves a requested period into a concrete {startDate, endDate} range.
+ * Accepted options (in order of precedence):
+ *   - startDate + endDate: ISO strings (YYYY-MM-DD) or Date objects
+ *   - period: 'last7' | 'last28' | 'last90' | 'last180' | 'last365' |
+ *             'thisMonth' | 'lastMonth' | 'thisYear'
+ *   - days: positive integer (1..540) — rolling window ending today
+ * Defaults to last 28 days if nothing is supplied.
+ * Google's Business Profile Performance API supports ~18 months of history,
+ * so we cap `days` at 540.
  */
-const getInsights = async () => {
+const resolveInsightsRange = ({ startDate, endDate, period, days } = {}) => {
+    const MAX_DAYS = 540;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    if (startDate && endDate) {
+        const s = startDate instanceof Date ? startDate : new Date(startDate);
+        const e = endDate   instanceof Date ? endDate   : new Date(endDate);
+        if (isNaN(s) || isNaN(e)) throw new Error('Invalid startDate/endDate — use YYYY-MM-DD.');
+        if (s > e) throw new Error('startDate must be on or before endDate.');
+        return { startDate: s, endDate: e };
+    }
+
+    if (period) {
+        const e = new Date(today);
+        const s = new Date(today);
+        switch (period) {
+            case 'last7':      s.setDate(e.getDate() - 7);   return { startDate: s, endDate: e };
+            case 'last28':     s.setDate(e.getDate() - 28);  return { startDate: s, endDate: e };
+            case 'last90':     s.setDate(e.getDate() - 90);  return { startDate: s, endDate: e };
+            case 'last180':    s.setDate(e.getDate() - 180); return { startDate: s, endDate: e };
+            case 'last365':    s.setDate(e.getDate() - 365); return { startDate: s, endDate: e };
+            case 'thisMonth': {
+                const start = new Date(today.getFullYear(), today.getMonth(), 1);
+                return { startDate: start, endDate: e };
+            }
+            case 'lastMonth': {
+                const start = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+                const end   = new Date(today.getFullYear(), today.getMonth(), 0);
+                return { startDate: start, endDate: end };
+            }
+            case 'thisYear': {
+                const start = new Date(today.getFullYear(), 0, 1);
+                return { startDate: start, endDate: e };
+            }
+            default:
+                throw new Error(`Unknown period: ${period}`);
+        }
+    }
+
+    const n = Math.max(1, Math.min(MAX_DAYS, parseInt(days, 10) || 28));
+    const e = new Date(today);
+    const s = new Date(today);
+    s.setDate(e.getDate() - n);
+    return { startDate: s, endDate: e };
+};
+
+/**
+ * Fetches performance metrics for a configurable date range (default: last 28 days).
+ * Metrics: impressions, calls, website clicks, directions, and bookings.
+ *
+ * @param {Object} [options]
+ * @param {string|Date} [options.startDate] - ISO date (YYYY-MM-DD) or Date
+ * @param {string|Date} [options.endDate]   - ISO date (YYYY-MM-DD) or Date
+ * @param {string}      [options.period]    - named preset, see resolveInsightsRange
+ * @param {number}      [options.days]      - rolling window size, 1..540
+ */
+const getInsights = async (options = {}) => {
     try {
         await throttle();
         const accessToken = await getFreshAccessToken();
@@ -195,9 +259,7 @@ const getInsights = async () => {
 
         if (!locationId) throw new Error('GBP_LOCATION_ID is not set.');
 
-        const endDate = new Date();
-        const startDate = new Date();
-        startDate.setDate(endDate.getDate() - 28);
+        const { startDate, endDate } = resolveInsightsRange(options);
 
         // fetchMultiDailyMetricsTimeSeries is a GET endpoint — all params go in the query string.
         const metrics = [
@@ -223,10 +285,14 @@ const getInsights = async () => {
         const response = await axios.get(url, {
             ...axiosConfig,
             headers: { Authorization: `Bearer ${accessToken}` },
-            timeout: 10000
+            timeout: 15000
         });
 
-        return response.data;
+        const iso = (d) => d.toISOString().slice(0, 10);
+        return {
+            ...response.data,
+            range: { startDate: iso(startDate), endDate: iso(endDate) }
+        };
     } catch (error) {
         console.error('Failed to fetch insights:', error.message);
         return extractGBPError(error, 'GET_INSIGHTS');
