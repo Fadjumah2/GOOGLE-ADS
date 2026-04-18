@@ -379,8 +379,8 @@ const app = {
                     <span>${p.address.addressLines.join(', ')}${p.address.locality ? ', ' + p.address.locality : ''}</span>
                 </div>` : ''}
                 
-                <button type="button" id="edit-profile-btn" class="btn btn-ghost btn-sm" style="width:100%; margin-top:12px; border:1px solid var(--border);">
-                    <i data-lucide="pencil"></i> Edit Profile
+                <button type="button" class="btn btn-ghost btn-sm" style="width:100%; margin-top:12px; border:1px solid var(--border);" onclick="app.openProfileModal()">
+                    <i data-lucide="pencil" style="pointer-events:none;"></i> <span style="pointer-events:none;">Edit Profile</span>
                 </button>
             </div>
         `;
@@ -391,6 +391,10 @@ const app = {
 
     openProfileModal() {
         const p = this.state.profile;
+        if (!p) {
+            this.toast('Profile data is still loading. Please wait a moment.', 'info');
+            return;
+        }
         $('modal-title').textContent = "Edit Business Profile";
         $('modal-body').innerHTML = `
             <div class="form-group">
@@ -451,9 +455,11 @@ const app = {
             },
             regularHours: {
                 periods: Array.from(document.querySelectorAll('.hour-row')).map(row => {
-                    const day = row.querySelector('.hour-open').dataset.day;
-                    const [openH, openM] = row.querySelector('.hour-open').value.split(':');
-                    const [closeH, closeM] = row.querySelector('.hour-close').value.split(':');
+                    const openEl = row.querySelector('.hour-open');
+                    const closeEl = row.querySelector('.hour-close');
+                    const day = openEl.dataset.day;
+                    const [openH, openM] = (openEl.value || '09:00').split(':');
+                    const [closeH, closeM] = (closeEl.value || '17:00').split(':');
                     return {
                         openDay: day,
                         openTime: { hours: parseInt(openH), minutes: parseInt(openM) },
