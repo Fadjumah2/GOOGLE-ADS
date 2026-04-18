@@ -203,6 +203,7 @@ const app = {
         // AI Agent Chat
         $('chat-send-btn').addEventListener('click', () => this.sendChatMessage());
         $('chat-clear-btn').addEventListener('click', () => this.clearChat());
+        $('chat-new-btn').addEventListener('click', () => this.clearChat());
         $('chat-input').addEventListener('keydown', e => {
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();

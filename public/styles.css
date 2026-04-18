@@ -1181,6 +1181,46 @@ select.form-control { cursor: pointer; }
     animation: fadeUp 0.3s ease;
 }
 
+/* Chat header */
+.chat-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 20px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    flex-shrink: 0;
+}
+.chat-header-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text);
+}
+.chat-header-title i { width: 16px; height: 16px; color: var(--primary); }
+.chat-new-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border-radius: 8px;
+    border: 1.5px solid var(--border);
+    background: var(--bg);
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 600;
+    transition: all 0.15s;
+    cursor: pointer;
+}
+.chat-new-btn i { width: 14px; height: 14px; }
+.chat-new-btn:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+    background: var(--primary-glow);
+}
+
 /* Scrollable messages area */
 .chat-wrap {
     flex: 1;
