@@ -379,12 +379,14 @@ const app = {
                     <span>${p.address.addressLines.join(', ')}${p.address.locality ? ', ' + p.address.locality : ''}</span>
                 </div>` : ''}
                 
-                <button class="btn btn-ghost btn-sm" style="width:100%; margin-top:12px; border:1px solid var(--border);" onclick="app.openProfileModal()">
+                <button type="button" id="edit-profile-btn" class="btn btn-ghost btn-sm" style="width:100%; margin-top:12px; border:1px solid var(--border);">
                     <i data-lucide="pencil"></i> Edit Profile
                 </button>
             </div>
         `;
         lucide.createIcons();
+        const editBtn = $('edit-profile-btn');
+        if (editBtn) editBtn.addEventListener('click', () => this.openProfileModal());
     },
 
     openProfileModal() {
