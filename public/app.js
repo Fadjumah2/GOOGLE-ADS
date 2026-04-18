@@ -287,8 +287,21 @@ const app = {
                 profileRes.json(), insightsRes.json(), reviewsRes.json()
             ]);
 
-            if (pd.success) { this.state.profile  = pd.profile;   this.renderProfile();  }
-            if (id.success) { this.state.insights = id.insights;  this.renderChart();    }
+            if (pd.success) {
+                this.state.profile = pd.profile;
+                this.renderProfile();
+            } else {
+                console.error('getProfile failed:', pd);
+                this.renderProfileError(pd.message || pd.error || 'Failed to load profile.');
+            }
+            if (id.success) {
+                this.state.insights = id.insights;
+                this.renderChart();
+            } else {
+                console.error('getInsights failed:', id);
+                this.state.insights = [];
+                this.renderChart();
+            }
             if (rd.success) {
                 this.state.reviews = rd.reviews;
                 this.state.dataLoaded.reviews = true;
@@ -301,6 +314,28 @@ const app = {
             this.toast('Could not connect to server.', 'error');
             this.renderKPIs();
         }
+    },
+
+    renderProfileError(message) {
+        const el = $('dash-profile');
+        if (!el) return;
+        el.innerHTML = `
+            <div class="card-head">
+                <div>
+                    <h3 class="card-title">Business Profile</h3>
+                    <p class="card-desc">Eritage ENT Care</p>
+                </div>
+                <i data-lucide="building-2" class="card-icon"></i>
+            </div>
+            <div style="padding:16px; color:var(--muted); font-size:13px;">
+                <i data-lucide="alert-triangle" style="width:16px;height:16px;vertical-align:-3px;"></i>
+                Couldn't load profile. ${this.esc(String(message))}
+                <button class="btn btn-ghost btn-sm" style="margin-top:12px; border:1px solid var(--border);" onclick="app.loadDashboard(true)">
+                    <i data-lucide="refresh-cw"></i> Retry
+                </button>
+            </div>
+        `;
+        if (window.lucide) lucide.createIcons();
     },
 
     // ── Profile ───────────────────────────────────────────
@@ -455,7 +490,12 @@ const app = {
         const insights = this.state.insights || [];
         const avg = avgRating(reviews);
         const unanswered = reviews.filter(r => !r.hasReply).length;
-        const impressions = insights.find(i => i.metric?.includes('IMPRESSION'))?.total ?? '—';
+        const sumMetric = (needle) => insights
+            .filter(i => i.metric?.includes(needle))
+            .reduce((s, i) => s + (Number(i.total) || 0), 0);
+        const impressions = insights.length === 0
+            ? '—'
+            : sumMetric('IMPRESSION');
 
         // Update sidebar badge
         const badge = $('nav-reviews-badge');
@@ -519,12 +559,16 @@ const app = {
         if (!ctx) return;
         if (window._perfChart) window._perfChart.destroy();
 
+        const sumMetric = (needle) => insights
+            .filter(i => i.metric?.includes(needle))
+            .reduce((s, i) => s + (Number(i.total) || 0), 0);
+
         const labels = ['Impressions', 'Calls', 'Website Clicks', 'Directions'];
         const values = [
-            insights.find(i => i.metric?.includes('IMPRESSION'))?.total ?? 0,
-            insights.find(i => i.metric?.includes('CALL'))?.total ?? 0,
-            insights.find(i => i.metric?.includes('WEBSITE'))?.total ?? 0,
-            insights.find(i => i.metric?.includes('DIRECTION'))?.total ?? 0,
+            sumMetric('IMPRESSION'),
+            sumMetric('CALL'),
+            sumMetric('WEBSITE'),
+            sumMetric('DIRECTION'),
         ];
 
         window._perfChart = new Chart(ctx, {
