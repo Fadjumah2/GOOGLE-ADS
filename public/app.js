@@ -8,7 +8,7 @@ const VIEW_META = {
     dashboard: { title: 'Dashboard',  subtitle: 'Overview of your Google Business Profile' },
     reviews:   { title: 'Reviews',    subtitle: 'Manage patient feedback and responses' },
     posts:     { title: 'Posts',       subtitle: 'Your Google Business posts' },
-    qa:        { title: 'Q & A',       subtitle: 'Customer questions and answers' },
+    analytics: { title: 'Analytics',  subtitle: 'Performance metrics, trends and insights' },
     services:  { title: 'Services',    subtitle: 'Medical services offered at Eritage ENT Care' },
     media:     { title: 'Media',       subtitle: 'Photos and videos on your listing' },
     agent:     { title: 'Synapse AI',  subtitle: 'Your intelligent GBP assistant' },
@@ -43,25 +43,19 @@ const IDLE_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
 const app = {
     state: {
         currentView: 'dashboard',
-        profile:  null,
-        insights: null,
+        profile:   null,
+        insights:  null,
+        analytics: null,
+        analyticsPeriod: 'last28',
+        dashboardPeriod: 'last28',
         reviews:  [],
         posts:    [],
         services: [],
         media:    [],
-        qa:       [],
         reviewFilter: 'all',
-        dataLoaded: { reviews: false, posts: false, services: false, media: false, qa: false, autopilot: false },
-        nextPageTokens: {
-            reviews: null,
-            posts: null,
-            media: null
-        },
-        chat: {
-            messages: [],
-            history: [],
-            isThinking: false
-        }
+        dataLoaded: { reviews: false, posts: false, services: false, media: false, analytics: false, autopilot: false },
+        nextPageTokens: { reviews: null, posts: null, media: null },
+        chat: { messages: [], history: [], isThinking: false }
     },
 
     // ── API Key management (memory only) ──────────────────
@@ -161,11 +155,38 @@ const app = {
 
         // Sync button
         $('refresh-btn').addEventListener('click', () => {
-            this.state.dataLoaded = { reviews: false, posts: false, services: false, media: false, qa: false };
+            this.state.dataLoaded = { reviews: false, posts: false, services: false, media: false, analytics: false, autopilot: false };
             this.loadDashboard(true);
             if (this.state.currentView !== 'dashboard') this.loadView(this.state.currentView, true);
             this.toast('Syncing with Google…', 'info');
         });
+
+        // Dashboard chart period tabs
+        $('dash-period-tabs').addEventListener('click', e => {
+            const tab = e.target.closest('.period-tab');
+            if (!tab) return;
+            $('dash-period-tabs').querySelectorAll('.period-tab').forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            const period = tab.dataset.period;
+            this.state.dashboardPeriod = period;
+            const labels = { last7: 'Last 7 days', last28: 'Last 28 days', last90: 'Last 90 days' };
+            $('dash-chart-desc').textContent = (labels[period] || period) + ' of activity';
+            this.loadDashboardInsights(period);
+        });
+
+        // Analytics period filter
+        $('analytics-period-filter').addEventListener('click', e => {
+            const btn = e.target.closest('.filter-btn');
+            if (!btn) return;
+            $('analytics-period-filter').querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            this.state.dataLoaded.analytics = false;
+            this.fetchAnalytics(btn.dataset.period);
+        });
+
+        // Bulk AI reply button
+        const bulkBtn = $('bulk-ai-reply-btn');
+        if (bulkBtn) bulkBtn.addEventListener('click', () => this.bulkAISuggestReplies());
 
         // Modal close
         $('modal-backdrop').addEventListener('click', e => {
@@ -249,25 +270,23 @@ const app = {
     },
 
     loadView(viewId, force = false) {
-        // Data already cached — render from state immediately, skip network call
         if (!force && this.state.dataLoaded[viewId]) {
             switch (viewId) {
-                case 'reviews':  this.renderReviews();  break;
-                case 'posts':    this.renderPosts();    break;
-                case 'services': this.renderServices(); break;
-                case 'media':    this.renderMedia();    break;
-                case 'qa':       this.renderQA();       break;
+                case 'reviews':   this.renderReviews();   break;
+                case 'posts':     this.renderPosts();     break;
+                case 'services':  this.renderServices();  break;
+                case 'media':     this.renderMedia();     break;
+                case 'analytics': this.renderAnalytics(); break;
                 case 'autopilot': this.renderAutopilot(); break;
             }
             return;
         }
-        // Not yet loaded — fetch from API
         switch (viewId) {
-            case 'reviews':  this.fetchReviews();  break;
-            case 'posts':    this.fetchPosts();    break;
-            case 'services': this.fetchServices(); break;
-            case 'media':    this.fetchMedia();    break;
-            case 'qa':       this.fetchQA();       break;
+            case 'reviews':   this.fetchReviews();   break;
+            case 'posts':     this.fetchPosts();     break;
+            case 'services':  this.fetchServices();  break;
+            case 'media':     this.fetchMedia();     break;
+            case 'analytics': this.fetchAnalytics(this.state.analyticsPeriod); break;
             case 'autopilot': this.fetchAutopilot(); break;
         }
     },
@@ -276,33 +295,21 @@ const app = {
     async loadDashboard(force = false) {
         try {
             const hdrs = { headers: this.apiHeaders() };
+            const period = this.state.dashboardPeriod || 'last28';
             const [profileRes, insightsRes, reviewsRes] = await Promise.all([
-                fetch('/api/gbp/getProfile',   hdrs),
-                fetch('/api/gbp/getInsights',  hdrs),
-                fetch('/api/gbp/fetchReviews', hdrs),
+                fetch('/api/gbp/getProfile',                      hdrs),
+                fetch(`/api/gbp/getInsights?period=${period}`,    hdrs),
+                fetch('/api/gbp/fetchReviews',                    hdrs),
             ]);
-            if (profileRes.status === 401 || insightsRes.status === 401 || reviewsRes.status === 401) {
-                return this.handle401();
-            }
-            const [pd, id, rd] = await Promise.all([
-                profileRes.json(), insightsRes.json(), reviewsRes.json()
-            ]);
+            if ([profileRes, insightsRes, reviewsRes].some(r => r.status === 401)) return this.handle401();
+            const [pd, id, rd] = await Promise.all([profileRes.json(), insightsRes.json(), reviewsRes.json()]);
 
-            if (pd.success) {
-                this.state.profile = pd.profile;
-                this.renderProfile();
-            } else {
-                console.error('getProfile failed:', pd);
-                this.renderProfileError(pd.message || pd.error || 'Failed to load profile.');
-            }
-            if (id.success) {
-                this.state.insights = id.insights;
-                this.renderChart();
-            } else {
-                console.error('getInsights failed:', id);
-                this.state.insights = [];
-                this.renderChart();
-            }
+            if (pd.success) { this.state.profile = pd.profile; this.renderProfile(); }
+            else { this.renderProfileError(pd.message || pd.error || 'Failed to load profile.'); }
+
+            this.state.insights = id.success ? id.insights : [];
+            this.renderChart();
+
             if (rd.success) {
                 this.state.reviews = rd.reviews;
                 this.state.dataLoaded.reviews = true;
@@ -314,6 +321,19 @@ const app = {
         } catch (err) {
             this.toast('Could not connect to server.', 'error');
             this.renderKPIs();
+        }
+    },
+
+    async loadDashboardInsights(period) {
+        try {
+            const res = await fetch(`/api/gbp/getInsights?period=${period}`, { headers: this.apiHeaders() });
+            if (res.status === 401) return this.handle401();
+            const data = await res.json();
+            this.state.insights = data.success ? data.insights : [];
+            this.renderChart();
+            this.renderKPIs();
+        } catch (err) {
+            this.toast('Could not fetch insights.', 'error');
         }
     },
 
@@ -650,6 +670,177 @@ const app = {
         lucide.createIcons();
     },
 
+    // ── Analytics View ────────────────────────────────────
+    async fetchAnalytics(period = 'last28') {
+        this.state.analyticsPeriod = period;
+        const grid = $('analytics-kpi-row');
+        if (grid) grid.innerHTML = this.loadingCards(7, 88);
+        try {
+            const data = await this.apiFetch(`/api/gbp/getInsights?period=${period}`);
+            if (data.success) {
+                this.state.analytics = data.insights;
+                this.state.dataLoaded.analytics = true;
+                this.renderAnalytics();
+            } else {
+                this.renderAnalyticsError(data.message || data.error || 'Could not load analytics.');
+            }
+        } catch (err) {
+            this.renderAnalyticsError(err.message || 'Connection error.');
+        }
+    },
+
+    renderAnalytics() {
+        const insights = this.state.analytics || [];
+        const METRICS = [
+            { key: 'IMPRESSIONS_DESKTOP_MAPS',   label: 'Desktop Maps Views',   icon: 'map',          color: 'indigo' },
+            { key: 'IMPRESSIONS_DESKTOP_SEARCH',  label: 'Desktop Search Views', icon: 'search',       color: 'violet' },
+            { key: 'IMPRESSIONS_MOBILE_MAPS',     label: 'Mobile Maps Views',    icon: 'smartphone',   color: 'cyan'   },
+            { key: 'IMPRESSIONS_MOBILE_SEARCH',   label: 'Mobile Search Views',  icon: 'phone',        color: 'teal'   },
+            { key: 'CALL_CLICKS',                 label: 'Call Clicks',          icon: 'phone-call',   color: 'green'  },
+            { key: 'WEBSITE_CLICKS',              label: 'Website Clicks',       icon: 'globe',        color: 'amber'  },
+            { key: 'DIRECTION_REQUESTS',          label: 'Direction Requests',   icon: 'navigation',   color: 'rose'   },
+        ];
+        const sum = key => insights.filter(i => i.metric?.includes(key)).reduce((s,i) => s + (Number(i.total)||0), 0);
+        const grid = $('analytics-kpi-row');
+        if (!grid) return;
+        if (!insights.length) {
+            grid.innerHTML = `<div class="analytics-empty-msg" style="grid-column:1/-1">
+                <i data-lucide="bar-chart-2"></i>
+                <p>No performance data available for this period.</p>
+                <p class="analytics-hint">The Business Profile Performance API may not be enabled. Enable it at <strong>console.cloud.google.com/apis/library</strong> and ensure your location is verified.</p>
+            </div>`;
+            lucide.createIcons();
+            return;
+        }
+        grid.innerHTML = METRICS.map(m => {
+            const val = sum(m.key);
+            return `<div class="analytics-metric-card">
+                <div class="analytics-metric-icon ${m.color}"><i data-lucide="${m.icon}"></i></div>
+                <div class="analytics-metric-body">
+                    <div class="analytics-metric-label">${m.label}</div>
+                    <div class="analytics-metric-value">${val.toLocaleString()}</div>
+                </div>
+            </div>`;
+        }).join('');
+        lucide.createIcons();
+        this.renderAnalyticsChart();
+        this.renderAnalyticsBottom();
+    },
+
+    renderAnalyticsChart() {
+        const insights = this.state.analytics || [];
+        const ctx = $('analytics-chart')?.getContext('2d');
+        if (!ctx) return;
+        if (window._analyticsChart) window._analyticsChart.destroy();
+
+        const impressionMetrics = insights.filter(i => i.metric?.includes('IMPRESSION'));
+        if (!impressionMetrics.length || !impressionMetrics[0]?.raw?.length) return;
+
+        const daily = {};
+        impressionMetrics.forEach(m => {
+            (m.raw || []).forEach(dv => {
+                const d = dv.date || {};
+                const key = `${d.year}-${String(d.month).padStart(2,'0')}-${String(d.day).padStart(2,'0')}`;
+                daily[key] = (daily[key] || 0) + (parseInt(dv.value, 10) || 0);
+            });
+        });
+        const sorted = Object.keys(daily).sort();
+        const labels = sorted.map(k => {
+            const [y,m,d] = k.split('-');
+            return new Date(+y, +m-1, +d).toLocaleDateString('en-GB', { day:'numeric', month:'short' });
+        });
+        const values = sorted.map(k => daily[k]);
+
+        window._analyticsChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels,
+                datasets: [{
+                    label: 'Daily Impressions',
+                    data: values,
+                    borderColor: '#8B5E3C',
+                    backgroundColor: 'rgba(139,94,60,0.08)',
+                    borderWidth: 2.5,
+                    pointRadius: values.length > 30 ? 0 : 3,
+                    pointHoverRadius: 5,
+                    fill: true,
+                    tension: 0.4,
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: { backgroundColor:'#1e1610', titleFont:{family:'Plus Jakarta Sans',size:12}, bodyFont:{family:'Plus Jakarta Sans',size:13}, padding:10, cornerRadius:8 }
+                },
+                scales: {
+                    y: { beginAtZero:true, grid:{color:'rgba(232,224,213,0.6)'}, ticks:{font:{family:'Plus Jakarta Sans',size:11},color:'#9D948E'} },
+                    x: { grid:{display:false}, ticks:{font:{family:'Plus Jakarta Sans',size:11},color:'#9D948E',maxTicksLimit:10} }
+                }
+            }
+        });
+    },
+
+    renderAnalyticsBottom() {
+        const reviews = this.state.reviews;
+        const total   = reviews.length;
+        const replied = reviews.filter(r => r.hasReply).length;
+        const rate    = total > 0 ? Math.round((replied / total) * 100) : 0;
+        const needReply = total - replied;
+
+        const rCard = $('analytics-response-card');
+        if (rCard) {
+            rCard.innerHTML = `
+                <div class="card-head">
+                    <div><h3 class="card-title">Response Rate</h3><p class="card-desc">${replied} of ${total} reviews replied to</p></div>
+                    <i data-lucide="message-square-check" class="card-icon"></i>
+                </div>
+                <div class="response-rate-display">
+                    <div class="response-rate-number">${rate}<span style="font-size:18px;font-weight:600;color:var(--text-muted)">%</span></div>
+                    <div class="response-rate-bar"><div class="response-rate-fill" style="width:${rate}%"></div></div>
+                    <div class="response-rate-footer">
+                        <span class="${needReply > 0 ? 'rate-warning' : 'rate-ok'}">${needReply > 0 ? `${needReply} still need a reply` : 'All reviews answered!'}</span>
+                        <button class="btn btn-ghost btn-sm" onclick="app.switchView('reviews')">Go to Reviews <i data-lucide="arrow-right"></i></button>
+                    </div>
+                </div>`;
+        }
+
+        const dist = {5:0,4:0,3:0,2:0,1:0};
+        reviews.forEach(r => { const n = STAR_MAP[r.starRating]; if (n) dist[n]++; });
+        const maxCount = Math.max(...Object.values(dist), 1);
+        const avg = total > 0 ? (reviews.reduce((s,r) => s + (STAR_MAP[r.starRating]||0), 0) / total).toFixed(1) : '—';
+
+        const dCard = $('analytics-rating-dist');
+        if (dCard) {
+            dCard.innerHTML = `
+                <div class="card-head">
+                    <div><h3 class="card-title">Rating Distribution</h3><p class="card-desc">Avg ${avg}★ across ${total} reviews</p></div>
+                    <i data-lucide="star" class="card-icon"></i>
+                </div>
+                <div class="rating-dist-list">
+                    ${[5,4,3,2,1].map(n => `
+                        <div class="rating-dist-row">
+                            <span class="rating-dist-label">${n}★</span>
+                            <div class="rating-dist-bar-wrap"><div class="rating-dist-bar rating-bar-${n}" style="width:${maxCount>0?Math.round((dist[n]/maxCount)*100):0}%"></div></div>
+                            <span class="rating-dist-count">${dist[n]}</span>
+                        </div>`).join('')}
+                </div>`;
+        }
+        lucide.createIcons();
+    },
+
+    renderAnalyticsError(msg) {
+        const grid = $('analytics-kpi-row');
+        if (!grid) return;
+        const is404 = msg?.includes('404') || msg?.includes('NOT_FOUND') || msg?.includes('PERFORMANCE_API');
+        grid.innerHTML = `<div class="analytics-empty-msg" style="grid-column:1/-1">
+            <i data-lucide="alert-triangle"></i>
+            <p><strong>${is404 ? 'Performance API Not Enabled' : 'Could Not Load Analytics'}</strong></p>
+            ${is404 ? `<p class="analytics-hint">Enable the <strong>Business Profile Performance API</strong> in your GCP console, then verify your location is active on Google Maps.</p>` : `<p class="analytics-hint">${this.esc(msg)}</p>`}
+        </div>`;
+        lucide.createIcons();
+    },
+
     // ── Fetch helper with 12 s timeout ───────────────────
     async apiFetch(url) {
         const ctrl = new AbortController();
@@ -744,11 +935,37 @@ const app = {
                         <div class="reply-text">${this.esc(r.replyComment)}</div>
                     </div>
                 ` : `
-                    <button class="btn btn-ghost btn-sm reply-new-btn" style="margin-top:4px;"
-                        data-review-name="${this.esc(r.reviewName)}"
-                        data-reviewer="${this.esc(r.reviewer)}">
-                        <i data-lucide="reply"></i> Reply
-                    </button>
+                    ${r._aiDraft ? `
+                    <div class="ai-draft-preview">
+                        <div class="ai-draft-preview-head">
+                            <span class="ai-draft-badge"><i data-lucide="sparkles"></i> AI Draft Ready</span>
+                        </div>
+                        <div class="ai-draft-preview-text">${this.esc(r._aiDraft)}</div>
+                        <div class="ai-draft-preview-actions">
+                            <button class="btn btn-primary btn-sm reply-new-btn"
+                                data-review-name="${this.esc(r.reviewName)}"
+                                data-reviewer="${this.esc(r.reviewer)}">
+                                <i data-lucide="send"></i> Review &amp; Post
+                            </button>
+                            <button class="btn btn-ghost btn-sm ai-draft-btn"
+                                data-review-name="${this.esc(r.reviewName)}"
+                                data-reviewer="${this.esc(r.reviewer)}">
+                                <i data-lucide="refresh-cw"></i> Regenerate
+                            </button>
+                        </div>
+                    </div>` : `
+                    <div class="review-action-row">
+                        <button class="btn btn-ghost btn-sm reply-new-btn"
+                            data-review-name="${this.esc(r.reviewName)}"
+                            data-reviewer="${this.esc(r.reviewer)}">
+                            <i data-lucide="reply"></i> Reply
+                        </button>
+                        <button class="btn btn-ai btn-sm ai-draft-btn"
+                            data-review-name="${this.esc(r.reviewName)}"
+                            data-reviewer="${this.esc(r.reviewer)}">
+                            <i data-lucide="sparkles"></i> AI Draft
+                        </button>
+                    </div>`}
                 `}
             </div>
         `).join('') + (this.state.nextPageTokens.reviews ? `
@@ -757,7 +974,6 @@ const app = {
             </div>
         ` : '');
 
-        // Wire reply buttons via delegation — avoids all inline-onclick escaping issues
         list.querySelectorAll('.reply-new-btn').forEach(btn => {
             btn.addEventListener('click', () =>
                 this.openReplyModal(btn.dataset.reviewName, btn.dataset.reviewer, false)
@@ -773,15 +989,20 @@ const app = {
                 this.confirmDeleteReply(btn.dataset.reviewName, btn.dataset.reviewer)
             );
         });
+        list.querySelectorAll('.ai-draft-btn').forEach(btn => {
+            btn.addEventListener('click', () =>
+                this.suggestReplyAI(btn.dataset.reviewName, btn.dataset.reviewer)
+            );
+        });
 
         lucide.createIcons();
     },
 
     openReplyModal(reviewName, reviewer, isEdit = false) {
-        // Look up existing reply text from state — no need to pass it through HTML attributes
+        const stateReview = this.state.reviews.find(r => r.reviewName === reviewName);
         const existing = isEdit
-            ? (this.state.reviews.find(r => r.reviewName === reviewName)?.replyComment || '')
-            : '';
+            ? (stateReview?.replyComment || '')
+            : (stateReview?._aiDraft || '');
 
         $('modal-title').textContent = isEdit ? `Edit Response — ${reviewer}` : `Reply to ${reviewer}`;
         $('modal-body').innerHTML = `
@@ -790,6 +1011,7 @@ const app = {
                 <textarea class="form-control" id="reply-text"
                     placeholder="Write a professional, friendly response…"
                     rows="5">${this.esc(existing)}</textarea>
+                <div class="char-counter" id="reply-char-counter">${existing.length} / 4000</div>
             </div>
             <div class="modal-footer" style="padding:0;">
                 <button class="btn btn-ghost" id="modal-cancel-btn">Cancel</button>
@@ -800,9 +1022,84 @@ const app = {
             </div>
         `;
         this.openModal();
+        lucide.createIcons($('modal-body'));
 
+        $('reply-text').addEventListener('input', function() {
+            $('reply-char-counter').textContent = `${this.value.length} / 4000`;
+            $('reply-char-counter').classList.toggle('char-over', this.value.length > 4000);
+        });
         $('modal-cancel-btn').addEventListener('click', () => this.closeModal());
         $('modal-submit-btn').addEventListener('click', () => this.submitReply(reviewName, isEdit));
+    },
+
+    async suggestReplyAI(reviewName, reviewer) {
+        const review = this.state.reviews.find(r => r.reviewName === reviewName);
+        if (!review) { this.toast('Review not found in cache.', 'error'); return; }
+
+        const stars = STAR_MAP[review.starRating] ?? 0;
+        const comment = review.comment || '(no written comment)';
+
+        $('modal-title').textContent = `AI Draft Reply — ${reviewer}`;
+        $('modal-body').innerHTML = `
+            <div class="form-group">
+                <label class="form-label">Your response</label>
+                <div class="ai-drafting-row" id="ai-drafting-row">
+                    <span class="ai-drafting-dot"></span>
+                    <span>AI is drafting a reply…</span>
+                </div>
+                <textarea class="form-control" id="reply-text"
+                    placeholder="AI draft loading…" rows="5" disabled></textarea>
+                <div class="char-counter" id="reply-char-counter">0 / 4000</div>
+            </div>
+            <div class="modal-footer" style="padding:0;">
+                <button class="btn btn-ghost" id="modal-cancel-btn">Cancel</button>
+                <button class="btn btn-primary" id="modal-submit-btn" disabled>
+                    <i data-lucide="send"></i> Post Reply
+                </button>
+            </div>
+        `;
+        this.openModal();
+        lucide.createIcons($('modal-body'));
+        $('modal-cancel-btn').addEventListener('click', () => this.closeModal());
+
+        const prompt = `Write a short, professional, warm owner reply for a ${stars}-star Google Business Profile review from "${reviewer}". Review text: "${comment.slice(0, 400)}". Rules: under 180 words, no emojis, no medical claims, no hashtags, no phone numbers, no URLs, do not quote the reviewer's words back.`;
+
+        try {
+            const res = await fetch('/api/agent/chat', {
+                method: 'POST',
+                headers: this.apiHeaders({ 'Content-Type': 'application/json' }),
+                body: JSON.stringify({ message: prompt, history: [] })
+            });
+            if (res.status === 401) { this.closeModal(); return this.handle401(); }
+            const data = await res.json();
+            const draft = data.reply || '';
+
+            const draftRow = $('ai-drafting-row');
+            if (draftRow) draftRow.remove();
+
+            const ta = $('reply-text');
+            ta.value = draft;
+            ta.disabled = false;
+            ta.focus();
+            $('reply-char-counter').textContent = `${draft.length} / 4000`;
+            ta.addEventListener('input', function() {
+                $('reply-char-counter').textContent = `${this.value.length} / 4000`;
+                $('reply-char-counter').classList.toggle('char-over', this.value.length > 4000);
+            });
+
+            const submitBtn = $('modal-submit-btn');
+            submitBtn.disabled = false;
+            submitBtn.addEventListener('click', () => this.submitReply(reviewName, false));
+        } catch (err) {
+            const draftRow = $('ai-drafting-row');
+            if (draftRow) draftRow.remove();
+            const ta = $('reply-text');
+            ta.disabled = false;
+            ta.placeholder = 'AI draft failed — type your reply manually.';
+            $('modal-submit-btn').disabled = false;
+            $('modal-submit-btn').addEventListener('click', () => this.submitReply(reviewName, false));
+            this.toast('AI draft failed — you can type manually.', 'error');
+        }
     },
 
     async submitReply(reviewName, isEdit = false) {
@@ -828,6 +1125,41 @@ const app = {
         } catch {
             this.toast('Network error. Try again.', 'error');
         }
+    },
+
+    async bulkAISuggestReplies() {
+        const unanswered = this.state.reviews.filter(r => !r.hasReply && STAR_MAP[r.starRating] >= 4);
+        if (!unanswered.length) {
+            this.toast('No unanswered 4★/5★ reviews to draft replies for.', 'info');
+            return;
+        }
+        const confirmed = confirm(`AI-draft replies for ${unanswered.length} unanswered 4★/5★ review${unanswered.length > 1 ? 's' : ''}? Each draft opens in the reply modal for your approval before posting.`);
+        if (!confirmed) return;
+
+        this.toast(`Drafting ${unanswered.length} AI replies…`, 'info');
+        let doneCount = 0;
+        for (const review of unanswered) {
+            const stars = STAR_MAP[review.starRating] ?? 0;
+            const comment = review.comment || '(no written comment)';
+            const prompt = `Write a short, professional, warm owner reply for a ${stars}-star Google Business Profile review from "${review.reviewer}". Review text: "${comment.slice(0, 400)}". Rules: under 180 words, no emojis, no medical claims, no hashtags, no phone numbers, no URLs, do not quote the reviewer's words back.`;
+            try {
+                const res = await fetch('/api/agent/chat', {
+                    method: 'POST',
+                    headers: this.apiHeaders({ 'Content-Type': 'application/json' }),
+                    body: JSON.stringify({ message: prompt, history: [] })
+                });
+                if (res.status === 401) return this.handle401();
+                const data = await res.json();
+                const draft = data.reply || '';
+
+                // Stash draft in state for display
+                const stateReview = this.state.reviews.find(r => r.reviewName === review.reviewName);
+                if (stateReview) stateReview._aiDraft = draft;
+                doneCount++;
+            } catch (_) { /* skip failed drafts */ }
+        }
+        this.renderReviews();
+        this.toast(`${doneCount} AI draft${doneCount !== 1 ? 's' : ''} ready — click "Post" to publish each one.`, 'success');
     },
 
     confirmDeleteReply(reviewName, reviewer) {
@@ -995,6 +1327,7 @@ const app = {
             <div class="form-group">
                 <label class="form-label">Post Text <span style="color:var(--danger)">*</span></label>
                 <textarea class="form-control" id="post-summary" placeholder="Share news, offers, or updates about Eritage ENT Care…" rows="4"></textarea>
+                <div class="char-counter" id="post-char-counter">0 / 1500</div>
             </div>
 
             <!-- Type Specific Fields -->
@@ -1057,6 +1390,12 @@ const app = {
 
         $('post-cta-type').addEventListener('change', e => {
             $('cta-url-group').style.display = e.target.value ? 'block' : 'none';
+        });
+        $('post-summary').addEventListener('input', function() {
+            const counter = $('post-char-counter');
+            if (!counter) return;
+            counter.textContent = `${this.value.length} / 1500`;
+            counter.classList.toggle('char-over', this.value.length > 1500);
         });
     },
 

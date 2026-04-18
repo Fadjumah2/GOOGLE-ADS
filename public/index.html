@@ -44,10 +44,9 @@
                     <i data-lucide="file-text"></i>
                     <span>Posts</span>
                 </a>
-                <a href="#" class="nav-item" data-view="qa">
-                    <i data-lucide="message-circle"></i>
-                    <span>Q &amp; A</span>
-                    <span class="nav-badge-discontinued">EOL</span>
+                <a href="#" class="nav-item" data-view="analytics">
+                    <i data-lucide="bar-chart-2"></i>
+                    <span>Analytics</span>
                 </a>
 
                 <span class="nav-section-label">Profile</span>
@@ -154,9 +153,13 @@
                             <div class="card-head">
                                 <div>
                                     <h3 class="card-title">Performance</h3>
-                                    <p class="card-desc">Last 28 days of activity</p>
+                                    <p class="card-desc" id="dash-chart-desc">Last 28 days of activity</p>
                                 </div>
-                                <i data-lucide="trending-up" class="card-icon"></i>
+                                <div class="period-tabs" id="dash-period-tabs">
+                                    <button class="period-tab" data-period="last7">7D</button>
+                                    <button class="period-tab active" data-period="last28">28D</button>
+                                    <button class="period-tab" data-period="last90">90D</button>
+                                </div>
                             </div>
                             <div class="chart-wrap">
                                 <canvas id="perf-chart"></canvas>
@@ -217,7 +220,7 @@
                             </button>
                             <button class="action-item" onclick="app.switchView('services')">
                                 <i data-lucide="stethoscope"></i>
-                                <span>Manage Services</span>
+                                <span>Services</span>
                             </button>
                             <button class="action-item" onclick="app.openNewPostModal()">
                                 <i data-lucide="file-text"></i>
@@ -229,27 +232,27 @@
                             </button>
                             <button class="action-item" onclick="app.switchView('reviews')">
                                 <i data-lucide="star"></i>
-                                <span>Reply to Reviews</span>
+                                <span>Reviews</span>
+                            </button>
+                            <button class="action-item" onclick="app.switchView('analytics')">
+                                <i data-lucide="bar-chart-2"></i>
+                                <span>Analytics</span>
                             </button>
                             <button class="action-item" onclick="app.switchView('agent')">
                                 <i data-lucide="sparkles"></i>
-                                <span>Ask Synapse AI</span>
+                                <span>Ask AI</span>
                             </button>
                             <button class="action-item" onclick="app.switchView('autopilot')">
                                 <i data-lucide="bot"></i>
-                                <span>Config Autopilot</span>
+                                <span>Autopilot</span>
                             </button>
                             <button class="action-item" onclick="app.fetchVerificationStatus()">
                                 <i data-lucide="shield-check"></i>
                                 <span>Verify Status</span>
                             </button>
-                            <button class="action-item" onclick="app.fetchAttributes()">
-                                <i data-lucide="list-checks"></i>
-                                <span>View Attributes</span>
-                            </button>
                             <button class="action-item" onclick="app.loadDashboard(true)">
                                 <i data-lucide="refresh-cw"></i>
-                                <span>Sync Data</span>
+                                <span>Sync Now</span>
                             </button>
                         </div>
                     </div>
@@ -266,6 +269,10 @@
                                 <button class="filter-btn active" data-filter="all">All</button>
                                 <button class="filter-btn" data-filter="unanswered">Unanswered</button>
                             </div>
+                            <button class="btn btn-ghost btn-sm" id="bulk-ai-reply-btn" title="AI-draft replies for all unanswered reviews">
+                                <i data-lucide="sparkles"></i>
+                                AI Draft All
+                            </button>
                         </div>
                     </div>
                     <div id="reviews-list"></div>
@@ -287,18 +294,55 @@
                     <div class="posts-grid" id="posts-grid"></div>
                 </section>
 
-                <!-- ── Q&A ── -->
-                <section class="view" id="view-qa">
-                    <div class="empty-state">
-                        <div class="empty-icon"><i data-lucide="info"></i></div>
-                        <div class="empty-title">Q&A Discontinued</div>
-                        <div class="empty-desc" style="max-width: 400px; margin: 0 auto;">
-                            The Google Business Profile Q&A API was permanently discontinued by Google on November 3, 2025. 
-                            Google replaced it with AI-powered Ask Maps (Gemini) which is not available via API.
+                <!-- ── ANALYTICS ── -->
+                <section class="view" id="view-analytics">
+                    <div class="view-toolbar">
+                        <div class="toolbar-left">
+                            <span class="results-count" id="analytics-subtitle">Performance data</span>
                         </div>
-                        <a href="https://developers.google.com/my-business/content/qanda/change-log" target="_blank" class="btn btn-ghost btn-sm" style="margin-top:16px;">
-                            Official Change Log <i data-lucide="external-link"></i>
-                        </a>
+                        <div class="toolbar-right">
+                            <div class="filter-group" id="analytics-period-filter">
+                                <button class="filter-btn" data-period="last7">7 Days</button>
+                                <button class="filter-btn active" data-period="last28">28 Days</button>
+                                <button class="filter-btn" data-period="last90">90 Days</button>
+                                <button class="filter-btn" data-period="thisYear">This Year</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Metric KPI cards -->
+                    <div class="analytics-kpi-row" id="analytics-kpi-row">
+                        <div class="skeleton" style="height:88px;border-radius:14px;"></div>
+                        <div class="skeleton" style="height:88px;border-radius:14px;"></div>
+                        <div class="skeleton" style="height:88px;border-radius:14px;"></div>
+                        <div class="skeleton" style="height:88px;border-radius:14px;"></div>
+                        <div class="skeleton" style="height:88px;border-radius:14px;"></div>
+                        <div class="skeleton" style="height:88px;border-radius:14px;"></div>
+                        <div class="skeleton" style="height:88px;border-radius:14px;"></div>
+                    </div>
+
+                    <!-- Trend chart -->
+                    <div class="card analytics-chart-card" style="margin-top:20px;">
+                        <div class="card-head">
+                            <div>
+                                <h3 class="card-title">Daily Impressions Trend</h3>
+                                <p class="card-desc" id="analytics-chart-desc">Combined search &amp; maps visibility over time</p>
+                            </div>
+                            <i data-lucide="trending-up" class="card-icon"></i>
+                        </div>
+                        <div class="chart-wrap">
+                            <canvas id="analytics-chart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Response rate + rating distribution -->
+                    <div class="analytics-bottom-row" style="margin-top:20px;">
+                        <div class="card" id="analytics-response-card">
+                            <div class="skeleton" style="height:120px;border-radius:10px;"></div>
+                        </div>
+                        <div class="card" id="analytics-rating-dist">
+                            <div class="skeleton" style="height:120px;border-radius:10px;"></div>
+                        </div>
                     </div>
                 </section>
 
