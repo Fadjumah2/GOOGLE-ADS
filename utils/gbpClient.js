@@ -199,33 +199,28 @@ const getInsights = async () => {
         const startDate = new Date();
         startDate.setDate(endDate.getDate() - 28);
 
-        const url = `https://businessprofileperformance.googleapis.com/v1/locations/${locationId}:fetchMultiDailyMetricsTimeSeries`;
+        // fetchMultiDailyMetricsTimeSeries is a GET endpoint — all params go in the query string.
+        const metrics = [
+            'BUSINESS_IMPRESSIONS_DESKTOP_MAPS',
+            'BUSINESS_IMPRESSIONS_DESKTOP_SEARCH',
+            'BUSINESS_IMPRESSIONS_MOBILE_MAPS',
+            'BUSINESS_IMPRESSIONS_MOBILE_SEARCH',
+            'CALL_CLICKS',
+            'WEBSITE_CLICKS',
+            'BUSINESS_DIRECTION_REQUESTS'
+        ];
+        const params = new URLSearchParams();
+        metrics.forEach(m => params.append('dailyMetrics', m));
+        params.append('dailyRange.start_date.year',  startDate.getFullYear());
+        params.append('dailyRange.start_date.month', startDate.getMonth() + 1);
+        params.append('dailyRange.start_date.day',   startDate.getDate());
+        params.append('dailyRange.end_date.year',    endDate.getFullYear());
+        params.append('dailyRange.end_date.month',   endDate.getMonth() + 1);
+        params.append('dailyRange.end_date.day',     endDate.getDate());
 
-        const payload = {
-            dailyMetrics: [
-                'BUSINESS_IMPRESSIONS_DESKTOP_MAPS',
-                'BUSINESS_IMPRESSIONS_DESKTOP_SEARCH',
-                'BUSINESS_IMPRESSIONS_MOBILE_MAPS',
-                'BUSINESS_IMPRESSIONS_MOBILE_SEARCH',
-                'CALL_CLICKS',
-                'WEBSITE_CLICKS',
-                'DIRECTIONS_REQUESTS'
-            ],
-            dailyRange: {
-                startDate: {
-                    year: startDate.getFullYear(),
-                    month: startDate.getMonth() + 1,
-                    day: startDate.getDate()
-                },
-                endDate: {
-                    year: endDate.getFullYear(),
-                    month: endDate.getMonth() + 1,
-                    day: endDate.getDate()
-                }
-            }
-        };
+        const url = `https://businessprofileperformance.googleapis.com/v1/locations/${locationId}:fetchMultiDailyMetricsTimeSeries?${params.toString()}`;
 
-        const response = await axios.post(url, payload, {
+        const response = await axios.get(url, {
             ...axiosConfig,
             headers: { Authorization: `Bearer ${accessToken}` },
             timeout: 10000
