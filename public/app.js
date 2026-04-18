@@ -416,6 +416,7 @@ const app = {
             this.toast('Profile data is still loading. Please wait a moment.', 'info');
             return;
         }
+        try {
         $('modal-title').textContent = "Edit Business Profile";
         $('modal-body').innerHTML = `
             <div class="form-group">
@@ -447,9 +448,9 @@ const app = {
                         <div class="hour-row" style="display: flex; gap: 8px; align-items: center; justify-content: space-between;">
                             <span style="width: 80px; font-size: 12px; font-weight:500;">${day.charAt(0) + day.slice(1).toLowerCase()}</span>
                             <div style="display:flex; gap:6px; align-items:center;">
-                                <input type="time" class="hour-open form-control" style="padding:4px 8px; font-size:12px;" data-day="${day}" value="${dayHours?.openTime ? `${dayHours.openTime.hours.toString().padStart(2, '0')}:${dayHours.openTime.minutes.toString().padStart(2, '0')}` : '09:00'}">
+                                <input type="time" class="hour-open form-control" style="padding:4px 8px; font-size:12px;" data-day="${day}" value="${dayHours?.openTime ? `${String(dayHours.openTime.hours ?? 0).padStart(2, '0')}:${String(dayHours.openTime.minutes ?? 0).padStart(2, '0')}` : '09:00'}">
                                 <span style="font-size:12px;">to</span>
-                                <input type="time" class="hour-close form-control" style="padding:4px 8px; font-size:12px;" data-day="${day}" value="${dayHours?.closeTime ? `${dayHours.closeTime.hours.toString().padStart(2, '0')}:${dayHours.closeTime.minutes.toString().padStart(2, '0')}` : '17:00'}">
+                                <input type="time" class="hour-close form-control" style="padding:4px 8px; font-size:12px;" data-day="${day}" value="${dayHours?.closeTime ? `${String(dayHours.closeTime.hours ?? 0).padStart(2, '0')}:${String(dayHours.closeTime.minutes ?? 0).padStart(2, '0')}` : '17:00'}">
                             </div>
                         </div>
                     `;
@@ -462,6 +463,9 @@ const app = {
             </div>
         `;
         this.openModal();
+        } catch (err) {
+            this.toast('Could not open profile editor: ' + err.message, 'error');
+        }
     },
 
     async submitProfileUpdate() {
