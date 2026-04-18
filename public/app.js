@@ -1686,7 +1686,7 @@ const app = {
     // ── Autopilot ────────────────────────────────────────────
     async fetchAutopilot() {
         try {
-            const res = await fetch('/api/agent/status', { headers: { 'x-api-key': this.state.apiKey } });
+            const res = await fetch('/api/agent/status', { headers: this.apiHeaders() });
             const data = await res.json();
             if (!data.success) throw new Error(data.error || 'status_failed');
             this.state.autopilot = data;
@@ -1694,6 +1694,10 @@ const app = {
             this.renderAutopilot();
         } catch (e) {
             $('ap-status-body').innerHTML = `<p class="muted">Failed to load: ${this.esc(e.message)}</p>`;
+            ['ap-today-body', 'ap-calendar-body', 'ap-log-body'].forEach(id => {
+                const el = $(id);
+                if (el) el.innerHTML = `<p class="muted">—</p>`;
+            });
         }
     },
 
@@ -1817,7 +1821,7 @@ const app = {
             this.toast('Generating preview…', 'info');
             const res = await fetch('/api/agent/autonomousPost', {
                 method: 'POST',
-                headers: { 'x-api-key': this.state.apiKey, 'Content-Type': 'application/json' },
+                headers: this.apiHeaders({ 'Content-Type': 'application/json' }),
                 body: JSON.stringify({ force: true, dryRun: true }),
             });
             const data = await res.json();
@@ -1847,7 +1851,7 @@ const app = {
             this.toast('Running daily cycle…', 'info');
             const res = await fetch('/api/agent/runDaily', {
                 method: 'POST',
-                headers: { 'x-api-key': this.state.apiKey, 'Content-Type': 'application/json' },
+                headers: this.apiHeaders({ 'Content-Type': 'application/json' }),
                 body: JSON.stringify({}),
             });
             const data = await res.json();
