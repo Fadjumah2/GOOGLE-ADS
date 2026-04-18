@@ -47,6 +47,11 @@ const extractGBPError = (error, operation) => {
     const status = error.response?.status;
     const gbp = error.response?.data?.error;
 
+    // Log full Google error body for server-side diagnosis
+    if (error.response?.data) {
+        console.error(`[GBP ERROR] ${operation} HTTP ${status}:`, JSON.stringify(error.response.data));
+    }
+
     let errorCode;
     switch (status) {
         case 400: errorCode = 'INVALID_ARGUMENT'; break;
@@ -62,6 +67,7 @@ const extractGBPError = (error, operation) => {
         success: false,
         error: errorCode,
         message: gbp?.message || error.message,
+        ...(gbp?.status  && { googleStatus: gbp.status }),
         ...(gbp?.details && { details: gbp.details })
     };
 };
@@ -307,7 +313,39 @@ const getInsights = async (options = {}) => {
             range: { startDate: iso(startDate), endDate: iso(endDate) }
         };
     } catch (error) {
-        console.error('Failed to fetch insights:', error.message);
+        const status = error.response?.status;
+        const googleMsg = error.response?.data?.error?.message || error.message;
+        console.error(`Failed to fetch insights (HTTP ${status}):`, googleMsg);
+        if (error.response?.data) {
+            console.error('[GBP INSIGHTS] full error body:', JSON.stringify(error.response.data));
+        }
+
+        if (status === 404) {
+            return {
+                success: false,
+                error: 'PERFORMANCE_API_NOT_FOUND',
+                message:
+                    'The Business Profile Performance API returned 404 (Not Found). ' +
+                    'Two likely causes: ' +
+                    '(1) The "Business Profile Performance API" is not enabled for your GCP project — ' +
+                    'go to console.cloud.google.com/apis/library, search "Business Profile Performance API", and enable it. ' +
+                    '(2) The location is not verified on Google — unverified locations have no performance data. ' +
+                    `Google error detail: ${googleMsg}`
+            };
+        }
+
+        if (status === 403) {
+            return {
+                success: false,
+                error: 'PERFORMANCE_API_PERMISSION_DENIED',
+                message:
+                    'Permission denied fetching performance data. ' +
+                    'Ensure the "Business Profile Performance API" is enabled in your GCP project and ' +
+                    'the service account (or OAuth user) has the business.manage scope. ' +
+                    `Google error detail: ${googleMsg}`
+            };
+        }
+
         return extractGBPError(error, 'GET_INSIGHTS');
     }
 };
