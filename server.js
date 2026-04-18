@@ -32,7 +32,7 @@ const handleAgentStatus = require('./api/agent/status');
 const handleAuditLog = require('./api/agent/auditLog');
 const handleCronDaily = require('./api/cron/daily');
 const app = express();
-// Dummy comment to trigger deployment
+// Deployment trigger: rate limit fix + button responsiveness
 const port = 3000;
 
 app.use(express.json());

@@ -379,8 +379,8 @@ const app = {
                     <span>${p.address.addressLines.join(', ')}${p.address.locality ? ', ' + p.address.locality : ''}</span>
                 </div>` : ''}
                 
-                <button type="button" class="btn btn-ghost btn-sm" style="width:100%; margin-top:12px; border:1px solid var(--border);" onclick="app.openProfileModal()">
-                    <i data-lucide="pencil" style="pointer-events:none;"></i> <span style="pointer-events:none;">Edit Profile</span>
+                <button class="btn btn-ghost btn-sm" style="width:100%; margin-top:12px; border:1px solid var(--border);" onclick="app.openProfileModal()">
+                    <i data-lucide="pencil"></i> Edit Profile
                 </button>
             </div>
         `;

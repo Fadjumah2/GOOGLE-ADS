@@ -346,19 +346,12 @@ async function runAgentChat(userMessage, history = []) {
 
   const updatedHistory = await chat.getHistory();
 
-  // Strip function-call and function-response parts before returning to client.
-  // Raw tool results (reviews JSON, posts JSON, etc.) can be 50k+ tokens each.
-  // Sending them back on every subsequent turn burns through free-tier quota instantly.
-  // Keeping only human-readable text turns is sufficient for conversational context.
-  const lightHistory = updatedHistory
-    .map(turn => {
-      const textParts = (turn.parts || []).filter(p => typeof p.text === 'string' && p.text.trim());
-      return textParts.length > 0 ? { role: turn.role, parts: textParts } : null;
-    })
-    .filter(Boolean)
-    .slice(-10); // cap at last 10 text turns (~5 exchanges)
+  // We keep the full history so the model knows what it has already fetched
+  // and doesn't hit rate limits by re-fetching the same data every turn.
+  // We only cap the total length to keep the context window manageable.
+  const trimmedHistory = updatedHistory.slice(-20);
 
-  return { reply, history: lightHistory };
+  return { reply, history: trimmedHistory };
 }
 
 /**
