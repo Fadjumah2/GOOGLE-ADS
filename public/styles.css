@@ -919,6 +919,24 @@ h1, h2, h3, h4, .page-title, .card-title {
     margin-bottom: 24px;
     line-height: 1.5;
 }
+.key-footer {
+    position: absolute;
+    bottom: 24px;
+    left: 0;
+    right: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    font-size: 12px;
+    color: var(--text-subtle);
+}
+.key-footer a {
+    color: var(--text-muted);
+    text-decoration: none;
+    transition: color 0.2s;
+}
+.key-footer a:hover { color: var(--primary); }
 
 /* ═══════════════════════════════════════
    MODAL

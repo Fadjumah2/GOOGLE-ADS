@@ -43,6 +43,14 @@ app.get("/ping", (req, res) => {
   res.json({ success: true, message: "pong" });
 });
 
+// Public compliance pages — no auth needed (required for Google API verification)
+app.get("/privacy", (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'privacy.html'));
+});
+app.get("/terms", (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'terms.html'));
+});
+
 // --- OAuth2 re-authorization routes (protected) ---
 // Step 1: Visit /api/auth/login to get the Google consent URL
 app.get('/api/auth/login', requireApiKey, (req, res) => {
