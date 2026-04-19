@@ -51,6 +51,16 @@ app.get("/terms", (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'terms.html'));
 });
 
+// Public marketing home page — no auth needed
+app.get("/home", (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'home.html'));
+});
+
+// Dashboard redesign preview — no auth needed (mock data only)
+app.get("/dashboard-new", (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'dashboard-new.html'));
+});
+
 // --- OAuth2 re-authorization routes (protected) ---
 // Step 1: Visit /api/auth/login to get the Google consent URL
 app.get('/api/auth/login', requireApiKey, (req, res) => {
