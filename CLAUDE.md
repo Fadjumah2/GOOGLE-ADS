@@ -223,15 +223,15 @@ curl -s https://www.trendexhub.com/api/gbp/getProfile \
 
 ---
 
-## Last Session Snapshot (auto-updated: 2026-04-18 23:10 UTC)
-- **Branch:** `main`
+## Last Session Snapshot (auto-updated: 2026-04-19 22:40 UTC)
+- **Branch:** `claude/add-compliance-pages-SVxj6`
 - **Last 5 commits:**
 ```
+20926c2 feat: add compliance pages for Google API verification (Privacy Policy, Terms of Service)
+114a126 Add files via upload
+3bd59ce feat: set autopilot to every-2-days at 02:15 EAT (23:15 UTC)
+c84c224 chore: auto-update CLAUDE.md session snapshot [2026-04-18 23:10 UTC]
 047f903 chore: auto-update CLAUDE.md session snapshot [2026-04-18 23:10 UTC]
-40a9add chore: auto-update CLAUDE.md session snapshot [2026-04-18 23:01 UTC]
-0d3d518 chore: auto-update CLAUDE.md session snapshot [2026-04-18 22:58 UTC]
-eb2f1f2 fix: prevent Edit Profile button from silently failing on undefined hours
-1be1757 feat: major dashboard upgrade — Analytics view, AI Draft Reply, period selectors
 ```
 - **Billing:** Activated and linked to project `468613454814` ✅
 - **APIs enabled:** My Business Reviews, Business Information, Account Management ✅
