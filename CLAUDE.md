@@ -223,15 +223,15 @@ curl -s https://www.trendexhub.com/api/gbp/getProfile \
 
 ---
 
-## Last Session Snapshot (auto-updated: 2026-04-19 22:41 UTC)
+## Last Session Snapshot (auto-updated: 2026-04-19 22:45 UTC)
 - **Branch:** `main`
 - **Last 5 commits:**
 ```
+e1d104c feat: implement marketing page + dashboard redesign from Synapse.zip; delete zip
+2518c7b chore: auto-update CLAUDE.md session snapshot [2026-04-19 22:41 UTC]
 89c3295 chore: auto-update CLAUDE.md session snapshot [2026-04-19 22:40 UTC]
 20926c2 feat: add compliance pages for Google API verification (Privacy Policy, Terms of Service)
 114a126 Add files via upload
-3bd59ce feat: set autopilot to every-2-days at 02:15 EAT (23:15 UTC)
-c84c224 chore: auto-update CLAUDE.md session snapshot [2026-04-18 23:10 UTC]
 ```
 - **Billing:** Activated and linked to project `468613454814` ✅
 - **APIs enabled:** My Business Reviews, Business Information, Account Management ✅
