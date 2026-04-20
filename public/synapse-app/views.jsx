@@ -112,31 +112,33 @@ function AutopilotView() {
 // ============ CHAT ============
 function ChatView() {
   const [input, setInput] = uS("");
-  const [history, setHistory] = uS([]);
+  const [displayHistory, setDisplayHistory] = uS([]);
+  const [apiHistory, setApiHistory] = uS([]);
   const [loading, setLoading] = uS(false);
   const scrollRef = uR(null);
 
   uE(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-  }, [history]);
+  }, [displayHistory]);
 
   const handleSend = uC(async () => {
     if (!input.trim()) return;
     const msg = input.trim();
     setInput("");
-    const updatedHistory = [...history, { role: "user", msg }];
-    setHistory(updatedHistory);
+    const updatedDisplay = [...displayHistory, { role: "user", msg }];
+    setDisplayHistory(updatedDisplay);
     setLoading(true);
     try {
-      const res = await API.chat(msg, updatedHistory);
-      setHistory([...updatedHistory, { role: "assistant", msg: res.response || res.message || "No response" }]);
+      const res = await API.chat(msg, apiHistory);
+      setDisplayHistory([...updatedDisplay, { role: "assistant", msg: res.reply || "No response" }]);
+      setApiHistory(res.history || []);
     } catch (e) {
       showToast(e.message, "bad");
-      setHistory(updatedHistory);
+      setDisplayHistory(updatedDisplay);
     } finally {
       setLoading(false);
     }
-  }, [input, history]);
+  }, [input, displayHistory, apiHistory]);
 
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "calc(100vh - 82px)" }}>
@@ -147,12 +149,12 @@ function ChatView() {
             <div style={{ fontSize: 14, color: T.ink70, marginTop: 8 }}>Connected to 14 tools across your Google Business Profile.</div>
           </div>
 
-          {history.length === 0 ? (
+          {displayHistory.length === 0 ? (
             <div style={{ textAlign: "center", color: T.ink60, padding: "40px 20px" }}>
               <Mono size={12}>Start a conversation to get AI-powered assistance with your business.</Mono>
             </div>
           ) : (
-            history.map((m, i) => (
+            displayHistory.map((m, i) => (
               <div key={i} style={{ display: "flex", gap: 12, flexDirection: m.role === "user" ? "row-reverse" : "row" }}>
                 <div style={{ width: 28, height: 28, borderRadius: 7, flexShrink: 0, background: m.role === "user" ? T.bgSoft : T.ink, border: m.role === "user" ? `1px solid ${T.line}` : "none", color: m.role === "user" ? T.ink : T.accent, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: T.fontMono, fontSize: 11, fontWeight: 500 }}>
                   {m.role === "user" ? "H" : <Ico name="ai" size={13} />}
@@ -193,7 +195,7 @@ function ChatView() {
             <button onClick={handleSend} disabled={loading || !input.trim()} style={{ width: 32, height: 32, borderRadius: 6, background: T.ink, color: T.bg, border: "none", cursor: loading ? "wait" : "pointer", opacity: loading ? 0.6 : 1, display: "flex", alignItems: "center", justifyContent: "center" }}><Ico name="send" size={14} color={T.bg} /></button>
           </div>
           <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8 }}>
-            <Mono size={10}>14 tools · Gemini 1.5 Pro · audit-logged</Mono>
+            <Mono size={10}>14 tools · Gemini 2.5 Flash · audit-logged</Mono>
             <Mono size={10}>⏎ send · ⇧⏎ newline</Mono>
           </div>
         </div>
