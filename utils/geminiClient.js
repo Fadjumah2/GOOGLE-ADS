@@ -334,6 +334,12 @@ async function runAgentChat(userMessage, history = []) {
     response = result.response;
   }
 
+  // If Gemini still wants more tools after hitting the cap, force a text reply.
+  if (response.functionCalls() && response.functionCalls().length > 0) {
+    result = await sendWithRetry(chat, [{ text: 'Please summarize your findings now and respond with text only.' }]);
+    response = result.response;
+  }
+
   // Safely extract reply text — response.text() throws on safety blocks or empty candidates
   let reply;
   try {

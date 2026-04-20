@@ -128,14 +128,23 @@ function ChatView() {
     const updatedDisplay = [...displayHistory, { role: "user", msg }];
     setDisplayHistory(updatedDisplay);
     setLoading(true);
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 55000);
     try {
-      const res = await API.chat(msg, apiHistory);
+      const res = await API.call("/api/agent/chat", {
+        method: "POST",
+        body: JSON.stringify({ message: msg, history: apiHistory }),
+        signal: controller.signal,
+      });
       setDisplayHistory([...updatedDisplay, { role: "assistant", msg: res.reply || "No response" }]);
       setApiHistory(res.history || []);
     } catch (e) {
-      showToast(e.message, "bad");
-      setDisplayHistory(updatedDisplay);
+      const errMsg = e.name === "AbortError"
+        ? "The AI took too long to respond. Please try again."
+        : (e.message || "Connection error — please check your network.");
+      setDisplayHistory([...updatedDisplay, { role: "error", msg: errMsg }]);
     } finally {
+      clearTimeout(timer);
       setLoading(false);
     }
   }, [input, displayHistory, apiHistory]);
@@ -160,7 +169,7 @@ function ChatView() {
                   {m.role === "user" ? "H" : <Ico name="ai" size={13} />}
                 </div>
                 <div style={{ maxWidth: "80%" }}>
-                  <div style={{ padding: "12px 16px", borderRadius: 10, background: m.role === "user" ? T.bgSoft : T.bgElev, border: `1px solid ${T.line}`, fontSize: 14, lineHeight: 1.55 }}>
+                  <div style={{ padding: "12px 16px", borderRadius: 10, background: m.role === "error" ? "oklch(0.97 0.01 25)" : m.role === "user" ? T.bgSoft : T.bgElev, border: `1px solid ${m.role === "error" ? "oklch(0.85 0.06 25)" : T.line}`, fontSize: 14, lineHeight: 1.55, color: m.role === "error" ? "oklch(0.45 0.12 25)" : "inherit" }}>
                     {m.msg}
                   </div>
                 </div>
