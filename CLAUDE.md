@@ -223,15 +223,15 @@ curl -s https://www.trendexhub.com/api/gbp/getProfile \
 
 ---
 
-## Last Session Snapshot (auto-updated: 2026-04-19 23:04 UTC)
+## Last Session Snapshot (auto-updated: 2026-04-20 15:42 UTC)
 - **Branch:** `main`
 - **Last 5 commits:**
 ```
+6b44872 chore: auto-update CLAUDE.md session snapshot [2026-04-19 23:04 UTC]
 9ae9ed6 feat: new React dashboard — index.html, primitives, data API client, shell, dashboard view
 6239823 chore: auto-update CLAUDE.md session snapshot [2026-04-19 23:04 UTC]
 7e410a5 chore: auto-update CLAUDE.md session snapshot [2026-04-19 22:45 UTC]
 e1d104c feat: implement marketing page + dashboard redesign from Synapse.zip; delete zip
-2518c7b chore: auto-update CLAUDE.md session snapshot [2026-04-19 22:41 UTC]
 ```
 - **Billing:** Activated and linked to project `468613454814` ✅
 - **APIs enabled:** My Business Reviews, Business Information, Account Management ✅
