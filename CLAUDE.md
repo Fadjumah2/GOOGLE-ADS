@@ -223,15 +223,15 @@ curl -s https://www.trendexhub.com/api/gbp/getProfile \
 
 ---
 
-## Last Session Snapshot (auto-updated: 2026-04-20 21:10 UTC)
+## Last Session Snapshot (auto-updated: 2026-04-20 21:45 UTC)
 - **Branch:** `claude/vercel-token-rotation-eNEHk`
 - **Last 5 commits:**
 ```
+34277c0 fix: correct AI chat — wrong response field, history format mismatch, duplicate message
+feec90d chore: auto-update CLAUDE.md session snapshot [2026-04-20 21:10 UTC]
 2a737bd chore: auto-update CLAUDE.md session snapshot [2026-04-20 21:10 UTC]
 db2af38 chore: auto-update CLAUDE.md session snapshot [2026-04-20 21:08 UTC]
 0f2101a chore: auto-update CLAUDE.md session snapshot [2026-04-20 21:08 UTC]
-6a4cee5 chore: auto-update CLAUDE.md session snapshot [2026-04-20 21:00 UTC]
-0cadaf5 feat: integrate all 8 views with real API calls
 ```
 - **Billing:** Activated and linked to project `468613454814` ✅
 - **APIs enabled:** My Business Reviews, Business Information, Account Management ✅
