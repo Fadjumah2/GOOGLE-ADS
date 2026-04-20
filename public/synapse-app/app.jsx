@@ -2,7 +2,7 @@
 const { useState: uSA, useEffect: uEA } = React;
 
 const VIEWS = {
-  dashboard: { title: "Today at a glance", sub: "Saturday, April 19 · Eritage ENT Care · Entebbe", Comp: DashboardView },
+  dashboard: { title: "Today at a glance", sub: "Saturday, April 20 · Eritage ENT Care · Entebbe", Comp: DashboardView },
   autopilot: { title: "Autopilot", sub: "Autonomous daily posting & safe review replies.", Comp: AutopilotView },
   chat: { title: "Synapse AI", sub: "Conversational agent with 14 GBP tools.", Comp: ChatView },
   audit: { title: "Audit log", sub: "Every autonomous action, timestamped.", Comp: AuditView },
@@ -23,6 +23,54 @@ function useIsMobile() {
   return m;
 }
 
+function ApiKeyModal() {
+  const [key, setKey] = useState("");
+  const [copied, setCopied] = useState(false);
+
+  const handleSubmit = () => {
+    if (key.trim()) {
+      API.setKey(key);
+      window.closeModal();
+      window.location.reload();
+    } else {
+      showToast("Please enter an API key", "bad");
+    }
+  };
+
+  return (
+    <div style={{ padding: 32 }}>
+      <div style={{ marginBottom: 24 }}>
+        <div style={{ fontSize: 22, fontWeight: 600, letterSpacing: "-0.01em", marginBottom: 8 }}>Authenticate</div>
+        <div style={{ fontSize: 14, color: T.ink70 }}>Enter your Synapse API key to access the dashboard.</div>
+      </div>
+
+      <div style={{ marginBottom: 24 }}>
+        <label style={{ display: "block", fontSize: 12, fontWeight: 500, color: T.ink60, marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.06em" }}>API Key</label>
+        <input
+          type="password"
+          value={key}
+          onChange={e => setKey(e.target.value)}
+          onKeyDown={e => e.key === "Enter" && handleSubmit()}
+          placeholder="Paste your API key here"
+          style={{
+            width: "100%",
+            padding: "10px 12px",
+            border: `1px solid ${T.line}`,
+            borderRadius: 6,
+            fontFamily: T.fontMono,
+            fontSize: 13,
+            boxSizing: "border-box"
+          }}
+        />
+      </div>
+
+      <div style={{ display: "flex", gap: 8 }}>
+        <Btn tone="solid" style={{ flex: 1 }} onClick={handleSubmit}>Continue</Btn>
+      </div>
+    </div>
+  );
+}
+
 function App() {
   const [view, setView] = useState(() => localStorage.getItem("synapse-view") || "dashboard");
   useEffect(() => localStorage.setItem("synapse-view", view), [view]);
@@ -40,6 +88,23 @@ function App() {
   useEffect(() => {
     if (isMobile) setSidebarOpen(false);
   }, [isMobile]);
+
+  // Check for API key on mount and listen for unauthorized
+  useEffect(() => {
+    const checkAuth = () => {
+      if (!API.getKey()) {
+        openModal(<ApiKeyModal />);
+      }
+    };
+    checkAuth();
+
+    const handleUnauthorized = () => {
+      openModal(<ApiKeyModal />);
+    };
+
+    window.addEventListener("synapse-unauthorized", handleUnauthorized);
+    return () => window.removeEventListener("synapse-unauthorized", handleUnauthorized);
+  }, []);
 
   const cfg = VIEWS[view];
   const Comp = cfg.Comp;
@@ -113,6 +178,9 @@ function App() {
           <Comp isMobile={isMobile} />
         </div>
       </main>
+
+      <ModalHost />
+      <ToastHost />
     </div>
   );
 }

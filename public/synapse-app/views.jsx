@@ -1,5 +1,54 @@
 // Synapse — Autopilot, Chat, Reviews, Posts, Analytics, Media, Services, Audit views
 
+// ============ MOCK DATA ============
+const MOCK = {
+  calendar: [
+    { day: "Fri", date: "19", theme: "Weekly Reminder", topic: "Book your check-up", done: true, today: false },
+    { day: "Sat", date: "20", theme: "Clinic Culture", topic: "Meet our team", done: false, today: true },
+    { day: "Sun", date: "21", theme: "Wellness Tip", topic: "Ear care 101", done: false, today: false },
+    { day: "Mon", date: "22", theme: "Service Spotlight", topic: "Hearing tests", done: false, today: false },
+    { day: "Tue", date: "23", theme: "Did You Know", topic: "Tinnitus facts", done: false, today: false },
+    { day: "Wed", date: "24", theme: "Community", topic: "Local health", done: false, today: false },
+    { day: "Thu", date: "25", theme: "Family", topic: "Kids' ear health", done: false, today: false }
+  ],
+  chatLog: [
+    { role: "user", msg: "Generate a post about hearing health" },
+    { role: "assistant", msg: "Here's a post: 'Taking care of your hearing is crucial...'" },
+    { role: "user", msg: "Make it more engaging" },
+    { role: "assistant", msg: "Updated: 'Did you know that regular hearing checks...'" }
+  ],
+  reviews: [
+    { id: "1", author: "John M.", rating: 5, text: "Great service, very professional team.", date: "2026-04-18", status: "answered" },
+    { id: "2", author: "Mary K.", rating: 4, text: "Good experience, friendly staff.", date: "2026-04-17", status: "unanswered" },
+    { id: "3", author: "James L.", rating: 3, text: "Average, could improve waiting time.", date: "2026-04-16", status: "unanswered" },
+    { id: "4", author: "Sarah P.", rating: 5, text: "Excellent doctor, very knowledgeable.", date: "2026-04-15", status: "answered" },
+    { id: "5", author: "Mike T.", rating: 2, text: "Had issues with the appointment system.", date: "2026-04-14", status: "unanswered" }
+  ],
+  posts: [
+    { id: "1", text: "Welcome to Eritage ENT Care! We're here to help with all your ear, nose, and throat needs.", date: "2026-04-19", likes: 42 },
+    { id: "2", text: "Tip: Protect your ears from loud noises. Use ear protection when needed.", date: "2026-04-17", likes: 28 },
+    { id: "3", text: "Meet our experienced team of ENT specialists dedicated to your health.", date: "2026-04-15", likes: 35 }
+  ],
+  auditLog: [
+    { time: "09:00", action: "autopilot.post.published", detail: "Daily post published", status: "success" },
+    { time: "08:55", action: "autopilot.reply.drafted", detail: "Review reply drafted (pending review)", status: "pending" },
+    { time: "08:30", action: "autopilot.post.generated", detail: "Post generated: 'Hearing Health Month'", status: "success" },
+    { time: "07:15", action: "autopilot.scheduled", detail: "Daily cycle started", status: "info" }
+  ],
+  metrics: [
+    { metric: "Profile Views", value: 1247, trend: 12 },
+    { metric: "Direction Requests", value: 89, trend: 8 },
+    { metric: "Calls", value: 34, trend: 5 },
+    { metric: "Website Clicks", value: 156, trend: 18 }
+  ],
+  services: [
+    { id: "1", name: "General Consultation", description: "Initial ear, nose, and throat examination" },
+    { id: "2", name: "Hearing Test", description: "Comprehensive hearing assessment and testing" },
+    { id: "3", name: "ENT Surgery", description: "Surgical procedures for ENT conditions" },
+    { id: "4", name: "Allergy Testing", description: "Allergy identification and treatment" }
+  ]
+};
+
 // ============ AUTOPILOT ============
 function AutopilotView() {
   return (
