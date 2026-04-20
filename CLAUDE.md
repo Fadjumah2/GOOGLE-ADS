@@ -223,15 +223,15 @@ curl -s https://www.trendexhub.com/api/gbp/getProfile \
 
 ---
 
-## Last Session Snapshot (auto-updated: 2026-04-20 21:55 UTC)
+## Last Session Snapshot (auto-updated: 2026-04-20 21:57 UTC)
 - **Branch:** `main`
 - **Last 5 commits:**
 ```
+3be4747 chore: auto-update CLAUDE.md session snapshot [2026-04-20 21:55 UTC]
 b299429 fix: resolve endless thinking and silent failures in AI chat
 b673d5d chore: auto-update CLAUDE.md session snapshot [2026-04-20 21:50 UTC]
 0f1f7df chore: auto-update CLAUDE.md session snapshot [2026-04-20 21:46 UTC]
 d7fa764 chore: auto-update CLAUDE.md session snapshot [2026-04-20 21:45 UTC]
-f8ed7fd fix: correct AI chat — wrong response field, history format mismatch, duplicate message
 ```
 - **Billing:** Activated and linked to project `468613454814` ✅
 - **APIs enabled:** My Business Reviews, Business Information, Account Management ✅
