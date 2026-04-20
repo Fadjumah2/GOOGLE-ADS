@@ -223,15 +223,15 @@ curl -s https://www.trendexhub.com/api/gbp/getProfile \
 
 ---
 
-## Last Session Snapshot (auto-updated: 2026-04-20 21:00 UTC)
-- **Branch:** `main`
+## Last Session Snapshot (auto-updated: 2026-04-20 21:10 UTC)
+- **Branch:** `claude/vercel-token-rotation-eNEHk`
 - **Last 5 commits:**
 ```
+db2af38 chore: auto-update CLAUDE.md session snapshot [2026-04-20 21:08 UTC]
+0f2101a chore: auto-update CLAUDE.md session snapshot [2026-04-20 21:08 UTC]
+6a4cee5 chore: auto-update CLAUDE.md session snapshot [2026-04-20 21:00 UTC]
 0cadaf5 feat: integrate all 8 views with real API calls
 2cdcf97 chore: trigger fresh Vercel deployment + snapshot refresh
-db1f931 feat: fully integrate frontend with API key authentication and modal
-cc5d989 chore: auto-update CLAUDE.md session snapshot [2026-04-20 15:46 UTC]
-da08f6c chore: auto-update CLAUDE.md session snapshot [2026-04-20 15:42 UTC]
 ```
 - **Billing:** Activated and linked to project `468613454814` ✅
 - **APIs enabled:** My Business Reviews, Business Information, Account Management ✅
