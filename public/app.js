@@ -198,7 +198,7 @@ const app = {
         const apPreview = $('ap-dry-post-btn');
         if (apPreview) apPreview.addEventListener('click', () => this.runAutopilotPreview());
         const apRun = $('ap-run-now-btn');
-        if (apRun) apRun.addEventListener('click', () => this.runAutopilotCycle());
+        if (apRun) apRun.addEventListener('click', () => this.confirmCycle());
 
         // AI Agent Chat
         $('chat-send-btn').addEventListener('click', () => this.sendChatMessage());
@@ -1484,51 +1484,6 @@ const app = {
         }
     },
 
-    async fetchAttributes() {
-        this.toast('Fetching business attributes…', 'info');
-        try {
-            const res = await fetch('/api/gbp/getAttributes', { headers: this.apiHeaders() });
-            const data = await res.json();
-            if (data.success) {
-                const attributes = data.attributes?.attributes || [];
-                
-                $('modal-title').textContent = 'Business Attributes';
-                if (!attributes.length) {
-                    $('modal-body').innerHTML = '<p class="muted">No attributes found for this location.</p>';
-                } else {
-                    $('modal-body').innerHTML = `
-                        <div style="max-height: 400px; overflow-y: auto; padding-right: 8px;">
-                            <table style="width:100%; font-size:13px; border-collapse: collapse;">
-                                <thead>
-                                    <tr style="text-align:left; border-bottom:1px solid var(--border);">
-                                        <th style="padding:8px 0;">Attribute</th>
-                                        <th style="padding:8px 0;">Value</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    ${attributes.map(a => `
-                                        <tr style="border-bottom:1px solid var(--border-light);">
-                                            <td style="padding:10px 0; color:var(--text-main); font-weight:500;">${this.esc(a.attributeId.replace(/_/g, ' '))}</td>
-                                            <td style="padding:10px 0; color:var(--text-muted);">${this.esc(a.values?.join(', ') || a.valueType || '—')}</td>
-                                        </tr>
-                                    `).join('')}
-                                </tbody>
-                            </table>
-                        </div>
-                        <div class="modal-footer" style="padding:20px 0 0 0;">
-                            <button class="btn btn-primary" style="width:100%" onclick="app.closeModal()">Close</button>
-                        </div>
-                    `;
-                }
-                this.openModal();
-            } else {
-                this.toast(data.message || 'Failed to fetch attributes.', 'error');
-            }
-        } catch (e) {
-            this.toast('Network error.', 'error');
-        }
-    },
-
     openUploadMediaModal() {
         $('modal-title').textContent = 'Upload Media';
         $('modal-body').innerHTML = `
@@ -1976,9 +1931,9 @@ const app = {
     },
 
     async runAutopilotCycle() {
-        if (!confirm('Run the autonomous daily cycle now? This will generate and publish a post (if not already posted today) and reply to any safe unanswered reviews.')) return;
         try {
             this.toast('Running daily cycle…', 'info');
+            this.closeModal(); // Close the confirmation modal
             const res = await fetch('/api/agent/runDaily', {
                 method: 'POST',
                 headers: this.apiHeaders({ 'Content-Type': 'application/json' }),
@@ -2014,6 +1969,24 @@ const app = {
         } catch (e) {
             this.toast('Cycle failed: ' + e.message, 'error');
         }
+    },
+
+    confirmCycle() {
+        $('modal-title').textContent = 'Confirm Action';
+        $('modal-body').innerHTML = `
+            <p style="font-size:14px;color:var(--text-muted);line-height:1.6;margin-bottom:20px;">
+                Are you sure you want to run the autonomous daily cycle now? This will generate and publish a post (if not already posted today) and reply to any safe unanswered reviews.
+            </p>
+            <div class="modal-footer" style="padding:0;">
+                <button class="btn btn-ghost" id="modal-cancel-btn">Cancel</button>
+                <button class="btn btn-primary" id="modal-confirm-cycle-btn">
+                    <i data-lucide="play"></i> Yes, Run Cycle
+                </button>
+            </div>
+        `;
+        this.openModal();
+        $('modal-cancel-btn').addEventListener('click', () => this.closeModal());
+        $('modal-confirm-cycle-btn').addEventListener('click', () => this.runAutopilotCycle());
     },
 };
 
