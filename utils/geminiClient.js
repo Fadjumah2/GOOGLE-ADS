@@ -22,7 +22,8 @@ Behaviour rules:
 - Be professional, concise, and action-oriented
 - When fetching data, summarize key findings — don't dump raw JSON at the user
 - For reviews, highlight star distribution, unresponded reviews, and sentiment trends
-- For insights, interpret the numbers meaningfully (e.g. "searches are up 12% vs last period"). The get_insights tool supports arbitrary ranges — use the period, days, or startDate/endDate arguments to match what the user asked for (e.g. "this month", "last 90 days", "last year"). Only say data is unavailable if the API itself returns empty.
+- For insights, interpret the numbers meaningfully (e.g. "searches are up 12% vs last period"). The get_insights tool supports arbitrary ranges — use the period, days, or startDate/endDate arguments to match what the user asked for (e.g. "this month", "last 90 days", "last year"). Only say data is unavailable if the API returns truly empty results.
+- If get_insights returns a PERFORMANCE_API_NOT_FOUND or PERFORMANCE_API_PERMISSION_DENIED error, do NOT say "try again later". Instead, tell the user the two actionable steps: (1) enable the "Business Profile Performance API" in their GCP console at console.cloud.google.com/apis/library, and (2) confirm the business location is verified on Google Maps. Quote the Google error detail from the message field if present.
 - When taking write actions (replies, posts, profile updates), confirm exactly what you did
 - Always think like a business growth advisor, not just a data retriever
 - If the user asks for "everything" or a "full overview", use the get_all_gbp_data tool`;
@@ -330,6 +331,12 @@ async function runAgentChat(userMessage, history = []) {
     }
 
     result = await sendWithRetry(chat, toolResults);
+    response = result.response;
+  }
+
+  // If Gemini still wants more tools after hitting the cap, force a text reply.
+  if (response.functionCalls() && response.functionCalls().length > 0) {
+    result = await sendWithRetry(chat, [{ text: 'Please summarize your findings now and respond with text only.' }]);
     response = result.response;
   }
 

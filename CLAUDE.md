@@ -223,15 +223,15 @@ curl -s https://www.trendexhub.com/api/gbp/getProfile \
 
 ---
 
-## Last Session Snapshot (auto-updated: 2026-04-18 19:04 UTC)
+## Last Session Snapshot (auto-updated: 2026-04-20 21:57 UTC)
 - **Branch:** `main`
 - **Last 5 commits:**
 ```
-b2fb69c fix(profile): description lives at profile.description, not top-level
-306829a chore: auto-update CLAUDE.md session snapshot [2026-04-18 18:47 UTC]
-5830b53 fix(dashboard): surface real insight totals and stop silent profile failures
-1af8757 chore: auto-update CLAUDE.md session snapshot [2026-04-18 18:35 UTC]
-dea016d feat(insights): support arbitrary date ranges (period, days, startDate/endDate)
+3be4747 chore: auto-update CLAUDE.md session snapshot [2026-04-20 21:55 UTC]
+b299429 fix: resolve endless thinking and silent failures in AI chat
+b673d5d chore: auto-update CLAUDE.md session snapshot [2026-04-20 21:50 UTC]
+0f1f7df chore: auto-update CLAUDE.md session snapshot [2026-04-20 21:46 UTC]
+d7fa764 chore: auto-update CLAUDE.md session snapshot [2026-04-20 21:45 UTC]
 ```
 - **Billing:** Activated and linked to project `468613454814` ✅
 - **APIs enabled:** My Business Reviews, Business Information, Account Management ✅
