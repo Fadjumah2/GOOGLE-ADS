@@ -1,8 +1,11 @@
 // Synapse Dashboard — root app
 const { useState: uSA, useEffect: uEA } = React;
 
+const today = new Date();
+const formattedDate = today.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+
 const VIEWS = {
-  dashboard: { title: "Today at a glance", sub: "Saturday, April 20 · Eritage ENT Care · Entebbe", Comp: DashboardView },
+  dashboard: { title: "Today at a glance", sub: `${formattedDate} · Eritage ENT Care · Entebbe`, Comp: DashboardView },
   autopilot: { title: "Autopilot", sub: "Autonomous daily posting & safe review replies.", Comp: AutopilotView },
   chat: { title: "Synapse AI", sub: "Conversational agent with 14 GBP tools.", Comp: ChatView },
   audit: { title: "Audit log", sub: "Every autonomous action, timestamped.", Comp: AuditView },
@@ -75,6 +78,35 @@ function App() {
   const [view, setView] = useState(() => localStorage.getItem("synapse-view") || "dashboard");
   useEffect(() => localStorage.setItem("synapse-view", view), [view]);
 
+  const [reviews, setReviews] = useState([]);
+  useEffect(() => {
+    API.reviews().then(data => setReviews(data.reviews || []));
+  }, []);
+
+  const [searchTerm, setSearchTerm] = useState("");
+  const [lastRefreshed, setLastRefreshed] = useState(Date.now());
+
+  const totalReviews = reviews.length;
+  const unansweredReviews = reviews.filter(r => !r.hasReply).length;
+
+  const today = new Date();
+  const formattedDate = today.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+
+  const businessName = "Eritage ENT Care";
+  const businessLocation = "Entebbe, Uganda";
+
+  const VIEWS = {
+    dashboard: { title: "Today at a glance", sub: `${formattedDate} · ${businessName} · ${businessLocation}`, Comp: DashboardView },
+    autopilot: { title: "Autopilot", sub: "Autonomous daily posting & safe review replies.", Comp: AutopilotView },
+    chat: { title: "Synapse AI", sub: "Conversational agent with 14 GBP tools.", Comp: ChatView },
+    audit: { title: "Audit log", sub: "Every autonomous action, timestamped.", Comp: AuditView },
+    posts: { title: "Posts", sub: "Your published Google posts.", Comp: PostsView },
+    reviews: { title: "Reviews", sub: `${totalReviews} total · ${unansweredReviews} awaiting action.`, Comp: ReviewsView },
+    media: { title: "Media", sub: "Photos and videos on your listing.", Comp: MediaView },
+    services: { title: "Services", sub: "What patients see when they search.", Comp: ServicesView },
+    analytics: { title: "Analytics", sub: "Trends, response times, rating distribution.", Comp: AnalyticsView }
+  };
+
   const isMobile = useIsMobile();
   // Sidebar: open by default on desktop, closed by default on mobile. Persisted.
   const [sidebarOpen, setSidebarOpen] = useState(() => {
@@ -119,10 +151,21 @@ function App() {
       {!isMobile && (
         <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 12px", border: `1px solid ${T.line}`, borderRadius: 6, background: T.bgElev }}>
           <Ico name="search" size={13} color={T.ink60} />
-          <Mono size={11} color={T.ink60}>Search · ⌘K</Mono>
+          <input
+            type="text"
+            placeholder="Search..."
+            value={searchTerm}
+            onChange={e => setSearchTerm(e.target.value)}
+            style={{ border: "none", background: "transparent", outline: "none", color: T.ink }}
+          />
+          {searchTerm && (
+            <button onClick={() => setSearchTerm("")} style={{ border: "none", background: "transparent", cursor: "pointer" }}>
+              <Ico name="x" size={13} color={T.ink60} />
+            </button>
+          )}
         </div>
       )}
-      {!isMobile && <Btn size="sm"><Ico name="refresh" size={12} /> Sync</Btn>}
+      {!isMobile && <Btn size="sm" onClick={() => setLastRefreshed(Date.now())}><Ico name="refresh" size={12} /> Sync</Btn>}
       <Btn size="sm" tone="solid">
         <Ico name="bolt" size={12} />
         {isMobile ? "Run" : "Run daily cycle"}
@@ -158,6 +201,8 @@ function App() {
         open={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
         isMobile={isMobile}
+        businessName={businessName}
+        businessLocation={businessLocation}
       />
 
       <main style={{
@@ -175,7 +220,7 @@ function App() {
           isMobile={isMobile}
         />
         <div style={{ flex: 1 }}>
-          <Comp isMobile={isMobile} />
+          <Comp isMobile={isMobile} reviews={reviews} searchTerm={searchTerm} lastRefreshed={lastRefreshed} />
         </div>
       </main>
 
@@ -186,3 +231,4 @@ function App() {
 }
 
 ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+render(<App />);

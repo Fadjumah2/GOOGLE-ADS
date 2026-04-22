@@ -214,31 +214,25 @@ function ChatView() {
 }
 
 // ============ REVIEWS ============
-function ReviewsView() {
-  const [loading, setLoading] = uS(true);
-  const [reviews, setReviews] = uS([]);
+function ReviewsView({ reviews, searchTerm }) {
   const [filter, setFilter] = uS("all");
 
-  uE(() => {
-    const load = async () => {
-      setLoading(true);
-      try {
-        const data = await API.reviews();
-        setReviews(data.reviews || []);
-      } catch (e) { console.error(e); }
-      finally { setLoading(false); }
-    };
-    load();
-  }, []);
+  const filteredReviews = reviews.filter(review => {
+    if (!searchTerm) return true;
+    const lowerSearchTerm = searchTerm.toLowerCase();
+    const reviewerName = (review.reviewer || "").toLowerCase();
+    const comment = (review.comment || "").toLowerCase();
+    return reviewerName.includes(lowerSearchTerm) || comment.includes(lowerSearchTerm);
+  });
 
   const stats = {
-    all: reviews.length,
-    replied: reviews.filter(r => r.hasReply).length,
-    unanswered: reviews.filter(r => !r.hasReply).length,
-    flagged: reviews.filter(r => !r.hasReply && starNum(r.starRating) <= 3).length
+    all: filteredReviews.length,
+    replied: filteredReviews.filter(r => r.hasReply).length,
+    unanswered: filteredReviews.filter(r => !r.hasReply).length,
+    flagged: filteredReviews.filter(r => !r.hasReply && starNum(r.starRating) <= 3).length
   };
 
-  const filtered = filter === "all" ? reviews : filter === "replied" ? reviews.filter(r => r.hasReply) : filter === "unanswered" ? reviews.filter(r => !r.hasReply && starNum(r.starRating) >= 4) : reviews.filter(r => !r.hasReply && starNum(r.starRating) <= 3);
+  const filtered = filter === "all" ? filteredReviews : filter === "replied" ? filteredReviews.filter(r => r.hasReply) : filter === "unanswered" ? filteredReviews.filter(r => !r.hasReply && starNum(r.starRating) >= 4) : filteredReviews.filter(r => !r.hasReply && starNum(r.starRating) <= 3);
 
   return (
     <div style={{ padding: "28px 32px 60px" }}>
@@ -260,9 +254,7 @@ function ReviewsView() {
       </div>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-        {loading ? (
-          [0, 1, 2].map(i => <Skel key={i} h={140} />)
-        ) : filtered.length === 0 ? (
+        {filtered.length === 0 ? (
           <Card><Mono size={12}>No reviews found in this filter.</Mono></Card>
         ) : (
           filtered.map(r => {
@@ -320,7 +312,7 @@ function PostsView() {
   return (
     <div style={{ padding: "28px 32px 60px" }}>
       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 20 }}>
-        <Mono size={11}>{posts.length} posts · last 30 days</Mono>
+        <Mono size={11}>{filteredPosts.length} posts · last 30 days</Mono>
         <Btn tone="solid" size="sm"><Ico name="plus" size={12} /> New post</Btn>
       </div>
       {loading ? (
@@ -360,7 +352,7 @@ function PostsView() {
 }
 
 // ============ AUDIT LOG ============
-function AuditView() {
+function AuditView({ searchTerm, lastRefreshed }) {
   const [loading, setLoading] = uS(true);
   const [entries, setEntries] = uS([]);
 
@@ -374,14 +366,22 @@ function AuditView() {
       finally { setLoading(false); }
     };
     load();
-  }, []);
+  }, [lastRefreshed]);
+
+  const filteredEntries = entries.filter(entry => {
+    if (!searchTerm) return true;
+    const lowerSearchTerm = searchTerm.toLowerCase();
+    const type = (entry.type || "").toLowerCase();
+    const payload = (entry.payload?.msg || entry.payload?.reason || "").toLowerCase();
+    return type.includes(lowerSearchTerm) || payload.includes(lowerSearchTerm);
+  });
 
   return (
     <div style={{ padding: "28px 32px 60px" }}>
       <Card flush>
         <div style={{ padding: "16px 20px", borderBottom: `1px solid ${T.line}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
-            <Mono size={11}>{entries.length} entries · live tail</Mono>
+            <Mono size={11}>{filteredEntries.length} entries · live tail</Mono>
             <span style={{ width: 6, height: 6, borderRadius: "50%", background: T.good }} />
           </div>
           <div style={{ display: "flex", gap: 8 }}>
@@ -392,10 +392,10 @@ function AuditView() {
         <div>
           {loading ? (
             [0, 1, 2, 3, 4].map(i => <div key={i} style={{ padding: "12px 20px", borderTop: `1px solid ${T.line}` }}><Skel h={14} /></div>)
-          ) : entries.length === 0 ? (
+          ) : filteredEntries.length === 0 ? (
             <div style={{ padding: "20px", textAlign: "center" }}><Mono size={12}>No audit entries yet. Run the daily cycle to generate activity.</Mono></div>
           ) : (
-            entries.map((l, i) => {
+            filteredEntries.map((l, i) => {
               const tone = l.type?.includes("rejected") || l.type?.includes("unauthorized") ? "bad" : l.type?.includes("skip") ? "warn" : "good";
               return (
                 <div key={i} style={{ padding: "12px 20px", display: "grid", gridTemplateColumns: "140px 180px 90px 1fr", gap: 16, alignItems: "center", borderTop: i > 0 ? `1px solid ${T.line}` : "none", background: i % 2 === 0 ? "transparent" : T.bgSoft }}>
@@ -414,26 +414,23 @@ function AuditView() {
 }
 
 // ============ ANALYTICS ============
-function AnalyticsView() {
+function AnalyticsView({ reviews, searchTerm, lastRefreshed }) {
   const [loading, setLoading] = uS(true);
   const [insights, setInsights] = uS([]);
-  const [reviews, setReviews] = uS([]);
   const [period, setPeriod] = uS("last28");
 
   const load = uC(async (p) => {
     setLoading(true);
     try {
-      const [ins, rev] = await Promise.all([
+      const [ins] = await Promise.all([
         API.insights(p).catch(() => null),
-        API.reviews().catch(() => null),
       ]);
       setInsights(ins?.insights || []);
-      setReviews(rev?.reviews || []);
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
   }, []);
 
-  uE(() => { load(period); }, [period, load]);
+  uE(() => { load(period); }, [period, load, lastRefreshed]);
 
   // Build 4 KPI metrics from insights
   const kpis = (() => {
@@ -577,10 +574,10 @@ function ServicesView() {
       <Card flush>
         {loading ? (
           [0, 1, 2, 3].map(i => <div key={i} style={{ padding: "16px 20px", borderTop: `1px solid ${T.line}` }}><Skel h={14} style={{ marginBottom: 6 }} /><Skel h={12} w="40%" /></div>)
-        ) : services.length === 0 ? (
+        ) : filteredServices.length === 0 ? (
           <div style={{ padding: 20 }}><Mono size={12}>No services found.</Mono></div>
         ) : (
-          services.map((s, i) => (
+          filteredServices.map((s, i) => (
             <div key={s.serviceId || i} style={{ padding: "16px 20px", display: "grid", gridTemplateColumns: "1fr 120px 100px 40px", gap: 16, alignItems: "center", borderTop: i > 0 ? `1px solid ${T.line}` : "none" }}>
               <div>
                 <div style={{ fontSize: 14, fontWeight: 500 }}>{s.displayName || s.name || "Untitled"}</div>
@@ -668,3 +665,13 @@ window.AuditView = AuditView;
 window.AnalyticsView = AnalyticsView;
 window.ServicesView = ServicesView;
 window.MediaView = MediaView;
+otView = AutopilotView;
+window.ChatView = ChatView;
+window.ReviewsView = ReviewsView;
+window.PostsView = PostsView;
+window.AuditView = AuditView;
+window.AnalyticsView = AnalyticsView;
+window.ServicesView = ServicesView;
+window.MediaView = MediaView;
+;
+ MediaView;

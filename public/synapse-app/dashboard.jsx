@@ -45,11 +45,10 @@ function ChartArea({ seriesA = [], seriesB = [], h = 200 }) {
 }
 
 // ── Dashboard ──
-function DashboardView({ onNavigate }) {
+function DashboardView({ onNavigate, reviews, lastRefreshed }) {
   const [loading, setLoading] = uD(true);
   const [profile, setProfile] = uD(null);
   const [insights, setInsights] = uD([]);
-  const [reviews, setReviews] = uD([]);
   const [apData, setApData] = uD(null);
   const [auditEntries, setAuditEntries] = uD([]);
   const [period, setPeriod] = uD("last28");
@@ -57,22 +56,20 @@ function DashboardView({ onNavigate }) {
 
   const load = uDC(async (p = period) => {
     setLoading(true);
-    const [pro, ins, rev, ap, log] = await Promise.all([
+    const [pro, ins, ap, log] = await Promise.all([
       API.profile().catch(() => null),
       API.insights(p).catch(() => null),
-      API.reviews().catch(() => null),
       API.apStatus().catch(() => null),
       API.auditLog(10).catch(() => null),
     ]);
     setProfile(pro?.profile || null);
     setInsights(ins?.insights || []);
-    setReviews(rev?.reviews || []);
     setApData(ap || null);
     setAuditEntries(log?.entries || []);
     setLoading(false);
   }, [period]);
 
-  uDE(() => { load(period); }, [period]);
+  uDE(() => { load(period); }, [period, lastRefreshed]);
 
   const handleRunNow = async () => {
     setRunning(true);

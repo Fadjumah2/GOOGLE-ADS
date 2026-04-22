@@ -18,10 +18,14 @@ const NAV = [
   { group: "Profile", items: [
     { id: "services",  label: "Services",  icon: "services"  },
     { id: "analytics", label: "Analytics", icon: "analytics" }
+  ]},
+  { group: "Links", items: [
+    { id: "liveGbp", label: "Live GBP", icon: "external", href: "https://www.google.com/viewer/place?client=ms-android-att-us-revc&hs=TN5U&sca_esv=17de63e8a22fe1ba&output=search&mid=/g/11wvfgz2ff&pip=CgplYXIgZG9jdG9yEAI%3D&lqi=ChJlYXIgZG9jdG9yIG5lYXIgbWUiA5ABAUitk7zX6buAgAhaHhAAEAEYABgCGAMiEmVhciBkb2N0b3IgbmVhciBtZZIBFW90b2xhcnluZ29sb2d5X2NsaW5pY5oBRENpOURRVWxSUVVOdlpFTm9kSGxqUmpsdlQyNUJNRmd6UW5WaE0xcERWRmhLVEUxRE1XMVdNSFJ0VW01U1ZWcEhZeEFCqgFLEAEqDiIKZWFyIGRvY3RvcigAMh8QASIbTZam58VKkQbxnrMLn1rxplER0Zicr6BfoS8hMhYQAiISZWFyIGRvY3RvciBuZWFyIG1l-gEFCJsDEDE&phdesc=7QxRf73cFnA&sa=X&ved=2ahUKEwi46ZKYq4CUAxXGfKQEHX4ZM0oQkbkFegQIJRAE" },
+    { id: "settings", label: "Settings", icon: "settings" }
   ]}
 ];
 
-function Sidebar({ view, setView, open, onClose, isMobile, reviewBadge }) {
+function Sidebar({ view, setView, open, onClose, isMobile, reviewBadge, businessName, businessLocation }) {
   const width = 236;
   const base = { width, flexShrink:0, background:T.bgSoft, borderRight:`1px solid ${T.line}`, display:"flex", flexDirection:"column", height:"100vh", transition:"transform 0.25s ease, margin-left 0.25s ease" };
   const desktopStyle = { ...base, position:"sticky", top:0, marginLeft: open ? 0 : -width };
@@ -50,8 +54,8 @@ function Sidebar({ view, setView, open, onClose, isMobile, reviewBadge }) {
 
       {/* Business chip */}
       <div style={{ margin:"0 12px 20px", padding:"10px 12px", border:`1px solid ${T.line}`, borderRadius:8, background:T.bgElev }}>
-        <div style={{ fontSize:12, fontWeight:500, lineHeight:1.2 }}>Eritage ENT Care</div>
-        <Mono size={10} style={{ marginTop:2 }}>Entebbe, Uganda · GBP</Mono>
+        <div style={{ fontSize:12, fontWeight:500, lineHeight:1.2 }}>{businessName}</div>
+        <Mono size={10} style={{ marginTop:2 }}>{businessLocation} · GBP</Mono>
       </div>
 
       {/* Nav */}
@@ -63,7 +67,7 @@ function Sidebar({ view, setView, open, onClose, isMobile, reviewBadge }) {
               const active = view === it.id;
               const badge = it.id === "reviews" && reviewBadge > 0 ? reviewBadge : null;
               return (
-                <div key={it.id} onClick={() => setView(it.id)} style={{ padding:"7px 10px", borderRadius:6, marginBottom:1, display:"flex", alignItems:"center", gap:10, fontSize:13, fontWeight:500, cursor:"pointer", background: active ? T.bgElev : "transparent", color: active ? T.ink : T.ink70, border:`1px solid ${active ? T.line : "transparent"}`, transition:"background 0.12s" }}
+                <div key={it.id} onClick={() => it.href ? window.open(it.href, '_blank') : setView(it.id)} style={{ padding:"7px 10px", borderRadius:6, marginBottom:1, display:"flex", alignItems:"center", gap:10, fontSize:13, fontWeight:500, cursor:"pointer", background: active ? T.bgElev : "transparent", color: active ? T.ink : T.ink70, border:`1px solid ${active ? T.line : "transparent"}`, transition:"background 0.12s" }}
                   onMouseOver={e => !active && (e.currentTarget.style.background = "oklch(0.94 0.008 75)")}
                   onMouseOut={e =>  !active && (e.currentTarget.style.background = "transparent")}>
                   <Ico name={it.icon} size={15} color={active ? T.accent : T.ink60} />
@@ -80,10 +84,10 @@ function Sidebar({ view, setView, open, onClose, isMobile, reviewBadge }) {
       {/* Footer */}
       <div style={{ padding:14, borderTop:`1px solid ${T.line}`, fontSize:12 }}>
         <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-          <div style={{ width:28, height:28, borderRadius:"50%", background:T.accent, color:T.bg, display:"flex", alignItems:"center", justifyContent:"center", fontWeight:600, fontSize:11 }}>HM</div>
+          <div style={{ width:28, height:28, borderRadius:"50%", background:T.accent, color:T.bg, display:"flex", alignItems:"center", justifyContent:"center", fontWeight:600, fontSize:11 }}>FJ</div>
           <div style={{ flex:1, minWidth:0 }}>
-            <div style={{ fontSize:12, fontWeight:500, lineHeight:1.2 }}>Hassan M.</div>
-            <Mono size={10}>Owner · Eritage ENT Care</Mono>
+            <div style={{ fontSize:12, fontWeight:500, lineHeight:1.2 }}>FAHAD JUMA</div>
+            <Mono size={10}>FOUNDER</Mono>
           </div>
         </div>
         <div style={{ marginTop:10, display:"flex", gap:8 }}>
