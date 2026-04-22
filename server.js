@@ -1,44 +1,55 @@
 
-require('dotenv').config();
-const path = require('path');
-const express = require('express');
-const { google } = require('googleapis');
-const gbpClient = require('./utils/gbpClient');
-const requireApiKey = require('./middleware/requireApiKey');
-const handleReplyToReview = require('./api/gbp/replyToReview');
-const handleDeleteReviewReply = require('./api/gbp/deleteReviewReply');
-const handleGetReviews = require('./api/gbp/fetchReviews');
-const handleGetPosts = require('./api/gbp/getPosts');
-const handleGetProfile = require('./api/gbp/getProfile');
-const handleUpdateProfile = require('./api/gbp/updateProfile');
-const handleGetInsights = require('./api/gbp/getInsights');
-const handleCreatePost = require('./api/gbp/createPost');
-const handleFetchQuestions = require('./api/gbp/fetchQuestions');
-const handleReplyToQuestion = require('./api/gbp/replyToQuestion');
-const handleListMedia = require('./api/gbp/listMedia');
-const handleUploadMedia = require('./api/gbp/uploadMedia');
-const handleDeleteMedia = require('./api/gbp/deleteMedia');
-const handleGetServiceList = require('./api/gbp/getServiceList');
-const handleUpdateServiceList = require('./api/gbp/updateServiceList');
-const handleAddService = require('./api/gbp/addService');
-const handleGetSignedUrl = require('./api/gbp/getSignedUrl');
-const handleDeletePost = require('./api/gbp/deletePost');
-const handleGetLocations = require('./api/gbp/getLocations');
-const handleGetVerificationStatus = require('./api/gbp/getVerificationStatus');
-const handleGetAttributes = require('./api/gbp/getAttributes');
-const handleAgentChat = require('./api/agent/chat');
-const handleAutonomousPost = require('./api/agent/autonomousPost');
-const handleAutoReplyReviews = require('./api/agent/autoReplyReviews');
-const handleRunDaily = require('./api/agent/runDaily');
-const handleAgentStatus = require('./api/agent/status');
-const handleAuditLog = require('./api/agent/auditLog');
-const handleCronDaily = require('./api/cron/daily');
+import 'dotenv/config';
+import path from 'path';
+import express from 'express';
+import { google } from 'googleapis';
+import gbpClient from './utils/gbpClient.js';
+import requireApiKey from './middleware/requireApiKey.js';
+import handleReplyToReview from './api/gbp/replyToReview.js';
+import handleDeleteReviewReply from './api/gbp/deleteReviewReply.js';
+import handleGetReviews from './api/gbp/fetchReviews.js';
+import handleGetPosts from './api/gbp/getPosts.js';
+import handleGetProfile from './api/gbp/getProfile.js';
+import handleUpdateProfile from './api/gbp/updateProfile.js';
+import handleGetInsights from './api/gbp/getInsights.js';
+import handleCreatePost from './api/gbp/createPost.js';
+import handleFetchQuestions from './api/gbp/fetchQuestions.js';
+import handleReplyToQuestion from './api/gbp/replyToQuestion.js';
+import handleListMedia from './api/gbp/listMedia.js';
+import handleUploadMedia from './api/gbp/uploadMedia.js';
+import handleDeleteMedia from './api/gbp/deleteMedia.js';
+import handleGetServiceList from './api/gbp/getServiceList.js';
+import handleUpdateServiceList from './api/gbp/updateServiceList.js';
+import handleAddService from './api/gbp/addService.js';
+import handleGetSignedUrl from './api/gbp/getSignedUrl.js';
+import handleDeletePost from './api/gbp/deletePost.js';
+import handleGetLocations from './api/gbp/getLocations.js';
+import handleGetVerificationStatus from './api/gbp/getVerificationStatus.js';
+import handleGetAttributes from './api/gbp/getAttributes.js';
+import handleAgentChat from './api/agent/chat.js';
+import handleAutonomousPost from './api/agent/autonomousPost.js';
+import handleAutoReplyReviews from './api/agent/autoReplyReviews.js';
+import handleRunDaily from './api/agent/runDaily.js';
+import handleAgentStatus from './api/agent/status.js';
+import handleAuditLog from './api/agent/auditLog.js';
+import handleCronDaily from './api/cron/daily.js';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 const app = express();
-// Deployment trigger: rate limit fix + button responsiveness
-const port = 3000;
+const port = process.env.PORT || 3000;
 
 app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
+
+// Serve static assets from Vite's build output in production
+if (process.env.NODE_ENV === 'production') {
+  app.use(express.static(path.join(__dirname, 'dist')));
+} else {
+  // Serve from public in development
+  app.use(express.static(path.join(__dirname, 'public')));
+}
 
 // Public health-check — no auth needed
 app.get("/ping", (req, res) => {
@@ -47,20 +58,20 @@ app.get("/ping", (req, res) => {
 
 // Public compliance pages — no auth needed (required for Google API verification)
 app.get("/privacy", (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'privacy.html'));
+  res.sendFile(path.join(__dirname, process.env.NODE_ENV === 'production' ? 'dist' : 'public', 'privacy.html'));
 });
 app.get("/terms", (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'terms.html'));
+  res.sendFile(path.join(__dirname, process.env.NODE_ENV === 'production' ? 'dist' : 'public', 'terms.html'));
 });
 
 // Public marketing home page — no auth needed
 app.get("/home", (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'home.html'));
+  res.sendFile(path.join(__dirname, process.env.NODE_ENV === 'production' ? 'dist' : 'public', 'home.html'));
 });
 
 // Dashboard redesign preview — no auth needed (mock data only)
 app.get("/dashboard-new", (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'dashboard-new.html'));
+  res.sendFile(path.join(__dirname, process.env.NODE_ENV === 'production' ? 'dist' : 'public', 'dashboard-new.html'));
 });
 
 // --- OAuth2 re-authorization routes (protected) ---
@@ -140,6 +151,13 @@ app.post('/api/agent/runDaily', requireApiKey, handleRunDaily);
 // Vercel Cron entry point — authenticated via CRON_SECRET bearer token,
 // NOT via x-api-key (Vercel Cron can't attach custom headers).
 app.get('/api/cron/daily', handleCronDaily);
+
+// Catch-all for SPA routing
+if (process.env.NODE_ENV === 'production') {
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+  });
+}
 
 app.listen(port, () => {
   console.log(`Server listening at http://localhost:${port}`);
