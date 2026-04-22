@@ -399,6 +399,71 @@ function PostsView({ searchTerm, lastRefreshed }) {
 
 
 
+function NewMediaModal({ onClose }) {
+  const [file, setFile] = uS(null);
+  const [description, setDescription] = uS("");
+  const [isSubmitting, setIsSubmitting] = uS(false);
+
+  const handleFileChange = (e) => {
+    setFile(e.target.files[0]);
+  };
+
+  const handleSubmit = async () => {
+    if (!file) return;
+
+    setIsSubmitting(true);
+    try {
+      const { signedUrl, publicUrl } = await API.getSignedUrl(file.name, file.type);
+
+      await fetch(signedUrl, {
+        method: 'PUT',
+        body: file,
+        headers: {
+          'Content-Type': file.type,
+        },
+      });
+
+      await API.uploadMedia({
+        mediaFormat: file.type.startsWith('video/') ? 'VIDEO' : 'PHOTO',
+        sourceUrl: publicUrl,
+        description: description,
+        locationAssociation: {
+          category: 'ADDITIONAL'
+        }
+      });
+
+      onClose();
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <div style={{ padding: 20, width: 500 }}>
+      <h2>Upload new media</h2>
+      <input
+        type="file"
+        onChange={handleFileChange}
+        style={{ width: "100%", marginBottom: 10, padding: 10, borderRadius: 6, border: `1px solid ${T.line}` }}
+      />
+      <input
+        value={description}
+        onChange={e => setDescription(e.target.value)}
+        placeholder="Description"
+        style={{ width: "100%", marginBottom: 10, padding: 10, borderRadius: 6, border: `1px solid ${T.line}` }}
+      />
+      <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
+        <Btn onClick={onClose}>Cancel</Btn>
+        <Btn tone="solid" onClick={handleSubmit} disabled={isSubmitting || !file}>
+          {isSubmitting ? "Uploading..." : "Upload Media"}
+        </Btn>
+      </div>
+    </div>
+  );
+}
+
 // ============ MEDIA ============
 function MediaView({ searchTerm, lastRefreshed }) {
   const [loading, setLoading] = uS(true);
@@ -430,7 +495,7 @@ function MediaView({ searchTerm, lastRefreshed }) {
     <div style={{ padding: "28px 32px 60px" }}>
       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 20 }}>
         <Mono size={11}>{photoCount} photos · {videoCount} videos</Mono>
-        <Btn size="sm" tone="solid"><Ico name="plus" size={12} /> Upload media</Btn>
+        <Btn size="sm" tone="solid" onClick={() => openModal(<NewMediaModal onClose={closeModal} />)}><Ico name="plus" size={12} /> Upload media</Btn>
       </div>
       {loading ? (
         <div data-keep-grid="4" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}>

@@ -7,6 +7,7 @@
     "start": "node server.js"
   },
   "dependencies": {
+    "@google-cloud/storage": "^7.19.0",
     "@google/generative-ai": "^0.24.1",
     "axios": "^0.21.1",
     "dotenv": "^10.0.0",

@@ -36,6 +36,7 @@ const API = {
   createPost:    (body)         => API.call("/api/gbp/createPost",      { method: "POST", body: JSON.stringify(body) }),
   addService:    (body)         => API.call("/api/gbp/addService",       { method: "POST", body: JSON.stringify(body) }),
   uploadMedia:   (body)         => API.call("/api/gbp/uploadMedia",     { method: "POST", body: JSON.stringify(body) }),
+  getSignedUrl:  (filename, contentType) => API.call("/api/gbp/getSignedUrl",  { method: "POST", body: JSON.stringify({ filename, contentType }) }),
 
   // ── Agent ──
   chat:        (message, history) => API.call("/api/agent/chat",             { method: "POST", body: JSON.stringify({ message, history }) }),

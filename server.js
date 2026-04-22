@@ -21,6 +21,7 @@ const handleDeleteMedia = require('./api/gbp/deleteMedia');
 const handleGetServiceList = require('./api/gbp/getServiceList');
 const handleUpdateServiceList = require('./api/gbp/updateServiceList');
 const handleAddService = require('./api/gbp/addService');
+const handleGetSignedUrl = require('./api/gbp/getSignedUrl');
 const handleDeletePost = require('./api/gbp/deletePost');
 const handleGetLocations = require('./api/gbp/getLocations');
 const handleGetVerificationStatus = require('./api/gbp/getVerificationStatus');
@@ -120,6 +121,7 @@ app.delete('/api/gbp/deleteMedia', requireApiKey, handleDeleteMedia);
 app.get('/api/gbp/getServiceList', requireApiKey, handleGetServiceList);
 app.patch('/api/gbp/updateServiceList', requireApiKey, handleUpdateServiceList);
 app.post('/api/gbp/addService', requireApiKey, handleAddService);
+app.post('/api/gbp/getSignedUrl', requireApiKey, handleGetSignedUrl);
 
 app.get('/api/gbp/getVerificationStatus', requireApiKey, handleGetVerificationStatus);
 app.get('/api/gbp/getAttributes', requireApiKey, handleGetAttributes);
