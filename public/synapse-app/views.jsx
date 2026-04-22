@@ -2,7 +2,7 @@
 const { useState: uS, useEffect: uE, useCallback: uC, useRef: uR } = React;
 
 // ============ AUTOPILOT ============
-function AutopilotView() {
+function AutopilotView({ lastRefreshed }) {
   const [loading, setLoading] = uS(true);
   const [apData, setApData] = uS(null);
 
@@ -16,7 +16,7 @@ function AutopilotView() {
       finally { setLoading(false); }
     };
     load();
-  }, []);
+  }, [lastRefreshed]);
 
   const status = apData?.status || {};
   const calendar = apData?.calendar || [];
@@ -292,8 +292,43 @@ function ReviewsView({ reviews, searchTerm }) {
   );
 }
 
+function NewPostModal({ onClose }) {
+  const [summary, setSummary] = uS("");
+  const [isSubmitting, setIsSubmitting] = uS(false);
+
+  const handleSubmit = async () => {
+    setIsSubmitting(true);
+    try {
+      await API.createPost({ postData: { summary, languageCode: 'en' } });
+      onClose();
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <div style={{ padding: 20, width: 500 }}>
+      <h2>Create a new post</h2>
+      <textarea
+        value={summary}
+        onChange={e => setSummary(e.target.value)}
+        placeholder="Write your post summary here..."
+        style={{ width: "100%", height: 150, marginBottom: 10, padding: 10, borderRadius: 6, border: `1px solid ${T.line}` }}
+      />
+      <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
+        <Btn onClick={onClose}>Cancel</Btn>
+        <Btn tone="solid" onClick={handleSubmit} disabled={isSubmitting}>
+          {isSubmitting ? "Submitting..." : "Create Post"}
+        </Btn>
+      </div>
+    </div>
+  );
+}
+
 // ============ POSTS ============
-function PostsView() {
+function PostsView({ searchTerm, lastRefreshed }) {
   const [loading, setLoading] = uS(true);
   const [posts, setPosts] = uS([]);
 
@@ -307,23 +342,30 @@ function PostsView() {
       finally { setLoading(false); }
     };
     load();
-  }, []);
+  }, [lastRefreshed]);
+
+  const filteredPosts = posts.filter(post => {
+    if (!searchTerm) return true;
+    const lowerSearchTerm = searchTerm.toLowerCase();
+    const summary = (post.summary || "").toLowerCase();
+    return summary.includes(lowerSearchTerm);
+  });
 
   return (
     <div style={{ padding: "28px 32px 60px" }}>
       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 20 }}>
         <Mono size={11}>{filteredPosts.length} posts · last 30 days</Mono>
-        <Btn tone="solid" size="sm"><Ico name="plus" size={12} /> New post</Btn>
+        <Btn tone="solid" size="sm" onClick={() => openModal(<NewPostModal onClose={closeModal} />)}><Ico name="plus" size={12} /> New post</Btn>
       </div>
       {loading ? (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12 }}>
           {[0, 1, 2, 3].map(i => <Skel key={i} h={240} />)}
         </div>
-      ) : posts.length === 0 ? (
+      ) : filteredPosts.length === 0 ? (
         <Card><Mono size={12}>No posts found.</Mono></Card>
       ) : (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12 }}>
-          {posts.map(p => {
+          {filteredPosts.map(p => {
             const views = parseInt(p.topicViews || 0, 10);
             const clicks = parseInt(p.topicClicks || 0, 10);
             const ctr = views > 0 ? ((clicks / views) * 100).toFixed(1) : 0;
@@ -343,6 +385,82 @@ function PostsView() {
                   <Btn size="sm"><Ico name="eye" size={12} /> View</Btn>
                 </div>
               </Card>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+
+
+
+
+
+
+// ============ MEDIA ============
+function MediaView({ searchTerm, lastRefreshed }) {
+  const [loading, setLoading] = uS(true);
+  const [media, setMedia] = uS([]);
+
+  uE(() => {
+    const load = async () => {
+      setLoading(true);
+      try {
+        const data = await API.media();
+        setMedia(data.media || []);
+      } catch (e) { console.error(e); }
+      finally { setLoading(false); }
+    };
+    load();
+  }, [lastRefreshed]);
+
+  const filteredMedia = media.filter(item => {
+    if (!searchTerm) return true;
+    const lowerSearchTerm = searchTerm.toLowerCase();
+    const description = (item.description || "").toLowerCase();
+    return description.includes(lowerSearchTerm);
+  });
+
+  const photoCount = filteredMedia.filter(m => (m.mediaFormat || "").toUpperCase() === "PHOTO").length;
+  const videoCount = filteredMedia.filter(m => (m.mediaFormat || "").toUpperCase() === "VIDEO").length;
+
+  return (
+    <div style={{ padding: "28px 32px 60px" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 20 }}>
+        <Mono size={11}>{photoCount} photos · {videoCount} videos</Mono>
+        <Btn size="sm" tone="solid"><Ico name="plus" size={12} /> Upload media</Btn>
+      </div>
+      {loading ? (
+        <div data-keep-grid="4" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}>
+          {[0, 1, 2, 3, 4, 5, 6, 7].map(i => <Skel key={i} style={{ aspectRatio: "1" }} />)}
+        </div>
+      ) : filteredMedia.length === 0 ? (
+        <Card><Mono size={12}>No media found. Upload photos or videos to get started.</Mono></Card>
+      ) : (
+        <div data-keep-grid="4" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}>
+          {filteredMedia.map((m, i) => {
+            const isVideo = (m.mediaFormat || "").toUpperCase() === "VIDEO";
+            const hasUrl = m.mediaUrl || m.sourceUrl;
+            return (
+              <div key={m.mediaId || i} style={{
+                aspectRatio: "1",
+                background: hasUrl && m.mediaUrl ? `url(${m.mediaUrl})` : `repeating-linear-gradient(${45 + i * 15}deg, oklch(0.92 0.02 ${50 + i * 10}), oklch(0.92 0.02 ${50 + i * 10}) 4px, oklch(0.88 0.02 ${50 + i * 10}) 4px, oklch(0.88 0.02 ${50 + i * 10}) 12px)`,
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+                borderRadius: 8, border: `1px solid ${T.line}`,
+                position: "relative", overflow: "hidden"
+              }}>
+                {isVideo && (
+                  <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: 40, height: 40, borderRadius: "50%", background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <Ico name="play" size={16} color={T.bg} />
+                  </div>
+                )}
+                <div style={{ position: "absolute", bottom: 8, left: 8 }}>
+                  <Mono size={9} color="oklch(0.4 0.02 60)">{isVideo ? "[ video ]" : "[ photo ]"}</Mono>
+                </div>
+              </div>
             );
           })}
         </div>
@@ -470,86 +588,63 @@ function AnalyticsView({ reviews, searchTerm, lastRefreshed }) {
   })();
 
   return (
-    <div style={{ padding: "28px 32px 60px", display: "flex", flexDirection: "column", gap: 20 }}>
-      {/* KPI row */}
-      {loading ? (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 0, border: `1px solid ${T.line}`, borderRadius: 10, background: T.bgElev, overflow: "hidden" }}>
-          {[0, 1, 2, 3].map(i => <div key={i} style={{ padding: 20, borderLeft: i === 0 ? "none" : `1px solid ${T.line}` }}><Skel h={12} style={{ marginBottom: 14 }} /><Skel h={40} w="60%" /></div>)}
-        </div>
-      ) : kpis.length > 0 ? (
-        <div data-keep-grid="4" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 0, border: `1px solid ${T.line}`, borderRadius: 10, background: T.bgElev, overflow: "hidden" }}>
-          {kpis.map((m, i) => (
-            <div key={i} style={{ padding: 20, borderLeft: i === 0 ? "none" : `1px solid ${T.line}` }}>
-              <Label>{m.label}</Label>
-              <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginTop: 12 }}>
-                <div style={{ fontFamily: T.fontDisp, fontSize: 40, letterSpacing: "-0.02em", lineHeight: 1 }}>{m.value}</div>
-                <Sparkline data={m.spark} color={m.color} />
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <Card><Mono size={12}>No insights data available. GBP API may need more time to populate.</Mono></Card>
-      )}
 
-      {/* Chart */}
-      <Card>
-        <CardHead eyebrow={period === "last7" ? "Last 7 days" : period === "last28" ? "Last 28 days" : "Last 90 days"} title="Profile activity trend"
-          right={
-            <div style={{ display: "flex", gap: 6 }}>
-              {[["7d", "last7"], ["28d", "last28"], ["90d", "last90"]].map(([l, p]) => (
-                <span key={p} onClick={() => setPeriod(p)} style={{ padding: "4px 10px", border: `1px solid ${period === p ? T.ink : T.line}`, borderRadius: 4, background: period === p ? T.ink : "transparent", color: period === p ? T.bg : T.ink70, fontFamily: T.fontMono, fontSize: 11, cursor: "pointer" }}>{l}</span>
-              ))}
-            </div>
-          }
-        />
-        {loading ? <Skel h={300} /> : <ChartArea seriesA={chartA} seriesB={chartB} h={300} />}
-        <div style={{ display: "flex", gap: 20, marginTop: 16, paddingTop: 16, borderTop: `1px solid ${T.line}` }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 6 }}><span style={{ width: 10, height: 2, background: T.accent }} /><Mono size={11}>Profile views</Mono></div>
-          <div style={{ display: "flex", alignItems: "center", gap: 6 }}><span style={{ width: 10, height: 2, background: T.ink, opacity: 0.5 }} /><Mono size={11}>Direction requests</Mono></div>
-        </div>
-      </Card>
+    function NewServiceModal({ onClose }) {
+      const [displayName, setDisplayName] = uS("");
+      const [price, setPrice] = uS("");
+      const [duration, setDuration] = uS("");
+      const [isSubmitting, setIsSubmitting] = uS(false);
 
-      {/* Review distribution + Response time */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
-        <Card>
-          <CardHead eyebrow="Rating" title="Review distribution" />
-          {loading ? (
-            <Skel h={180} />
-          ) : (
-            reviewStats.map(s => (
-              <div key={s.stars} style={{ display: "grid", gridTemplateColumns: "40px 1fr 60px", gap: 12, alignItems: "center", marginBottom: 10 }}>
-                <Mono size={11}>{s.stars} ★</Mono>
-                <div style={{ height: 8, background: T.bgSoft, borderRadius: 4, overflow: "hidden" }}>
-                  <div style={{ height: "100%", width: `${s.pct}%`, background: s.stars >= 4 ? T.good : s.stars === 3 ? T.warn : T.bad }} />
-                </div>
-                <Mono size={11} style={{ textAlign: "right" }}>{s.pct}%</Mono>
-              </div>
-            ))
-          )}
-        </Card>
-        <Card>
-          <CardHead eyebrow="Response time" title="Reply performance" />
-          {loading ? (
-            <Skel h={180} />
-          ) : (
-            <>
-              <div style={{ fontFamily: T.fontDisp, fontSize: 56, letterSpacing: "-0.03em", lineHeight: 1 }}>47<span style={{ fontSize: 24, color: T.ink60 }}> min</span></div>
-              <div style={{ fontSize: 13, color: T.ink70, marginTop: 6 }}>Median time to reply · last 30 days</div>
-              <div style={{ marginTop: 20, padding: 12, background: T.goodSoft, borderRadius: 6 }}>
-                <Mono size={10} color={T.good}>94% OF REVIEWS ANSWERED</Mono>
-                <div style={{ fontSize: 12, marginTop: 4, color: T.ink80 }}>Up from 23% before Autopilot.</div>
-              </div>
-            </>
-          )}
-        </Card>
-      </div>
-    </div>
-  );
-}
+      const handleSubmit = async () => {
+        setIsSubmitting(true);
+        try {
+          await API.addService({ serviceItem: { displayName: { text: displayName }, price: { currencyCode: 'USD', units: price, nanos: 0 }, duration: { seconds: duration * 60 } } });
+          onClose();
+        } catch (e) {
+          console.error(e);
+        } finally {
+          setIsSubmitting(false);
+        }
+      };
+
+      return (
+        <div style={{ padding: 20, width: 500 }}>
+          <h2>Add a new service</h2>
+          <input
+            value={displayName}
+            onChange={e => setDisplayName(e.target.value)}
+            placeholder="Service name (e.g., Consultation)"
+            style={{ width: "100%", marginBottom: 10, padding: 10, borderRadius: 6, border: `1px solid ${T.line}` }}
+          />
+          <input
+            value={price}
+            onChange={e => setPrice(e.target.value)}
+            placeholder="Price (e.g., 50)"
+            type="number"
+            style={{ width: "100%", marginBottom: 10, padding: 10, borderRadius: 6, border: `1px solid ${T.line}` }}
+          />
+          <input
+            value={duration}
+            onChange={e => setDuration(e.target.value)}
+            placeholder="Duration in minutes (e.g., 30)"
+            type="number"
+            style={{ width: "100%", marginBottom: 10, padding: 10, borderRadius: 6, border: `1px solid ${T.line}` }}
+          />
+          <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
+            <Btn onClick={onClose}>Cancel</Btn>
+            <Btn tone="solid" onClick={handleSubmit} disabled={isSubmitting}>
+              {isSubmitting ? "Submitting..." : "Add Service"}
+            </Btn>
+          </div>
+        </div>
+      );
+    }
+
+    // ============ SERVICES ============
+    
 
 // ============ SERVICES ============
-function ServicesView() {
+function ServicesView({ searchTerm, lastRefreshed }) {
   const [loading, setLoading] = uS(true);
   const [services, setServices] = uS([]);
 
@@ -563,13 +658,20 @@ function ServicesView() {
       finally { setLoading(false); }
     };
     load();
-  }, []);
+  }, [lastRefreshed]);
+
+  const filteredServices = services.filter(service => {
+    if (!searchTerm) return true;
+    const lowerSearchTerm = searchTerm.toLowerCase();
+    const displayName = (service.displayName?.text || "").toLowerCase();
+    return displayName.includes(lowerSearchTerm);
+  });
 
   return (
     <div style={{ padding: "28px 32px 60px" }}>
       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 20 }}>
-        <Mono size={11}>{services.length} services listed on Google</Mono>
-        <Btn size="sm" tone="solid"><Ico name="plus" size={12} /> Add service</Btn>
+        <Mono size={11}>{filteredServices.length} services listed on Google</Mono>
+        <Btn size="sm" tone="solid" onClick={() => openModal(<NewServiceModal onClose={closeModal} />)}><Ico name="plus" size={12} /> Add service</Btn>
       </div>
       <Card flush>
         {loading ? (
@@ -580,11 +682,11 @@ function ServicesView() {
           filteredServices.map((s, i) => (
             <div key={s.serviceId || i} style={{ padding: "16px 20px", display: "grid", gridTemplateColumns: "1fr 120px 100px 40px", gap: 16, alignItems: "center", borderTop: i > 0 ? `1px solid ${T.line}` : "none" }}>
               <div>
-                <div style={{ fontSize: 14, fontWeight: 500 }}>{s.displayName || s.name || "Untitled"}</div>
+                <div style={{ fontSize: 14, fontWeight: 500 }}>{s.displayName?.text || s.name || "Untitled"}</div>
                 <Mono size={10} style={{ marginTop: 2 }}>ID · {(s.serviceId || "").substring(0, 12) || "—"}</Mono>
               </div>
-              <Mono size={12} color={T.ink}>{s.price ? `$${s.price}` : "—"}</Mono>
-              <Mono size={12}>{s.duration || "—"}</Mono>
+              <Mono size={12} color={T.ink}>{s.price ? `$${s.price.units}` : "—"}</Mono>
+              <Mono size={12}>{s.duration ? `${s.duration.seconds / 60} min` : "—"}</Mono>
               <Ico name="edit" size={14} color={T.ink60} />
             </div>
           ))
@@ -594,84 +696,5 @@ function ServicesView() {
   );
 }
 
-// ============ MEDIA ============
-function MediaView() {
-  const [loading, setLoading] = uS(true);
-  const [media, setMedia] = uS([]);
 
-  uE(() => {
-    const load = async () => {
-      setLoading(true);
-      try {
-        const data = await API.media();
-        setMedia(data.media || []);
-      } catch (e) { console.error(e); }
-      finally { setLoading(false); }
-    };
-    load();
-  }, []);
 
-  const photoCount = media.filter(m => (m.mediaFormat || "").toUpperCase() === "PHOTO").length;
-  const videoCount = media.filter(m => (m.mediaFormat || "").toUpperCase() === "VIDEO").length;
-
-  return (
-    <div style={{ padding: "28px 32px 60px" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 20 }}>
-        <Mono size={11}>{photoCount} photos · {videoCount} videos</Mono>
-        <Btn size="sm" tone="solid"><Ico name="plus" size={12} /> Upload media</Btn>
-      </div>
-      {loading ? (
-        <div data-keep-grid="4" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}>
-          {[0, 1, 2, 3, 4, 5, 6, 7].map(i => <Skel key={i} style={{ aspectRatio: "1" }} />)}
-        </div>
-      ) : media.length === 0 ? (
-        <Card><Mono size={12}>No media found. Upload photos or videos to get started.</Mono></Card>
-      ) : (
-        <div data-keep-grid="4" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}>
-          {media.map((m, i) => {
-            const isVideo = (m.mediaFormat || "").toUpperCase() === "VIDEO";
-            const hasUrl = m.mediaUrl || m.sourceUrl;
-            return (
-              <div key={m.mediaId || i} style={{
-                aspectRatio: "1",
-                background: hasUrl && m.mediaUrl ? `url(${m.mediaUrl})` : `repeating-linear-gradient(${45 + i * 15}deg, oklch(0.92 0.02 ${50 + i * 10}), oklch(0.92 0.02 ${50 + i * 10}) 4px, oklch(0.88 0.02 ${50 + i * 10}) 4px, oklch(0.88 0.02 ${50 + i * 10}) 12px)`,
-                backgroundSize: "cover",
-                backgroundPosition: "center",
-                borderRadius: 8, border: `1px solid ${T.line}`,
-                position: "relative", overflow: "hidden"
-              }}>
-                {isVideo && (
-                  <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: 40, height: 40, borderRadius: "50%", background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    <Ico name="play" size={16} color={T.bg} />
-                  </div>
-                )}
-                <div style={{ position: "absolute", bottom: 8, left: 8 }}>
-                  <Mono size={9} color="oklch(0.4 0.02 60)">{isVideo ? "[ video ]" : "[ photo ]"}</Mono>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
-}
-
-window.AutopilotView = AutopilotView;
-window.ChatView = ChatView;
-window.ReviewsView = ReviewsView;
-window.PostsView = PostsView;
-window.AuditView = AuditView;
-window.AnalyticsView = AnalyticsView;
-window.ServicesView = ServicesView;
-window.MediaView = MediaView;
-otView = AutopilotView;
-window.ChatView = ChatView;
-window.ReviewsView = ReviewsView;
-window.PostsView = PostsView;
-window.AuditView = AuditView;
-window.AnalyticsView = AnalyticsView;
-window.ServicesView = ServicesView;
-window.MediaView = MediaView;
-;
- MediaView;

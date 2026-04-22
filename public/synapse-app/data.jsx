@@ -34,6 +34,7 @@ const API = {
   media:         ()             => API.call("/api/gbp/listMedia"),
   replyToReview: (name, txt)    => API.call("/api/gbp/replyToReview",  { method: "POST", body: JSON.stringify({ reviewName: name, comment: txt }) }),
   createPost:    (body)         => API.call("/api/gbp/createPost",      { method: "POST", body: JSON.stringify(body) }),
+  addService:    (body)         => API.call("/api/gbp/addService",       { method: "POST", body: JSON.stringify(body) }),
   uploadMedia:   (body)         => API.call("/api/gbp/uploadMedia",     { method: "POST", body: JSON.stringify(body) }),
 
   // ── Agent ──
