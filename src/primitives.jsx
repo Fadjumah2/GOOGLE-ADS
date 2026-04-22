@@ -1,8 +1,7 @@
-// Synapse Dashboard — shared primitives + design tokens
-const { useState, useEffect, useRef, useMemo } = React;
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 
 // ============ DESIGN TOKENS ============
-const T = {
+export const T = {
   bg:        "oklch(0.985 0.005 75)",
   bgSoft:    "oklch(0.965 0.008 75)",
   bgElev:    "#ffffff",
@@ -29,15 +28,15 @@ const T = {
 };
 
 // ============ PRIMITIVES ============
-const Mono = ({ children, style, size = 11, color }) => (
+export const Mono = ({ children, style, size = 11, color }) => (
   <span style={{ fontFamily: T.fontMono, fontSize: size, letterSpacing: "0.02em", color: color || T.ink60, ...style }}>{children}</span>
 );
 
-const Label = ({ children, color = T.ink60 }) => (
+export const Label = ({ children, color = T.ink60 }) => (
   <span style={{ fontFamily: T.fontMono, fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase", color }}>{children}</span>
 );
 
-const Pill = ({ children, tone = "neutral", dot = false }) => {
+export const Pill = ({ children, tone = "neutral", dot = false }) => {
   const tones = {
     neutral: { bg: T.bgSoft,    fg: T.ink70,  dotC: T.ink60 },
     good:    { bg: T.goodSoft,  fg: T.good,   dotC: T.good  },
@@ -55,13 +54,13 @@ const Pill = ({ children, tone = "neutral", dot = false }) => {
   );
 };
 
-const Card = ({ children, style, dark = false, flush = false }) => (
+export const Card = ({ children, style, dark = false, flush = false }) => (
   <div style={{ background: dark ? T.bgDark : T.bgElev, color: dark ? T.bg : "inherit", border:`1px solid ${dark ? "oklch(0.25 0.01 60)" : T.line}`, borderRadius:10, padding: flush ? 0 : 20, ...style }}>
     {children}
   </div>
 );
 
-const CardHead = ({ title, sub, eyebrow, right, style }) => (
+export const CardHead = ({ title, sub, eyebrow, right, style }) => (
   <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:12, marginBottom:18, ...style }}>
     <div>
       {eyebrow && <Label>{eyebrow}</Label>}
@@ -72,7 +71,7 @@ const CardHead = ({ title, sub, eyebrow, right, style }) => (
   </div>
 );
 
-const Btn = ({ children, tone = "ghost", size = "md", onClick, style, disabled, ...props }) => {
+export const Btn = ({ children, tone = "ghost", size = "md", onClick, style, disabled, ...props }) => {
   const sizes = { sm:{ p:"6px 12px", f:12 }, md:{ p:"9px 16px", f:13 }, lg:{ p:"12px 20px", f:14 } };
   const tones = {
     ghost:  { bg:"transparent",         fg:T.ink,   bd:T.lineStrong },
@@ -93,7 +92,7 @@ const Btn = ({ children, tone = "ghost", size = "md", onClick, style, disabled, 
   );
 };
 
-const Ico = ({ name, size = 14, color = "currentColor", stroke = 1.5 }) => {
+export const Ico = ({ name, size = 14, color = "currentColor", stroke = 1.5 }) => {
   const paths = {
     dashboard: "M3 3h7v9H3zM14 3h7v5h-7zM14 12h7v9h-7zM3 16h7v5H3z",
     reviews:   "M12 2l3 6.5 7 .8-5.2 4.8 1.4 7L12 17.8 5.8 21l1.4-7L2 9.3l7-.8z",
@@ -148,12 +147,12 @@ const Ico = ({ name, size = 14, color = "currentColor", stroke = 1.5 }) => {
 };
 
 // Skeleton loader
-const Skel = ({ w = "100%", h = 16, r = 6, style }) => (
+export const Skel = ({ w = "100%", h = 16, r = 6, style }) => (
   <div style={{ width: w, height: h, borderRadius: r, background: `linear-gradient(90deg, ${T.bgSoft} 25%, ${T.line} 50%, ${T.bgSoft} 75%)`, backgroundSize: "200% 100%", animation: "skel 1.4s ease infinite", ...style }} />
 );
 
 // Inject skeleton keyframe once
-if (!document.getElementById("skel-kf")) {
+if (typeof document !== 'undefined' && !document.getElementById("skel-kf")) {
   const s = document.createElement("style");
   s.id = "skel-kf";
   s.textContent = "@keyframes skel { 0%{background-position:200% 0} 100%{background-position:-200% 0} }";
@@ -161,19 +160,28 @@ if (!document.getElementById("skel-kf")) {
 }
 
 // ── Toast system ──
-window._toastFns = [];
-window.showToast = (msg, tone = "neutral") => window._toastFns.forEach(fn => fn(msg, tone));
+export const showToast = (msg, tone = "neutral") => {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('show-toast', { detail: { msg, tone } }));
+  }
+};
 
-function ToastHost() {
+export function ToastHost() {
   const [toasts, setToasts] = useState([]);
   useEffect(() => {
-    const fn = (msg, tone) => {
+    const handleShowToast = (e) => {
       const id = Date.now() + Math.random();
-      setToasts(t => [...t, { id, msg, tone }]);
+      setToasts(t => [...t, { id, ...e.detail }]);
       setTimeout(() => setToasts(t => t.filter(x => x.id !== id)), 4500);
     };
-    window._toastFns.push(fn);
-    return () => { window._toastFns = window._toastFns.filter(f => f !== fn); };
+    if (typeof window !== 'undefined') {
+      window.addEventListener('show-toast', handleShowToast);
+    }
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('show-toast', handleShowToast);
+      }
+    };
   }, []);
   if (!toasts.length) return null;
   const toneStyle = { neutral: { bg: T.ink, fg: T.bg }, good: { bg: T.good, fg: "#fff" }, bad: { bg: T.bad, fg: "#fff" }, warn: { bg: T.warn, fg: T.ink } };
@@ -192,16 +200,31 @@ function ToastHost() {
 }
 
 // ── Modal system ──
-window._modalFns = { open: null, close: null };
-window.openModal = (content) => window._modalFns.open && window._modalFns.open(content);
-window.closeModal = () => window._modalFns.close && window._modalFns.close();
+export const openModal = (content) => {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('open-modal', { detail: { content } }));
+  }
+};
+export const closeModal = () => {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('open-modal', { detail: { content: null } }));
+  }
+};
 
-function ModalHost() {
+export function ModalHost() {
   const [content, setContent] = useState(null);
   useEffect(() => {
-    window._modalFns.open  = setContent;
-    window._modalFns.close = () => setContent(null);
-    return () => { window._modalFns.open = null; window._modalFns.close = null; };
+    const handleOpenModal = (e) => {
+      setContent(e.detail.content);
+    };
+    if (typeof window !== 'undefined') {
+      window.addEventListener('open-modal', handleOpenModal);
+    }
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('open-modal', handleOpenModal);
+      }
+    };
   }, []);
   if (!content) return null;
   return (
@@ -214,15 +237,3 @@ function ModalHost() {
     </div>
   );
 }
-
-window.T = T;
-window.Mono = Mono;
-window.Label = Label;
-window.Pill = Pill;
-window.Card = Card;
-window.CardHead = CardHead;
-window.Btn = Btn;
-window.Ico = Ico;
-window.Skel = Skel;
-window.ToastHost = ToastHost;
-window.ModalHost = ModalHost;

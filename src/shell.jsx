@@ -1,5 +1,5 @@
-// Synapse — Sidebar + Topbar shell (responsive + collapsible)
-const { useState: uS1, useEffect: uE1 } = React;
+import React, { useState, useEffect } from 'react';
+import { T, Ico, Label, Mono } from './primitives.jsx';
 
 const NAV = [
   { group: "Overview", items: [
@@ -25,7 +25,7 @@ const NAV = [
   ]}
 ];
 
-function Sidebar({ view, setView, open, onClose, isMobile, reviewBadge, businessName, businessLocation }) {
+export function Sidebar({ view, setView, open, onClose, isMobile, reviewBadge, businessName, businessLocation }) {
   const width = 236;
   const base = { width, flexShrink:0, background:T.bgSoft, borderRight:`1px solid ${T.line}`, display:"flex", flexDirection:"column", height:"100vh", transition:"transform 0.25s ease, margin-left 0.25s ease" };
   const desktopStyle = { ...base, position:"sticky", top:0, marginLeft: open ? 0 : -width };
@@ -102,7 +102,7 @@ function Sidebar({ view, setView, open, onClose, isMobile, reviewBadge, business
   );
 }
 
-function Topbar({ view, title, sub, right, onMenu, sidebarOpen, isMobile }) {
+export function Topbar({ view, title, sub, right, onMenu, sidebarOpen, isMobile }) {
   return (
     <div style={{ position:"sticky", top:0, zIndex:10, background:`color-mix(in oklch, ${T.bg} 88%, transparent)`, backdropFilter:"blur(12px)", borderBottom:`1px solid ${T.line}`, padding: isMobile ? "14px 18px" : "16px 32px", display:"flex", alignItems:"center", justifyContent:"space-between", gap:12 }}>
       <div style={{ display:"flex", alignItems:"center", gap:12, minWidth:0 }}>
@@ -128,5 +128,3 @@ function Topbar({ view, title, sub, right, onMenu, sidebarOpen, isMobile }) {
   );
 }
 
-window.Sidebar = Sidebar;
-window.Topbar = Topbar;

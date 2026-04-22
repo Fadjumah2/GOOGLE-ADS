@@ -1,60 +1,19 @@
-// Synapse — Dashboard home view (real API)
-const { useState: uD, useEffect: uDE, useCallback: uDC } = React;
+import React, { useState, useEffect, useCallback } from 'react';
+import { API, findMetric, sparkFrom, fmtNum, starNum, relTime, auditTypeLabel } from './data.jsx';
+import { T, Mono, Label, Pill, Card, CardHead, Btn, Ico, Skel, showToast } from './primitives.jsx';
+import { ChartArea } from './ChartArea.jsx';
+import { Sparkline } from './Sparkline.jsx';
 
-// ── Sparkline SVG ──
-function Sparkline({ data, color = T.accent, w = 80, h = 24 }) {
-  const vals = (data || []).map(Number);
-  if (!vals.length) return null;
-  const max = Math.max(...vals), min = Math.min(...vals);
-  const range = max - min || 1;
-  const pts = vals.map((v, i) => `${(i / (vals.length - 1)) * w},${h - ((v - min) / range) * h}`).join(" ");
-  const lastY = h - ((vals[vals.length - 1] - min) / range) * h;
-  return (
-    <svg width={w} height={h} style={{ overflow:"visible" }}>
-      <polyline points={pts} fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-      <circle cx={w} cy={lastY} r="2.5" fill={color} />
-    </svg>
-  );
-}
+export function DashboardView({ onNavigate, reviews, lastRefreshed }) {
+  const [loading, setLoading] = useState(true);
+  const [profile, setProfile] = useState(null);
+  const [insights, setInsights] = useState([]);
+  const [apData, setApData] = useState(null);
+  const [auditEntries, setAuditEntries] = useState([]);
+  const [period, setPeriod] = useState("last28");
+  const [running, setRunning] = useState(false);
 
-// ── Area chart (real data) ──
-function ChartArea({ seriesA = [], seriesB = [], h = 200 }) {
-  const allVals = [...seriesA, ...seriesB].filter(Boolean);
-  if (!allVals.length) return <div style={{ height: h, display:"flex", alignItems:"center", justifyContent:"center" }}><Mono size={11}>No data for this period</Mono></div>;
-  const max = Math.max(...allVals) || 1;
-  const w = 800, pad = 20;
-  const toPath = (arr) => arr.map((v, i) => `${i === 0 ? "M" : "L"}${pad + (i / (arr.length - 1)) * (w - pad * 2)},${pad + (1 - v / max) * (h - pad * 2)}`).join(" ");
-  const toArea = (arr) => toPath(arr) + ` L${pad + (w - pad * 2)},${h - pad} L${pad},${h - pad} Z`;
-  return (
-    <svg viewBox={`0 0 ${w} ${h}`} style={{ width:"100%", height:h }} preserveAspectRatio="none">
-      <defs>
-        <linearGradient id="gradA" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={T.accent} stopOpacity="0.25" />
-          <stop offset="100%" stopColor={T.accent} stopOpacity="0" />
-        </linearGradient>
-        <pattern id="grid" width="80" height="40" patternUnits="userSpaceOnUse">
-          <path d="M 80 0 L 0 0 0 40" fill="none" stroke={T.line} strokeWidth="0.5" />
-        </pattern>
-      </defs>
-      <rect width={w} height={h} fill="url(#grid)" />
-      {seriesA.length > 1 && <path d={toArea(seriesA)} fill="url(#gradA)" />}
-      {seriesA.length > 1 && <path d={toPath(seriesA)} fill="none" stroke={T.accent} strokeWidth="2" />}
-      {seriesB.length > 1 && <path d={toPath(seriesB)} fill="none" stroke={T.ink} strokeWidth="1.5" strokeDasharray="3 3" opacity="0.45" />}
-    </svg>
-  );
-}
-
-// ── Dashboard ──
-function DashboardView({ onNavigate, reviews, lastRefreshed }) {
-  const [loading, setLoading] = uD(true);
-  const [profile, setProfile] = uD(null);
-  const [insights, setInsights] = uD([]);
-  const [apData, setApData] = uD(null);
-  const [auditEntries, setAuditEntries] = uD([]);
-  const [period, setPeriod] = uD("last28");
-  const [running, setRunning] = uD(false);
-
-  const load = uDC(async (p = period) => {
+  const load = useCallback(async (p = period) => {
     setLoading(true);
     const [pro, ins, ap, log] = await Promise.all([
       API.profile().catch(() => null),
@@ -69,7 +28,7 @@ function DashboardView({ onNavigate, reviews, lastRefreshed }) {
     setLoading(false);
   }, [period]);
 
-  uDE(() => { load(period); }, [period, lastRefreshed]);
+  useEffect(() => { load(period); }, [period, lastRefreshed]);
 
   const handleRunNow = async () => {
     setRunning(true);
@@ -294,7 +253,3 @@ function DashboardView({ onNavigate, reviews, lastRefreshed }) {
     </div>
   );
 }
-
-window.DashboardView = DashboardView;
-window.ChartArea = ChartArea;
-window.Sparkline = Sparkline;

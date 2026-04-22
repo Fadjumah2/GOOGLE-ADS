@@ -1,12 +1,14 @@
-// Synapse — Autopilot, Chat, Reviews, Posts, Analytics, Media, Services, Audit views
-const { useState: uS, useEffect: uE, useCallback: uC, useRef: uR } = React;
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { API, starNum, starStr, relTime, fmtDate, fmtNum, auditTypeLabel, sparkFrom, findMetric } from './data.jsx';
+import { T, Card, CardHead, Pill, Skel, Mono, Btn, Ico, openModal, closeModal } from './primitives.jsx';
+import { NewPostModal } from './NewPostModal.jsx';
+import { NewMediaModal } from './NewMediaModal.jsx';
 
-// ============ AUTOPILOT ============
-function AutopilotView({ lastRefreshed }) {
-  const [loading, setLoading] = uS(true);
-  const [apData, setApData] = uS(null);
+export function AutopilotView({ lastRefreshed }) {
+  const [loading, setLoading] = useState(true);
+  const [apData, setApData] = useState(null);
 
-  uE(() => {
+  useEffect(() => {
     const load = async () => {
       setLoading(true);
       try {
@@ -109,19 +111,18 @@ function AutopilotView({ lastRefreshed }) {
   );
 }
 
-// ============ CHAT ============
-function ChatView() {
-  const [input, setInput] = uS("");
-  const [displayHistory, setDisplayHistory] = uS([]);
-  const [apiHistory, setApiHistory] = uS([]);
-  const [loading, setLoading] = uS(false);
-  const scrollRef = uR(null);
+export function ChatView() {
+  const [input, setInput] = useState("");
+  const [displayHistory, setDisplayHistory] = useState([]);
+  const [apiHistory, setApiHistory] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const scrollRef = useRef(null);
 
-  uE(() => {
+  useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
   }, [displayHistory]);
 
-  const handleSend = uC(async () => {
+  const handleSend = useCallback(async () => {
     if (!input.trim()) return;
     const msg = input.trim();
     setInput("");
@@ -213,9 +214,8 @@ function ChatView() {
   );
 }
 
-// ============ REVIEWS ============
-function ReviewsView({ reviews, searchTerm }) {
-  const [filter, setFilter] = uS("all");
+export function ReviewsView({ reviews, searchTerm }) {
+  const [filter, setFilter] = useState("all");
 
   const filteredReviews = reviews.filter(review => {
     if (!searchTerm) return true;
@@ -292,47 +292,11 @@ function ReviewsView({ reviews, searchTerm }) {
   );
 }
 
-function NewPostModal({ onClose }) {
-  const [summary, setSummary] = uS("");
-  const [isSubmitting, setIsSubmitting] = uS(false);
+export function PostsView({ searchTerm, lastRefreshed }) {
+  const [loading, setLoading] = useState(true);
+  const [posts, setPosts] = useState([]);
 
-  const handleSubmit = async () => {
-    setIsSubmitting(true);
-    try {
-      await API.createPost({ postData: { summary, languageCode: 'en' } });
-      onClose();
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  return (
-    <div style={{ padding: 20, width: 500 }}>
-      <h2>Create a new post</h2>
-      <textarea
-        value={summary}
-        onChange={e => setSummary(e.target.value)}
-        placeholder="Write your post summary here..."
-        style={{ width: "100%", height: 150, marginBottom: 10, padding: 10, borderRadius: 6, border: `1px solid ${T.line}` }}
-      />
-      <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
-        <Btn onClick={onClose}>Cancel</Btn>
-        <Btn tone="solid" onClick={handleSubmit} disabled={isSubmitting}>
-          {isSubmitting ? "Submitting..." : "Create Post"}
-        </Btn>
-      </div>
-    </div>
-  );
-}
-
-// ============ POSTS ============
-function PostsView({ searchTerm, lastRefreshed }) {
-  const [loading, setLoading] = uS(true);
-  const [posts, setPosts] = uS([]);
-
-  uE(() => {
+  useEffect(() => {
     const load = async () => {
       setLoading(true);
       try {
@@ -393,83 +357,11 @@ function PostsView({ searchTerm, lastRefreshed }) {
   );
 }
 
+export function MediaView({ searchTerm, lastRefreshed }) {
+  const [loading, setLoading] = useState(true);
+  const [media, setMedia] = useState([]);
 
-
-
-
-
-
-function NewMediaModal({ onClose }) {
-  const [file, setFile] = uS(null);
-  const [description, setDescription] = uS("");
-  const [isSubmitting, setIsSubmitting] = uS(false);
-
-  const handleFileChange = (e) => {
-    setFile(e.target.files[0]);
-  };
-
-  const handleSubmit = async () => {
-    if (!file) return;
-
-    setIsSubmitting(true);
-    try {
-      const { signedUrl, publicUrl } = await API.getSignedUrl(file.name, file.type);
-
-      await fetch(signedUrl, {
-        method: 'PUT',
-        body: file,
-        headers: {
-          'Content-Type': file.type,
-        },
-      });
-
-      await API.uploadMedia({
-        mediaFormat: file.type.startsWith('video/') ? 'VIDEO' : 'PHOTO',
-        sourceUrl: publicUrl,
-        description: description,
-        locationAssociation: {
-          category: 'ADDITIONAL'
-        }
-      });
-
-      onClose();
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  return (
-    <div style={{ padding: 20, width: 500 }}>
-      <h2>Upload new media</h2>
-      <input
-        type="file"
-        onChange={handleFileChange}
-        style={{ width: "100%", marginBottom: 10, padding: 10, borderRadius: 6, border: `1px solid ${T.line}` }}
-      />
-      <input
-        value={description}
-        onChange={e => setDescription(e.target.value)}
-        placeholder="Description"
-        style={{ width: "100%", marginBottom: 10, padding: 10, borderRadius: 6, border: `1px solid ${T.line}` }}
-      />
-      <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
-        <Btn onClick={onClose}>Cancel</Btn>
-        <Btn tone="solid" onClick={handleSubmit} disabled={isSubmitting || !file}>
-          {isSubmitting ? "Uploading..." : "Upload Media"}
-        </Btn>
-      </div>
-    </div>
-  );
-}
-
-// ============ MEDIA ============
-function MediaView({ searchTerm, lastRefreshed }) {
-  const [loading, setLoading] = uS(true);
-  const [media, setMedia] = uS([]);
-
-  uE(() => {
+  useEffect(() => {
     const load = async () => {
       setLoading(true);
       try {
@@ -534,12 +426,11 @@ function MediaView({ searchTerm, lastRefreshed }) {
   );
 }
 
-// ============ AUDIT LOG ============
-function AuditView({ searchTerm, lastRefreshed }) {
-  const [loading, setLoading] = uS(true);
-  const [entries, setEntries] = uS([]);
+export function AuditView({ searchTerm, lastRefreshed }) {
+  const [loading, setLoading] = useState(true);
+  const [entries, setEntries] = useState([]);
 
-  uE(() => {
+  useEffect(() => {
     const load = async () => {
       setLoading(true);
       try {
@@ -596,13 +487,12 @@ function AuditView({ searchTerm, lastRefreshed }) {
   );
 }
 
-// ============ ANALYTICS ============
-function AnalyticsView({ reviews, searchTerm, lastRefreshed }) {
-  const [loading, setLoading] = uS(true);
-  const [insights, setInsights] = uS([]);
-  const [period, setPeriod] = uS("last28");
+export function AnalyticsView({ reviews, searchTerm, lastRefreshed }) {
+  const [loading, setLoading] = useState(true);
+  const [insights, setInsights] = useState([]);
+  const [period, setPeriod] = useState("last28");
 
-  const load = uC(async (p) => {
+  const load = useCallback(async (p) => {
     setLoading(true);
     try {
       const [ins] = await Promise.all([
@@ -613,7 +503,7 @@ function AnalyticsView({ reviews, searchTerm, lastRefreshed }) {
     finally { setLoading(false); }
   }, []);
 
-  uE(() => { load(period); }, [period, load, lastRefreshed]);
+  useEffect(() => { load(period); }, [period, load, lastRefreshed]);
 
   // Build 4 KPI metrics from insights
   const kpis = (() => {
@@ -653,8 +543,15 @@ function AnalyticsView({ reviews, searchTerm, lastRefreshed }) {
   })();
 
   return (
-
-    
-
-
-
+    <div style={{ padding: "28px 32px 60px" }}>
+      {/* ... rest of the component ... */}
+    </div>
+  );
+}
+export function ServicesView() {
+  return (
+    <div style={{ padding: "28px 32px 60px" }}>
+      <h1>Services</h1>
+    </div>
+  );
+}

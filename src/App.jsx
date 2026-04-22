@@ -1,20 +1,9 @@
-// Synapse Dashboard — root app
-const { useState: uSA, useEffect: uEA } = React;
-
-const today = new Date();
-const formattedDate = today.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
-
-const VIEWS = {
-  dashboard: { title: "Today at a glance", sub: `${formattedDate} · Eritage ENT Care · Entebbe`, Comp: DashboardView },
-  autopilot: { title: "Autopilot", sub: "Autonomous daily posting & safe review replies.", Comp: AutopilotView },
-  chat: { title: "Synapse AI", sub: "Conversational agent with 14 GBP tools.", Comp: ChatView },
-  audit: { title: "Audit log", sub: "Every autonomous action, timestamped.", Comp: AuditView },
-  posts: { title: "Posts", sub: "Your published Google posts.", Comp: PostsView },
-  reviews: { title: "Reviews", sub: "5 total · 3 awaiting action.", Comp: ReviewsView },
-  media: { title: "Media", sub: "Photos and videos on your listing.", Comp: MediaView },
-  services: { title: "Services", sub: "What patients see when they search.", Comp: ServicesView },
-  analytics: { title: "Analytics", sub: "Trends, response times, rating distribution.", Comp: AnalyticsView }
-};
+import React, { useState, useEffect } from 'react';
+import { API } from './data.jsx';
+import { T, Btn, Ico, ModalHost, ToastHost, openModal, showToast } from './primitives.jsx';
+import { Sidebar, Topbar } from './shell.jsx';
+import { AutopilotView, ChatView, AuditView, PostsView, ReviewsView, MediaView, ServicesView, AnalyticsView } from './views.jsx';
+import { DashboardView } from './dashboard.jsx';
 
 function useIsMobile() {
   const [m, setM] = useState(() => typeof window !== "undefined" && window.innerWidth < 900);
@@ -28,12 +17,10 @@ function useIsMobile() {
 
 function ApiKeyModal() {
   const [key, setKey] = useState("");
-  const [copied, setCopied] = useState(false);
 
   const handleSubmit = () => {
     if (key.trim()) {
       API.setKey(key);
-      window.closeModal();
       window.location.reload();
     } else {
       showToast("Please enter an API key", "bad");
@@ -74,7 +61,7 @@ function ApiKeyModal() {
   );
 }
 
-function App() {
+export default function App() {
   const [view, setView] = useState(() => localStorage.getItem("synapse-view") || "dashboard");
   useEffect(() => localStorage.setItem("synapse-view", view), [view]);
 
@@ -237,5 +224,3 @@ function App() {
   );
 }
 
-ReactDOM.createRoot(document.getElementById("root")).render(<App />);
-render(<App />);
