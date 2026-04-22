@@ -1,4 +1,4 @@
-const normalizeReviews = (data) => {
+export const normalizeReviews = (data) => {
   if (!data || !Array.isArray(data.reviews)) {
     return {
       success: false,
@@ -32,7 +32,7 @@ const normalizeReviews = (data) => {
   };
 };
 
-const normalizeQuestions = (data) => {
+export const normalizeQuestions = (data) => {
   if (!data || !Array.isArray(data.questions)) {
     return {
       success: false,
@@ -54,7 +54,7 @@ const normalizeQuestions = (data) => {
   };
 };
 
-const normalizeMedia = (data) => {
+export const normalizeMedia = (data) => {
   if (!data || !Array.isArray(data.mediaItems)) {
     return {
       success: false,
@@ -76,7 +76,7 @@ const normalizeMedia = (data) => {
   };
 };
 
-const normalizeServices = (data) => {
+export const normalizeServices = (data) => {
   if (!data || !Array.isArray(data.serviceItems)) {
     return {
       success: false,
@@ -114,7 +114,7 @@ const normalizeServices = (data) => {
   };
 };
 
-const normalizeProfile = (data) => {
+export const normalizeProfile = (data) => {
   if (!data) {
     return {
       success: false,
@@ -142,7 +142,7 @@ const normalizeProfile = (data) => {
   };
 };
 
-const normalizeInsights = (data) => {
+export const normalizeInsights = (data) => {
   if (!data) return { success: false, error: "NO_DATA", insights: [] };
 
   // fetchMultiDailyMetricsTimeSeries returns:
@@ -198,7 +198,7 @@ const normalizeInsights = (data) => {
   };
 };
 
-const normalizePosts = (data) => {
+export const normalizePosts = (data) => {
   if (!data || !Array.isArray(data.localPosts)) {
     return {
       success: false,
@@ -225,12 +225,3 @@ const normalizePosts = (data) => {
   };
 };
 
-module.exports = { 
-  normalizeReviews, 
-  normalizeQuestions, 
-  normalizeMedia, 
-  normalizeServices,
-  normalizeProfile,
-  normalizeInsights,
-  normalizePosts
-};

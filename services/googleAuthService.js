@@ -1,6 +1,6 @@
-const axios = require('axios');
-const { GoogleAuth } = require('google-auth-library');
-const { HttpsProxyAgent } = require('https-proxy-agent');
+import axios from 'axios';
+import { GoogleAuth } from 'google-auth-library';
+import { HttpsProxyAgent } from 'https-proxy-agent';
 
 const proxyUrl = process.env.HTTPS_PROXY || process.env.https_proxy;
 const httpsAgent = proxyUrl ? new HttpsProxyAgent(proxyUrl) : undefined;
@@ -108,7 +108,7 @@ async function refreshOAuthToken() {
  *
  * @returns {Promise<{access_token: string, expires_in: number}>}
  */
-async function refreshAccessToken() {
+export async function refreshAccessToken() {
     const saAuth = getServiceAccountAuth();
 
     if (saAuth) {
@@ -128,6 +128,3 @@ async function refreshAccessToken() {
     return refreshOAuthToken();
 }
 
-module.exports = {
-    refreshAccessToken
-};

@@ -13,7 +13,7 @@ if (!API_KEY) {
   console.error('[SECURITY] FATAL: API_KEY is not set in .env — all protected routes will be blocked.');
 }
 
-module.exports = function requireApiKey(req, res, next) {
+export default function requireApiKey(req, res, next) {
   if (!API_KEY) {
     return res.status(503).json({
       success: false,

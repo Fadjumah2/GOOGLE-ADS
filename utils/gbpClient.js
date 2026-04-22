@@ -1,8 +1,8 @@
-const axios = require('axios');
-const { google } = require('googleapis');
-const { Storage } = require('@google-cloud/storage');
-const { HttpsProxyAgent } = require('https-proxy-agent');
-const { refreshAccessToken } = require('../services/googleAuthService');
+import axios from 'axios';
+import { google } from 'googleapis';
+import { Storage } from '@google-cloud/storage';
+import { HttpsProxyAgent } from 'https-proxy-agent';
+import { refreshAccessToken } from '../services/googleAuthService.js';
 
 // Use proxy agent if HTTPS_PROXY is set (needed in some hosted environments)
 const proxyUrl = process.env.HTTPS_PROXY || process.env.https_proxy;
@@ -33,7 +33,7 @@ const getFreshAccessToken = async () => {
     return access_token;
 };
 
-const getAuthenticatedClient = async () => {
+export const getAuthenticatedClient = async () => {
     const accessToken = await getFreshAccessToken();
     const auth = new google.auth.OAuth2();
     auth.setCredentials({ access_token: accessToken });
@@ -79,7 +79,7 @@ const extractGBPError = (error, operation) => {
  * Fetches reviews. Supports pagination via optional pageToken.
  * Response includes nextPageToken when more pages exist.
  */
-const fetchReviews = async (pageToken = null) => {
+export const fetchReviews = async (pageToken = null) => {
     try {
         await throttle();
         const accessToken = await getFreshAccessToken();
@@ -114,7 +114,7 @@ const fetchReviews = async (pageToken = null) => {
  * reviewName must be the full resource path: accounts/{id}/locations/{id}/reviews/{id}
  * Payload: { comment: "..." } per GBP Reviews API v1 ReviewReply resource spec.
  */
-const replyToReview = async (reviewName, replyText) => {
+export const replyToReview = async (reviewName, replyText) => {
     try {
         await throttle();
         const accessToken = await getFreshAccessToken();
@@ -142,7 +142,7 @@ const replyToReview = async (reviewName, replyText) => {
  * reviewName must be the full resource path: accounts/{id}/locations/{id}/reviews/{id}
  * Note: This deletes the OWNER REPLY only — customer reviews cannot be deleted via API.
  */
-const deleteReviewReply = async (reviewName) => {
+export const deleteReviewReply = async (reviewName) => {
     try {
         await throttle();
         const accessToken = await getFreshAccessToken();
@@ -167,7 +167,7 @@ const deleteReviewReply = async (reviewName) => {
 /**
  * Fetches the location profile from the Business Information API.
  */
-const getProfile = async () => {
+export const getProfile = async () => {
     try {
         await throttle();
         const accessToken = await getFreshAccessToken();
@@ -271,7 +271,7 @@ const resolveInsightsRange = ({ startDate, endDate, period, days } = {}) => {
  * @param {string}      [options.period]    - named preset, see resolveInsightsRange
  * @param {number}      [options.days]      - rolling window size, 1..540
  */
-const getInsights = async (options = {}) => {
+export const getInsights = async (options = {}) => {
     try {
         await throttle();
         const accessToken = await getFreshAccessToken();
@@ -354,7 +354,7 @@ const getInsights = async (options = {}) => {
 /**
  * Fetches verification status for the location.
  */
-const getVerificationStatus = async () => {
+export const getVerificationStatus = async () => {
     try {
         await throttle();
         const accessToken = await getFreshAccessToken();
@@ -380,7 +380,7 @@ const getVerificationStatus = async () => {
 /**
  * Fetches available attributes for the location based on its category.
  */
-const getAttributes = async () => {
+export const getAttributes = async () => {
     try {
         await throttle();
         const accessToken = await getFreshAccessToken();
@@ -406,7 +406,7 @@ const getAttributes = async () => {
 /**
  * Fetches local posts. Supports pagination via optional pageToken.
  */
-const getPosts = async (pageToken = null) => {
+export const getPosts = async (pageToken = null) => {
     try {
         await throttle();
         const accessToken = await getFreshAccessToken();
@@ -436,7 +436,7 @@ const getPosts = async (pageToken = null) => {
 /**
  * Lists all locations for the account.
  */
-const getLocations = async () => {
+export const getLocations = async () => {
     try {
         await throttle();
         const accessToken = await getFreshAccessToken();
@@ -466,7 +466,7 @@ const getLocations = async () => {
  * Updatable fields: title, storefrontAddress, websiteUri, regularHours,
  *   phoneNumbers, categories, description, serviceAreas, attributes
  */
-const updateProfile = async (updateData, updateMask) => {
+export const updateProfile = async (updateData, updateMask) => {
     try {
         await throttle();
         const accessToken = await getFreshAccessToken();
@@ -497,7 +497,7 @@ const updateProfile = async (updateData, updateMask) => {
  * Required fields: languageCode (e.g. "en"), summary (max 1500 chars)
  * Optional: callToAction { actionType, url }, media [{ sourceUrl, mediaFormat }]
  */
-const createPost = async (postData) => {
+export const createPost = async (postData) => {
     try {
         await throttle();
         const accessToken = await getFreshAccessToken();
@@ -528,7 +528,7 @@ const createPost = async (postData) => {
  * Deletes a local post.
  * postName must be the full resource path: accounts/{id}/locations/{id}/localPosts/{id}
  */
-const deletePost = async (postName) => {
+export const deletePost = async (postName) => {
     try {
         await throttle();
         const accessToken = await getFreshAccessToken();
@@ -551,13 +551,13 @@ const deletePost = async (postName) => {
 // NOTE: fetchQuestions and replyToQuestion are NOT called from the route handlers
 // (those return 410 immediately) but are kept here for documentation purposes.
 // The My Business Q&A API was permanently discontinued on November 3, 2025.
-const fetchQuestions = async () => ({
+export const fetchQuestions = async () => ({
     success: false,
     error: 'API_DISCONTINUED',
     message: 'The Google Business Profile Q&A API was permanently discontinued on November 3, 2025.'
 });
 
-const replyToQuestion = async () => ({
+export const replyToQuestion = async () => ({
     success: false,
     error: 'API_DISCONTINUED',
     message: 'The Google Business Profile Q&A API was permanently discontinued on November 3, 2025.'
@@ -566,7 +566,7 @@ const replyToQuestion = async () => ({
 /**
  * Lists media items. Supports pagination via optional pageToken.
  */
-const listMedia = async (pageToken = null) => {
+export const listMedia = async (pageToken = null) => {
     try {
         await throttle();
         const accessToken = await getFreshAccessToken();
@@ -596,7 +596,7 @@ const listMedia = async (pageToken = null) => {
 /**
  * Fetches the service list (via the location resource's serviceItems field).
  */
-const getServiceList = async () => {
+export const getServiceList = async () => {
     try {
         await throttle();
         const accessToken = await getFreshAccessToken();
@@ -625,7 +625,7 @@ const getServiceList = async () => {
  * serviceListData must be a GBP location resource fragment: { serviceItems: [...] }
  * Default updateMask covers the full serviceItems array.
  */
-const updateServiceList = async (serviceListData, updateMask = 'serviceItems') => {
+export const updateServiceList = async (serviceListData, updateMask = 'serviceItems') => {
     try {
         await throttle();
         const accessToken = await getFreshAccessToken();
@@ -656,7 +656,7 @@ const updateServiceList = async (serviceListData, updateMask = 'serviceItems') =
  * mediaData must include: mediaFormat ("PHOTO" | "VIDEO"), sourceUrl (string),
  * and locationAssociation.category (e.g. "COVER_PHOTO", "PROFILE_COVER", "ADDITIONAL")
  */
-const uploadMedia = async (mediaData) => {
+export const uploadMedia = async (mediaData) => {
     try {
         await throttle();
         const accessToken = await getFreshAccessToken();
@@ -687,7 +687,7 @@ const uploadMedia = async (mediaData) => {
  * Deletes a media item by its full resource name.
  * mediaId must be the full resource path: accounts/{id}/locations/{id}/media/{id}
  */
-const deleteMedia = async (mediaId) => {
+export const deleteMedia = async (mediaId) => {
     try {
         await throttle();
         const accessToken = await getFreshAccessToken();
@@ -707,7 +707,7 @@ const deleteMedia = async (mediaId) => {
     }
 };
 
-const getSignedUrl = async (filename, contentType) => {
+export const getSignedUrl = async (filename, contentType) => {
     try {
         await throttle();
         const storage = new Storage({
@@ -735,26 +735,3 @@ const getSignedUrl = async (filename, contentType) => {
     }
 };
 
-module.exports = {
-    fetchReviews,
-    replyToReview,
-    deleteReviewReply,
-    getProfile,
-    getInsights,
-    getPosts,
-    getLocations,
-    getVerificationStatus,
-    getAttributes,
-    updateProfile,
-    createPost,
-    deletePost,
-    fetchQuestions,
-    replyToQuestion,
-    listMedia,
-    uploadMedia,
-    deleteMedia,
-    getServiceList,
-    updateServiceList,
-    getAuthenticatedClient,
-    getSignedUrl
-};

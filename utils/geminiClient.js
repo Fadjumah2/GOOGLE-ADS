@@ -1,6 +1,6 @@
-require('dotenv').config();
-const { GoogleGenerativeAI } = require('@google/generative-ai');
-const gbpClient = require('./gbpClient');
+import 'dotenv/config';
+import { GoogleGenerativeAI } from '@google/generative-ai';
+import * as gbpClient from './gbpClient.js';
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
@@ -302,7 +302,7 @@ async function sendWithRetry(chat, payload, maxRetries = 1) {
   }
 }
 
-async function runAgentChat(userMessage, history = []) {
+export async function runAgentChat(userMessage, history = []) {
   const model = genAI.getGenerativeModel({
     model: 'gemini-2.5-flash',
     tools: [{ functionDeclarations: toolDeclarations }],
@@ -366,7 +366,7 @@ async function runAgentChat(userMessage, history = []) {
  * orchestrator to draft a post body or a review reply that will be
  * validated by policyGuard before publishing.
  */
-async function generateText(prompt, { temperature = 0.7, maxOutputTokens = 400 } = {}) {
+export async function generateText(prompt, { temperature = 0.7, maxOutputTokens = 400 } = {}) {
   const model = genAI.getGenerativeModel({
     model: 'gemini-2.5-flash',
     generationConfig: { temperature, maxOutputTokens },
@@ -388,4 +388,3 @@ async function generateText(prompt, { temperature = 0.7, maxOutputTokens = 400 }
   }
 }
 
-module.exports = { runAgentChat, generateText };

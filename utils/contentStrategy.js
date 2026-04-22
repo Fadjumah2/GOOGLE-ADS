@@ -16,7 +16,7 @@
  * so we always know today's topic and can avoid repeats.
  */
 
-const CLINIC = {
+export const CLINIC = {
     name: 'Eritage ENT Care',
     city: 'Entebbe',
     country: 'Uganda',
@@ -32,7 +32,7 @@ const CLINIC = {
  * Each slot must be safe for daily public posting: no medical advice,
  * no guarantees, no disease claims.
  */
-const WEEKLY_THEMES = [
+export const WEEKLY_THEMES = [
     // Sunday — gentle awareness / community
     {
         theme: 'community_awareness',
@@ -132,7 +132,7 @@ const WEEKLY_THEMES = [
  * Absolute content constraints enforced later by policyGuard.js.
  * Defined here so generation and validation stay in sync.
  */
-const CONTENT_CONSTRAINTS = {
+export const CONTENT_CONSTRAINTS = {
     maxLength: 1400,       // GBP hard limit is 1500; we leave headroom.
     minLength: 60,
     bannedTerms: [
@@ -152,7 +152,7 @@ const CONTENT_CONSTRAINTS = {
  * Returns today's scheduled topic (weekly rotation).
  * @param {Date} [now]
  */
-function getTopicForToday(now = new Date()) {
+export function getTopicForToday(now = new Date()) {
     const idx = now.getDay();
     const topic = WEEKLY_THEMES[idx];
     return { ...topic, dayIndex: idx, dayName: dayName(idx) };
@@ -162,7 +162,7 @@ function getTopicForToday(now = new Date()) {
  * Returns the next N scheduled topics starting today — handy for showing
  * a content calendar in the UI.
  */
-function getUpcomingTopics(days = 7, now = new Date()) {
+export function getUpcomingTopics(days = 7, now = new Date()) {
     const out = [];
     for (let i = 0; i < days; i++) {
         const d = new Date(now);
@@ -176,10 +176,3 @@ function dayName(idx) {
     return ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][idx];
 }
 
-module.exports = {
-    CLINIC,
-    WEEKLY_THEMES,
-    CONTENT_CONSTRAINTS,
-    getTopicForToday,
-    getUpcomingTopics,
-};
