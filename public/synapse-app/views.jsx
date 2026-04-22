@@ -65,7 +65,7 @@ function AutopilotView({ lastRefreshed }) {
                 <Mono size={11} color={T.ink}>{f.k}</Mono>
                 <div style={{ fontSize: 12, color: T.ink60, marginTop: 3 }}>{f.desc}</div>
               </div>
-              <div style={{ width: 36, height: 20, borderRadius: 999, background: f.on ? T.good : T.lineStrong, padding: 2, display: "flex", justifyContent: f.on ? "flex-end" : "flex-start", cursor: "pointer" }}>
+              <div onClick={() => alert(`Toggling ${f.k}`)} style={{ width: 36, height: 20, borderRadius: 999, background: f.on ? T.good : T.lineStrong, padding: 2, display: "flex", justifyContent: f.on ? "flex-end" : "flex-start", cursor: "pointer" }}>
                 <div style={{ width: 16, height: 16, borderRadius: "50%", background: T.bg }} />
               </div>
             </div>
@@ -75,7 +75,7 @@ function AutopilotView({ lastRefreshed }) {
 
       {/* Content calendar detail */}
       <Card>
-        <CardHead eyebrow="Content strategy" title="Weekly rotation" sub="Themes cycle each day. Edit here or let Synapse AI adapt based on engagement." right={<Btn size="sm"><Ico name="edit" size={12} /> Customize</Btn>} />
+        <CardHead eyebrow="Content strategy" title="Weekly rotation" sub="Themes cycle each day. Edit here or let Synapse AI adapt based on engagement." right={<Btn size="sm" onClick={() => alert("Customize!")}><Ico name="edit" size={12} /> Customize</Btn>} />
         {loading ? (
           <Skel h={200} />
         ) : calendar.length > 0 ? (
@@ -248,8 +248,8 @@ function ReviewsView({ reviews, searchTerm }) {
           ))}
         </div>
         <div style={{ display: "flex", gap: 8 }}>
-          <Btn size="sm"><Ico name="sparkle" size={12} /> Draft all replies</Btn>
-          <Btn size="sm" tone="solid"><Ico name="download" size={12} /> Export</Btn>
+          <Btn size="sm" onClick={() => alert("Drafting all replies!")}><Ico name="sparkle" size={12} /> Draft all replies</Btn>
+          <Btn size="sm" tone="solid" onClick={() => alert("Exporting!")}><Ico name="download" size={12} /> Export</Btn>
         </div>
       </div>
 
@@ -382,7 +382,7 @@ function PostsView({ searchTerm, lastRefreshed }) {
                     <div><Mono size={10}>Clicks</Mono><div style={{ fontFamily: T.fontDisp, fontSize: 20, marginTop: 2 }}>{fmtNum(clicks)}</div></div>
                     <div><Mono size={10}>CTR</Mono><div style={{ fontFamily: T.fontDisp, fontSize: 20, marginTop: 2 }}>{ctr}%</div></div>
                   </div>
-                  <Btn size="sm"><Ico name="eye" size={12} /> View</Btn>
+                  <Btn size="sm" onClick={() => alert("Viewing post!")}><Ico name="eye" size={12} /> View</Btn>
                 </div>
               </Card>
             );
@@ -568,8 +568,8 @@ function AuditView({ searchTerm, lastRefreshed }) {
             <span style={{ width: 6, height: 6, borderRadius: "50%", background: T.good }} />
           </div>
           <div style={{ display: "flex", gap: 8 }}>
-            <Btn size="sm"><Ico name="filter" size={12} /> Filter</Btn>
-            <Btn size="sm"><Ico name="download" size={12} /> Export CSV</Btn>
+            <Btn size="sm" onClick={() => alert("Filtering!")}><Ico name="filter" size={12} /> Filter</Btn>
+            <Btn size="sm" onClick={() => alert("Exporting CSV!")}><Ico name="download" size={12} /> Export CSV</Btn>
           </div>
         </div>
         <div>
