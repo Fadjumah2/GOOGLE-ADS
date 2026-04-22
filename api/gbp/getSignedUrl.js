@@ -1,36 +1,24 @@
-const { Storage } = require('@google-cloud/storage');
+const gbpClient = require('../../utils/gbpClient');
 const logger = require('../../utils/logger');
-
-const storage = new Storage();
-const bucketName = process.env.GCS_BUCKET_NAME;
 
 const handleGetSignedUrl = async (req, res) => {
   const { filename, contentType } = req.body;
-
-  if (!bucketName) {
-    logger.error('GCS_BUCKET_NAME environment variable not set.');
-    return res.status(500).json({ success: false, message: 'Server configuration error.' });
-  }
 
   if (!filename || !contentType) {
     logger.error('Missing filename or contentType in request body.');
     return res.status(400).json({ success: false, message: 'Missing filename or contentType.' });
   }
 
-  const options = {
-    version: 'v4',
-    action: 'write',
-    expires: Date.now() + 15 * 60 * 1000, // 15 minutes
-    contentType,
-  };
-
   try {
-    const [url] = await storage.bucket(bucketName).file(filename).getSignedUrl(options);
-    const publicUrl = `https://storage.googleapis.com/${bucketName}/${filename}`;
-    res.json({ success: true, signedUrl: url, publicUrl });
+    const result = await gbpClient.getSignedUrl(filename, contentType);
+    if (result.error) {
+        logger.error(`GBP error getting signed URL: ${result.error}`);
+        return res.status(500).json(result);
+    }
+    res.json(result);
   } catch (error) {
-    logger.error(`Error generating signed URL: ${error.message}`);
-    res.status(500).json({ success: false, message: 'Could not generate upload URL.' });
+    logger.error(`Unexpected error getting signed URL: ${error.message}`);
+    res.status(500).json({ success: false, error: 'GET_SIGNED_URL_FAILED', message: error.message });
   }
 };
 

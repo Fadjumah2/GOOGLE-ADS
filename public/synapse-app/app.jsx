@@ -146,6 +146,13 @@ function App() {
     if (isMobile) setSidebarOpen(false);
   };
 
+  const handleRunNow = async () => {
+    try {
+      await API.runDaily();
+      showToast("Daily cycle started — refresh in a minute to see results.", "good");
+    } catch(e) { showToast(e.message, "bad"); }
+  };
+
   const topbarRight = (
     <>
       {!isMobile && (
@@ -166,7 +173,7 @@ function App() {
         </div>
       )}
       {!isMobile && <Btn size="sm" onClick={() => setLastRefreshed(Date.now())}><Ico name="refresh" size={12} /> Sync</Btn>}
-      <Btn size="sm" tone="solid">
+      <Btn size="sm" tone="solid" onClick={handleRunNow}>
         <Ico name="bolt" size={12} />
         {isMobile ? "Run" : "Run daily cycle"}
       </Btn>

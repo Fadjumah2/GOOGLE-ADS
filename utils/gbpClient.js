@@ -1,5 +1,6 @@
 const axios = require('axios');
 const { google } = require('googleapis');
+const { Storage } = require('@google-cloud/storage');
 const { HttpsProxyAgent } = require('https-proxy-agent');
 const { refreshAccessToken } = require('../services/googleAuthService');
 
@@ -706,6 +707,34 @@ const deleteMedia = async (mediaId) => {
     }
 };
 
+const getSignedUrl = async (filename, contentType) => {
+    try {
+        await throttle();
+        const storage = new Storage({
+            authClient: await getAuthenticatedClient(),
+        });
+        const bucketName = process.env.GCS_BUCKET_NAME;
+
+        if (!bucketName) {
+            throw new Error('GCS_BUCKET_NAME environment variable not set.');
+        }
+
+        const options = {
+            version: 'v4',
+            action: 'write',
+            expires: Date.now() + 15 * 60 * 1000, // 15 minutes
+            contentType,
+        };
+
+        const [url] = await storage.bucket(bucketName).file(filename).getSignedUrl(options);
+        const publicUrl = `https://storage.googleapis.com/${bucketName}/${filename}`;
+        return { success: true, signedUrl: url, publicUrl };
+    } catch (error) {
+        console.error('Failed to get signed URL:', error.message);
+        return extractGBPError(error, 'GET_SIGNED_URL');
+    }
+};
+
 module.exports = {
     fetchReviews,
     replyToReview,
@@ -726,5 +755,6 @@ module.exports = {
     deleteMedia,
     getServiceList,
     updateServiceList,
-    getAuthenticatedClient
+    getAuthenticatedClient,
+    getSignedUrl
 };
