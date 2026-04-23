@@ -735,3 +735,26 @@ export const getSignedUrl = async (filename, contentType) => {
     }
 };
 
+export default {
+    getAuthenticatedClient,
+    fetchReviews,
+    replyToReview,
+    deleteReviewReply,
+    getProfile,
+    getInsights,
+    getVerificationStatus,
+    getAttributes,
+    getPosts,
+    getLocations,
+    updateProfile,
+    createPost,
+    deletePost,
+    fetchQuestions,
+    replyToQuestion,
+    listMedia,
+    getServiceList,
+    updateServiceList,
+    uploadMedia,
+    deleteMedia,
+    getSignedUrl
+};
