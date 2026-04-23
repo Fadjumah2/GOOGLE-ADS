@@ -543,15 +543,128 @@ export function AnalyticsView({ reviews, searchTerm, lastRefreshed }) {
   })();
 
   return (
-    <div style={{ padding: "28px 32px 60px" }}>
-      {/* ... rest of the component ... */}
+    <div style={{ padding: "28px 32px 60px", display: "flex", flexDirection: "column", gap: 20 }}>
+      {/* Period selector */}
+      <div style={{ display: "flex", justifyContent: "flex-end" }}>
+        <div style={{ display: "flex", gap: 4, padding: 3, background: T.bgSoft, borderRadius: 6, border: `1px solid ${T.line}` }}>
+          {[{ k: "last7", l: "7 days" }, { k: "last28", l: "28 days" }, { k: "last90", l: "90 days" }].map(t => (
+            <button key={t.k} onClick={() => setPeriod(t.k)} style={{ padding: "6px 12px", border: "none", borderRadius: 4, background: period === t.k ? T.bgElev : "transparent", fontFamily: T.fontMono, fontSize: 11, letterSpacing: "0.04em", color: period === t.k ? T.ink : T.ink70, cursor: "pointer", boxShadow: period === t.k ? "0 1px 2px rgba(0,0,0,0.04)" : "none" }}>{t.l}</button>
+          ))}
+        </div>
+      </div>
+
+      {/* KPI cards */}
+      {loading ? (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
+          {[0,1,2,3].map(i => <Skel key={i} h={110} />)}
+        </div>
+      ) : kpis.length > 0 ? (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
+          {kpis.map((k, i) => (
+            <Card key={i}>
+              <Mono size={10}>{k.label}</Mono>
+              <div style={{ fontFamily: T.fontDisp, fontSize: 36, letterSpacing: "-0.02em", color: k.color, marginTop: 6 }}>{k.value}</div>
+              <div style={{ display: "flex", alignItems: "flex-end", gap: 2, height: 32, marginTop: 10 }}>
+                {k.spark.map((v, j) => {
+                  const max = Math.max(...k.spark, 1);
+                  const h = Math.max(2, Math.round((v / max) * 32));
+                  return <div key={j} style={{ flex: 1, height: h, background: k.color, opacity: 0.4, borderRadius: 2 }} />;
+                })}
+              </div>
+            </Card>
+          ))}
+        </div>
+      ) : (
+        <Card><Mono size={12}>No insights data available for this period.</Mono></Card>
+      )}
+
+      {/* Bar charts */}
+      {!loading && (chartA.length > 0 || chartB.length > 0) && (
+        <Card>
+          <CardHead eyebrow="Traffic" title="Profile views & direction requests" sub="Daily totals for the selected period." />
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24, marginTop: 16 }}>
+            {[
+              { label: "Profile views", data: chartA, color: T.accent },
+              { label: "Direction requests", data: chartB, color: T.good }
+            ].map((s, si) => {
+              const max = Math.max(...s.data, 1);
+              return (
+                <div key={si}>
+                  <Mono size={10}>{s.label}</Mono>
+                  <div style={{ display: "flex", alignItems: "flex-end", gap: 2, height: 60, marginTop: 8 }}>
+                    {s.data.map((v, j) => {
+                      const h = Math.max(2, Math.round((v / max) * 60));
+                      return <div key={j} style={{ flex: 1, height: h, background: s.color, opacity: 0.55, borderRadius: 2 }} />;
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </Card>
+      )}
+
+      {/* Review star distribution */}
+      <Card>
+        <CardHead eyebrow="Reviews" title="Star rating distribution" sub="Breakdown of all reviews by rating." />
+        <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 12 }}>
+          {reviewStats.map(r => (
+            <div key={r.stars} style={{ display: "grid", gridTemplateColumns: "48px 1fr 36px", gap: 12, alignItems: "center" }}>
+              <Mono size={11}>{r.stars} ★</Mono>
+              <div style={{ height: 8, background: T.bgSoft, borderRadius: 4, overflow: "hidden" }}>
+                <div style={{ height: "100%", width: `${r.pct}%`, background: r.stars >= 4 ? T.good : r.stars === 3 ? T.warn : T.bad, borderRadius: 4 }} />
+              </div>
+              <Mono size={11}>{r.count}</Mono>
+            </div>
+          ))}
+        </div>
+      </Card>
     </div>
   );
 }
-export function ServicesView() {
+
+export function ServicesView({ lastRefreshed }) {
+  const [loading, setLoading] = useState(true);
+  const [services, setServices] = useState([]);
+
+  useEffect(() => {
+    const load = async () => {
+      setLoading(true);
+      try {
+        const data = await API.services();
+        setServices(data.services || []);
+      } catch (e) { console.error(e); }
+      finally { setLoading(false); }
+    };
+    load();
+  }, [lastRefreshed]);
+
   return (
     <div style={{ padding: "28px 32px 60px" }}>
-      <h1>Services</h1>
+      <div style={{ marginBottom: 20 }}>
+        <Mono size={11}>{loading ? "Loading…" : `${services.length} services`}</Mono>
+      </div>
+      {loading ? (
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          {[0,1,2,3,4].map(i => <Skel key={i} h={68} />)}
+        </div>
+      ) : services.length === 0 ? (
+        <Card><Mono size={12}>No services found for this location.</Mono></Card>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          {services.map((s, i) => (
+            <Card key={i}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                <div>
+                  <div style={{ fontSize: 14, fontWeight: 500 }}>{s.displayName || "(unnamed)"}</div>
+                  {s.description && <div style={{ fontSize: 13, color: T.ink70, marginTop: 4, lineHeight: 1.5 }}>{s.description}</div>}
+                </div>
+                <Pill tone={s.type === "structured" ? "good" : "warn"}>{s.type === "structured" ? "structured" : "custom"}</Pill>
+              </div>
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

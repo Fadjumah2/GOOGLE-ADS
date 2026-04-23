@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { API, findMetric, sparkFrom, fmtNum, starNum, relTime, auditTypeLabel } from './data.jsx';
+import { API, findMetric, sparkFrom, fmtNum, starNum, starStr, relTime, auditTypeLabel } from './data.jsx';
 import { T, Mono, Label, Pill, Card, CardHead, Btn, Ico, Skel, showToast } from './primitives.jsx';
 import { ChartArea } from './ChartArea.jsx';
 import { Sparkline } from './Sparkline.jsx';
