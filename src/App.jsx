@@ -5,6 +5,34 @@ import { Sidebar, Topbar } from './shell.jsx';
 import { AutopilotView, ChatView, AuditView, PostsView, ReviewsView, MediaView, ServicesView, AnalyticsView } from './views.jsx';
 import { DashboardView } from './dashboard.jsx';
 
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+  static getDerivedStateFromError(error) {
+    console.error('React Error Boundary caught:', error);
+    return { hasError: true, error };
+  }
+  componentDidCatch(error, errorInfo) {
+    console.error('Component stack:', errorInfo.componentStack);
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{ padding: 32, color: '#c41e3a', fontFamily: 'system-ui' }}>
+          <h2>App crashed</h2>
+          <p>{this.state.error?.message}</p>
+          <button onClick={() => window.location.reload()} style={{ padding: '8px 16px', cursor: 'pointer' }}>
+            Reload
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 function useIsMobile() {
   const [m, setM] = useState(() => typeof window !== "undefined" && window.innerWidth < 900);
   useEffect(() => {
@@ -172,7 +200,7 @@ export default function App() {
     </>
   );
 
-  return (
+  const content = (
     <div style={{
       display: "flex",
       minHeight: "100vh",
@@ -227,5 +255,7 @@ export default function App() {
       <ToastHost />
     </div>
   );
+
+  return <ErrorBoundary>{content}</ErrorBoundary>;
 }
 
