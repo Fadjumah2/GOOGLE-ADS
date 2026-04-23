@@ -17,13 +17,13 @@
  * describing what they did or why they skipped.
  */
 
-const gbpClient = require('./gbpClient');
-const { generateText } = require('./geminiClient');
-const { getTopicForToday, CLINIC } = require('./contentStrategy');
-const { validatePost, validateReviewReply, isSafeForAutoReply } = require('./policyGuard');
-const auditLog = require('./auditLog');
-const { normalizePosts, normalizeReviews, normalizeProfile } = require('./normalizeGBPResponse');
-const logger = require('./logger');
+import gbpClient from './gbpClient.js';
+import { generateText } from './geminiClient.js';
+import { getTopicForToday, CLINIC } from './contentStrategy.js';
+import { validatePost, validateReviewReply, isSafeForAutoReply } from './policyGuard.js';
+import * as auditLog from './auditLog.js';
+import { normalizePosts, normalizeReviews, normalizeProfile } from './normalizeGBPResponse.js';
+import logger from './logger.js';
 
 /* ------------------------------------------------------------------ */
 /* Env / feature flags                                                */
@@ -45,6 +45,10 @@ function autoRepliesEnabled() {
 function dailyPostEnabled() {
     return (process.env.AUTOPILOT_DAILY_POST || 'true').toLowerCase() !== 'false';
 }
+function postIntervalHours() {
+    const h = parseInt(process.env.POST_INTERVAL_HOURS || '48', 10);
+    return isNaN(h) || h < 1 ? 48 : h;
+}
 
 const ATTEMPTS_PER_DAY = 3;   // regenerate up to 3 times if policyGuard rejects
 const LANGUAGE = 'en';
@@ -53,28 +57,27 @@ const LANGUAGE = 'en';
 /* Helpers                                                            */
 /* ------------------------------------------------------------------ */
 
-function startOfUtcDay(d = new Date()) {
-    const t = new Date(d);
-    t.setUTCHours(0, 0, 0, 0);
-    return t.getTime();
+function postWindowStart() {
+    return Date.now() - postIntervalHours() * 60 * 60 * 1000;
 }
 
 /**
- * Query GBP for posts and report whether any LIVE post was created today (UTC).
- * This is the authoritative idempotency check — more trustworthy than our log.
+ * Query GBP for posts and report whether any LIVE post was published within
+ * the last POST_INTERVAL_HOURS hours (default 48). This is the authoritative
+ * idempotency check — more trustworthy than the local audit log.
  */
 async function alreadyPostedToday() {
+    const windowStart = postWindowStart();
     const raw = await gbpClient.getPosts();
     if (raw && raw.error) {
         // On API failure, fall back to the local audit log so we still avoid duplicates.
         const logged = auditLog.findLast('autopilot.post.published');
-        return logged && Date.parse(logged.ts) >= startOfUtcDay();
+        return logged && Date.parse(logged.ts) >= windowStart;
     }
     const { posts } = normalizePosts(raw);
-    const today = startOfUtcDay();
     return posts.some(p => {
         const t = p.createTime ? Date.parse(p.createTime) : 0;
-        return t >= today && p.state !== 'REJECTED';
+        return t >= windowStart && p.state !== 'REJECTED';
     });
 }
 
@@ -117,7 +120,7 @@ async function runDailyPost({ force = false } = {}) {
         try {
             if (await alreadyPostedToday()) {
                 report.skipped = true;
-                report.reasons.push('already_posted_today');
+                report.reasons.push('already_posted_recently');
                 auditLog.record('autopilot.post.skipped', report);
                 return report;
             }
@@ -415,7 +418,7 @@ async function getStatus() {
     };
 }
 
-module.exports = {
+export {
     runDailyPost,
     runAutoReplies,
     runDailyCycle,

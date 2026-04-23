@@ -1,5 +1,5 @@
-const gbpClient = require('../../utils/gbpClient');
-const logger = require('../../utils/logger');
+import gbpClient from '../../utils/gbpClient.js';
+import logger from '../../utils/logger.js';
 
 const handleDeletePost = async (req, res) => {
   const { postName } = req.body;
@@ -26,4 +26,4 @@ const handleDeletePost = async (req, res) => {
   }
 };
 
-module.exports = handleDeletePost;
+export default handleDeletePost;

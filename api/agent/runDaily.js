@@ -1,11 +1,11 @@
-const autonomous = require('../../utils/autonomousAgent');
-const logger = require('../../utils/logger');
+import * as autonomous from '../../utils/autonomousAgent.js';
+import logger from '../../utils/logger.js';
 
 /**
  * POST /api/agent/runDaily
  * Run the full autonomous daily cycle (post + replies) immediately.
  */
-module.exports = async (req, res) => {
+export default async (req, res) => {
     try {
         const summary = await autonomous.runDailyCycle({
             source: 'manual',

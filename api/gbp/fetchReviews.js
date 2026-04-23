@@ -1,6 +1,6 @@
-const gbpClient = require('../../utils/gbpClient');
-const { normalizeReviews } = require('../../utils/normalizeGBPResponse');
-const logger = require('../../utils/logger');
+import gbpClient from '../../utils/gbpClient.js';
+import { normalizeReviews } from '../../utils/normalizeGBPResponse.js';
+import logger from '../../utils/logger.js';
 
 const handleGetReviews = async (req, res) => {
   try {
@@ -24,4 +24,4 @@ const handleGetReviews = async (req, res) => {
   }
 };
 
-module.exports = handleGetReviews;
+export default handleGetReviews;

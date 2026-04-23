@@ -1,7 +1,8 @@
-const axios = require('axios');
-const { google } = require('googleapis');
-const { HttpsProxyAgent } = require('https-proxy-agent');
-const { refreshAccessToken } = require('../services/googleAuthService');
+import axios from 'axios';
+import { google } from 'googleapis';
+import { Storage } from '@google-cloud/storage';
+import { HttpsProxyAgent } from 'https-proxy-agent';
+import { refreshAccessToken } from '../services/googleAuthService.js';
 
 // Use proxy agent if HTTPS_PROXY is set (needed in some hosted environments)
 const proxyUrl = process.env.HTTPS_PROXY || process.env.https_proxy;
@@ -32,7 +33,7 @@ const getFreshAccessToken = async () => {
     return access_token;
 };
 
-const getAuthenticatedClient = async () => {
+export const getAuthenticatedClient = async () => {
     const accessToken = await getFreshAccessToken();
     const auth = new google.auth.OAuth2();
     auth.setCredentials({ access_token: accessToken });
@@ -46,6 +47,11 @@ const getAuthenticatedClient = async () => {
 const extractGBPError = (error, operation) => {
     const status = error.response?.status;
     const gbp = error.response?.data?.error;
+
+    // Log full Google error body for server-side diagnosis
+    if (error.response?.data) {
+        console.error(`[GBP ERROR] ${operation} HTTP ${status}:`, JSON.stringify(error.response.data));
+    }
 
     let errorCode;
     switch (status) {
@@ -62,6 +68,7 @@ const extractGBPError = (error, operation) => {
         success: false,
         error: errorCode,
         message: gbp?.message || error.message,
+        ...(gbp?.status  && { googleStatus: gbp.status }),
         ...(gbp?.details && { details: gbp.details })
     };
 };
@@ -72,7 +79,7 @@ const extractGBPError = (error, operation) => {
  * Fetches reviews. Supports pagination via optional pageToken.
  * Response includes nextPageToken when more pages exist.
  */
-const fetchReviews = async (pageToken = null) => {
+export const fetchReviews = async (pageToken = null) => {
     try {
         await throttle();
         const accessToken = await getFreshAccessToken();
@@ -107,7 +114,7 @@ const fetchReviews = async (pageToken = null) => {
  * reviewName must be the full resource path: accounts/{id}/locations/{id}/reviews/{id}
  * Payload: { comment: "..." } per GBP Reviews API v1 ReviewReply resource spec.
  */
-const replyToReview = async (reviewName, replyText) => {
+export const replyToReview = async (reviewName, replyText) => {
     try {
         await throttle();
         const accessToken = await getFreshAccessToken();
@@ -135,7 +142,7 @@ const replyToReview = async (reviewName, replyText) => {
  * reviewName must be the full resource path: accounts/{id}/locations/{id}/reviews/{id}
  * Note: This deletes the OWNER REPLY only — customer reviews cannot be deleted via API.
  */
-const deleteReviewReply = async (reviewName) => {
+export const deleteReviewReply = async (reviewName) => {
     try {
         await throttle();
         const accessToken = await getFreshAccessToken();
@@ -160,7 +167,7 @@ const deleteReviewReply = async (reviewName) => {
 /**
  * Fetches the location profile from the Business Information API.
  */
-const getProfile = async () => {
+export const getProfile = async () => {
     try {
         await throttle();
         const accessToken = await getFreshAccessToken();
@@ -168,7 +175,20 @@ const getProfile = async () => {
 
         if (!locationId) throw new Error('GBP_LOCATION_ID is not set.');
 
-        const url = `https://mybusinessbusinessinformation.googleapis.com/v1/locations/${locationId}?readMask=name,title,storefrontAddress,websiteUri,regularHours,phoneNumbers,categories,metadata,latlng,description`;
+        const readMask = [
+            'name',
+            'title',
+            'storefrontAddress',
+            'websiteUri',
+            'regularHours',
+            'phoneNumbers',
+            'categories',
+            'metadata',
+            'latlng',
+            'profile'
+        ].join(',');
+
+        const url = `https://mybusinessbusinessinformation.googleapis.com/v1/locations/${locationId}?readMask=${encodeURIComponent(readMask)}`;
 
         const response = await axios.get(url, {
             ...axiosConfig,
@@ -184,10 +204,74 @@ const getProfile = async () => {
 };
 
 /**
- * Fetches 28-day performance metrics using the multi-metric endpoint.
- * Metrics: impressions, calls, website clicks, directions, and bookings.
+ * Resolves a requested period into a concrete {startDate, endDate} range.
+ * Accepted options (in order of precedence):
+ *   - startDate + endDate: ISO strings (YYYY-MM-DD) or Date objects
+ *   - period: 'last7' | 'last28' | 'last90' | 'last180' | 'last365' |
+ *             'thisMonth' | 'lastMonth' | 'thisYear'
+ *   - days: positive integer (1..540) — rolling window ending today
+ * Defaults to last 28 days if nothing is supplied.
+ * Google's Business Profile Performance API supports ~18 months of history,
+ * so we cap `days` at 540.
  */
-const getInsights = async () => {
+const resolveInsightsRange = ({ startDate, endDate, period, days } = {}) => {
+    const MAX_DAYS = 540;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    if (startDate && endDate) {
+        const s = startDate instanceof Date ? startDate : new Date(startDate);
+        const e = endDate   instanceof Date ? endDate   : new Date(endDate);
+        if (isNaN(s) || isNaN(e)) throw new Error('Invalid startDate/endDate — use YYYY-MM-DD.');
+        if (s > e) throw new Error('startDate must be on or before endDate.');
+        return { startDate: s, endDate: e };
+    }
+
+    if (period) {
+        const e = new Date(today);
+        const s = new Date(today);
+        switch (period) {
+            case 'last7':      s.setDate(e.getDate() - 7);   return { startDate: s, endDate: e };
+            case 'last28':     s.setDate(e.getDate() - 28);  return { startDate: s, endDate: e };
+            case 'last90':     s.setDate(e.getDate() - 90);  return { startDate: s, endDate: e };
+            case 'last180':    s.setDate(e.getDate() - 180); return { startDate: s, endDate: e };
+            case 'last365':    s.setDate(e.getDate() - 365); return { startDate: s, endDate: e };
+            case 'thisMonth': {
+                const start = new Date(today.getFullYear(), today.getMonth(), 1);
+                return { startDate: start, endDate: e };
+            }
+            case 'lastMonth': {
+                const start = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+                const end   = new Date(today.getFullYear(), today.getMonth(), 0);
+                return { startDate: start, endDate: end };
+            }
+            case 'thisYear': {
+                const start = new Date(today.getFullYear(), 0, 1);
+                return { startDate: start, endDate: e };
+            }
+            default:
+                throw new Error(`Unknown period: ${period}`);
+        }
+    }
+
+    const n = Math.max(1, Math.min(MAX_DAYS, parseInt(days, 10) || 28));
+    const e = new Date(today);
+    const s = new Date(today);
+    s.setDate(e.getDate() - n);
+    return { startDate: s, endDate: e };
+};
+
+/**
+ * Fetches performance metrics for a configurable date range (default: last 28 days).
+ * Metrics: impressions, calls, website clicks, directions, and bookings.
+ *
+ * @param {Object} [options]
+ * @param {string|Date} [options.startDate] - ISO date (YYYY-MM-DD) or Date
+ * @param {string|Date} [options.endDate]   - ISO date (YYYY-MM-DD) or Date
+ * @param {string}      [options.period]    - named preset, see resolveInsightsRange
+ * @param {number}      [options.days]      - rolling window size, 1..540
+ */
+export const getInsights = async (options = {}) => {
     try {
         await throttle();
         const accessToken = await getFreshAccessToken();
@@ -195,45 +279,74 @@ const getInsights = async () => {
 
         if (!locationId) throw new Error('GBP_LOCATION_ID is not set.');
 
-        const endDate = new Date();
-        const startDate = new Date();
-        startDate.setDate(endDate.getDate() - 28);
+        const { startDate, endDate } = resolveInsightsRange(options);
 
-        const url = `https://businessprofileperformance.googleapis.com/v1/locations/${locationId}:fetchMultiDailyMetricsTimeSeries`;
+        // fetchMultiDailyMetricsTimeSeries is a GET endpoint — all params go in the query string.
+        const metrics = [
+            'BUSINESS_IMPRESSIONS_DESKTOP_MAPS',
+            'BUSINESS_IMPRESSIONS_DESKTOP_SEARCH',
+            'BUSINESS_IMPRESSIONS_MOBILE_MAPS',
+            'BUSINESS_IMPRESSIONS_MOBILE_SEARCH',
+            'CALL_CLICKS',
+            'WEBSITE_CLICKS',
+            'BUSINESS_DIRECTION_REQUESTS'
+        ];
+        const params = new URLSearchParams();
+        metrics.forEach(m => params.append('dailyMetrics', m));
+        params.append('dailyRange.start_date.year',  startDate.getFullYear());
+        params.append('dailyRange.start_date.month', startDate.getMonth() + 1);
+        params.append('dailyRange.start_date.day',   startDate.getDate());
+        params.append('dailyRange.end_date.year',    endDate.getFullYear());
+        params.append('dailyRange.end_date.month',   endDate.getMonth() + 1);
+        params.append('dailyRange.end_date.day',     endDate.getDate());
 
-        const payload = {
-            dailyMetrics: [
-                'BUSINESS_IMPRESSIONS_DESKTOP_MAPS',
-                'BUSINESS_IMPRESSIONS_DESKTOP_SEARCH',
-                'BUSINESS_IMPRESSIONS_MOBILE_MAPS',
-                'BUSINESS_IMPRESSIONS_MOBILE_SEARCH',
-                'CALL_CLICKS',
-                'WEBSITE_CLICKS',
-                'DIRECTIONS_REQUESTS'
-            ],
-            dailyRange: {
-                start_date: {
-                    year: startDate.getFullYear(),
-                    month: startDate.getMonth() + 1,
-                    day: startDate.getDate()
-                },
-                end_date: {
-                    year: endDate.getFullYear(),
-                    month: endDate.getMonth() + 1,
-                    day: endDate.getDate()
-                }
-            }
-        };
+        const url = `https://businessprofileperformance.googleapis.com/v1/locations/${locationId}:fetchMultiDailyMetricsTimeSeries?${params.toString()}`;
 
-        const response = await axios.post(url, payload, {
+        const response = await axios.get(url, {
             ...axiosConfig,
             headers: { Authorization: `Bearer ${accessToken}` },
-            timeout: 10000
+            timeout: 15000
         });
 
-        return response.data;
+        const iso = (d) => d.toISOString().slice(0, 10);
+        return {
+            ...response.data,
+            range: { startDate: iso(startDate), endDate: iso(endDate) }
+        };
     } catch (error) {
-        console.error('Failed to fetch insights:', error.message);
+        const status = error.response?.status;
+        const googleMsg = error.response?.data?.error?.message || error.message;
+        console.error(`Failed to fetch insights (HTTP ${status}):`, googleMsg);
+        if (error.response?.data) {
+            console.error('[GBP INSIGHTS] full error body:', JSON.stringify(error.response.data));
+        }
+
+        if (status === 404) {
+            return {
+                success: false,
+                error: 'PERFORMANCE_API_NOT_FOUND',
+                message:
+                    'The Business Profile Performance API returned 404 (Not Found). ' +
+                    'Two likely causes: ' +
+                    '(1) The "Business Profile Performance API" is not enabled for your GCP project — ' +
+                    'go to console.cloud.google.com/apis/library, search "Business Profile Performance API", and enable it. ' +
+                    '(2) The location is not verified on Google — unverified locations have no performance data. ' +
+                    `Google error detail: ${googleMsg}`
+            };
+        }
+
+        if (status === 403) {
+            return {
+                success: false,
+                error: 'PERFORMANCE_API_PERMISSION_DENIED',
+                message:
+                    'Permission denied fetching performance data. ' +
+                    'Ensure the "Business Profile Performance API" is enabled in your GCP project and ' +
+                    'the service account (or OAuth user) has the business.manage scope. ' +
+                    `Google error detail: ${googleMsg}`
+            };
+        }
+
         return extractGBPError(error, 'GET_INSIGHTS');
     }
 };
@@ -241,7 +354,7 @@ const getInsights = async () => {
 /**
  * Fetches verification status for the location.
  */
-const getVerificationStatus = async () => {
+export const getVerificationStatus = async () => {
     try {
         await throttle();
         const accessToken = await getFreshAccessToken();
@@ -267,7 +380,7 @@ const getVerificationStatus = async () => {
 /**
  * Fetches available attributes for the location based on its category.
  */
-const getAttributes = async () => {
+export const getAttributes = async () => {
     try {
         await throttle();
         const accessToken = await getFreshAccessToken();
@@ -293,7 +406,7 @@ const getAttributes = async () => {
 /**
  * Fetches local posts. Supports pagination via optional pageToken.
  */
-const getPosts = async (pageToken = null) => {
+export const getPosts = async (pageToken = null) => {
     try {
         await throttle();
         const accessToken = await getFreshAccessToken();
@@ -323,7 +436,7 @@ const getPosts = async (pageToken = null) => {
 /**
  * Lists all locations for the account.
  */
-const getLocations = async () => {
+export const getLocations = async () => {
     try {
         await throttle();
         const accessToken = await getFreshAccessToken();
@@ -353,7 +466,7 @@ const getLocations = async () => {
  * Updatable fields: title, storefrontAddress, websiteUri, regularHours,
  *   phoneNumbers, categories, description, serviceAreas, attributes
  */
-const updateProfile = async (updateData, updateMask) => {
+export const updateProfile = async (updateData, updateMask) => {
     try {
         await throttle();
         const accessToken = await getFreshAccessToken();
@@ -384,7 +497,7 @@ const updateProfile = async (updateData, updateMask) => {
  * Required fields: languageCode (e.g. "en"), summary (max 1500 chars)
  * Optional: callToAction { actionType, url }, media [{ sourceUrl, mediaFormat }]
  */
-const createPost = async (postData) => {
+export const createPost = async (postData) => {
     try {
         await throttle();
         const accessToken = await getFreshAccessToken();
@@ -415,7 +528,7 @@ const createPost = async (postData) => {
  * Deletes a local post.
  * postName must be the full resource path: accounts/{id}/locations/{id}/localPosts/{id}
  */
-const deletePost = async (postName) => {
+export const deletePost = async (postName) => {
     try {
         await throttle();
         const accessToken = await getFreshAccessToken();
@@ -438,13 +551,13 @@ const deletePost = async (postName) => {
 // NOTE: fetchQuestions and replyToQuestion are NOT called from the route handlers
 // (those return 410 immediately) but are kept here for documentation purposes.
 // The My Business Q&A API was permanently discontinued on November 3, 2025.
-const fetchQuestions = async () => ({
+export const fetchQuestions = async () => ({
     success: false,
     error: 'API_DISCONTINUED',
     message: 'The Google Business Profile Q&A API was permanently discontinued on November 3, 2025.'
 });
 
-const replyToQuestion = async () => ({
+export const replyToQuestion = async () => ({
     success: false,
     error: 'API_DISCONTINUED',
     message: 'The Google Business Profile Q&A API was permanently discontinued on November 3, 2025.'
@@ -453,7 +566,7 @@ const replyToQuestion = async () => ({
 /**
  * Lists media items. Supports pagination via optional pageToken.
  */
-const listMedia = async (pageToken = null) => {
+export const listMedia = async (pageToken = null) => {
     try {
         await throttle();
         const accessToken = await getFreshAccessToken();
@@ -483,7 +596,7 @@ const listMedia = async (pageToken = null) => {
 /**
  * Fetches the service list (via the location resource's serviceItems field).
  */
-const getServiceList = async () => {
+export const getServiceList = async () => {
     try {
         await throttle();
         const accessToken = await getFreshAccessToken();
@@ -512,7 +625,7 @@ const getServiceList = async () => {
  * serviceListData must be a GBP location resource fragment: { serviceItems: [...] }
  * Default updateMask covers the full serviceItems array.
  */
-const updateServiceList = async (serviceListData, updateMask = 'serviceItems') => {
+export const updateServiceList = async (serviceListData, updateMask = 'serviceItems') => {
     try {
         await throttle();
         const accessToken = await getFreshAccessToken();
@@ -543,7 +656,7 @@ const updateServiceList = async (serviceListData, updateMask = 'serviceItems') =
  * mediaData must include: mediaFormat ("PHOTO" | "VIDEO"), sourceUrl (string),
  * and locationAssociation.category (e.g. "COVER_PHOTO", "PROFILE_COVER", "ADDITIONAL")
  */
-const uploadMedia = async (mediaData) => {
+export const uploadMedia = async (mediaData) => {
     try {
         await throttle();
         const accessToken = await getFreshAccessToken();
@@ -574,7 +687,7 @@ const uploadMedia = async (mediaData) => {
  * Deletes a media item by its full resource name.
  * mediaId must be the full resource path: accounts/{id}/locations/{id}/media/{id}
  */
-const deleteMedia = async (mediaId) => {
+export const deleteMedia = async (mediaId) => {
     try {
         await throttle();
         const accessToken = await getFreshAccessToken();
@@ -594,25 +707,54 @@ const deleteMedia = async (mediaId) => {
     }
 };
 
-module.exports = {
+export const getSignedUrl = async (filename, contentType) => {
+    try {
+        await throttle();
+        const storage = new Storage({
+            authClient: await getAuthenticatedClient(),
+        });
+        const bucketName = process.env.GCS_BUCKET_NAME;
+
+        if (!bucketName) {
+            throw new Error('GCS_BUCKET_NAME environment variable not set.');
+        }
+
+        const options = {
+            version: 'v4',
+            action: 'write',
+            expires: Date.now() + 15 * 60 * 1000, // 15 minutes
+            contentType,
+        };
+
+        const [url] = await storage.bucket(bucketName).file(filename).getSignedUrl(options);
+        const publicUrl = `https://storage.googleapis.com/${bucketName}/${filename}`;
+        return { success: true, signedUrl: url, publicUrl };
+    } catch (error) {
+        console.error('Failed to get signed URL:', error.message);
+        return extractGBPError(error, 'GET_SIGNED_URL');
+    }
+};
+
+export default {
+    getAuthenticatedClient,
     fetchReviews,
     replyToReview,
     deleteReviewReply,
     getProfile,
     getInsights,
-    getPosts,
-    getLocations,
     getVerificationStatus,
     getAttributes,
+    getPosts,
+    getLocations,
     updateProfile,
     createPost,
     deletePost,
     fetchQuestions,
     replyToQuestion,
     listMedia,
-    uploadMedia,
-    deleteMedia,
     getServiceList,
     updateServiceList,
-    getAuthenticatedClient
+    uploadMedia,
+    deleteMedia,
+    getSignedUrl
 };

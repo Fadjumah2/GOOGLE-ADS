@@ -1,5 +1,5 @@
-const autonomous = require('../../utils/autonomousAgent');
-const logger = require('../../utils/logger');
+import * as autonomous from '../../utils/autonomousAgent.js';
+import logger from '../../utils/logger.js';
 
 /**
  * POST /api/agent/autoReplyReviews
@@ -7,7 +7,7 @@ const logger = require('../../utils/logger');
  *
  * Drafts and publishes replies to safe (4★/5★, unanswered) reviews.
  */
-module.exports = async (req, res) => {
+export default async (req, res) => {
     try {
         const { maxReplies, dryRun } = req.body || {};
         if (dryRun) process.env.AUTOPILOT_REPLY_DRY_RUN = 'true';

@@ -1,23 +1,4 @@
-/**
- * Policy guard — the safety net between the AI and the public internet.
- *
- * Before the autonomous agent publishes ANY content on the Google Business
- * Profile, the text must pass through these checks. If a check fails the
- * content is rejected and logged; it is never re-tried silently.
- *
- * Rules enforced:
- *   1. Length limits (GBP hard caps: post 1500 chars, reply 4096 chars).
- *   2. Banned medical-claim terms (cure, guarantee, miracle, etc.).
- *   3. No leaked customer PII (email, phone that isn't the clinic's own).
- *   4. No URLs other than the clinic's own website / tel:.
- *   5. Plain-English only (reject non-ASCII-heavy output, emoji, hashtags).
- *   6. No profanity or aggressive language in review replies.
- *   7. No reply to <=2-star reviews without human approval (handled by orchestrator).
- *
- * All helpers return { ok: boolean, reasons: string[], cleaned?: string }.
- */
-
-const { CONTENT_CONSTRAINTS, CLINIC } = require('./contentStrategy');
+import { CONTENT_CONSTRAINTS, CLINIC } from './contentStrategy.js';
 
 const POST_MAX = 1400;
 const POST_MIN = 40;
@@ -72,7 +53,7 @@ function containsAny(text, list) {
 /**
  * Extract URLs that are NOT the clinic's own website / google maps / tel:.
  */
-function foreignUrls(text) {
+export function foreignUrls(text) {
     const matches = (text || '').match(URL_RE) || [];
     return matches.filter(u => {
         try {
@@ -91,7 +72,7 @@ function foreignUrls(text) {
 /**
  * Validate a post body that the autonomous agent wants to publish.
  */
-function validatePost(text) {
+export function validatePost(text) {
     const reasons = [];
     const trimmed = (text || '').trim();
 
@@ -136,7 +117,7 @@ function validatePost(text) {
 /**
  * Validate an auto-generated review reply.
  */
-function validateReviewReply(text, reviewMeta = {}) {
+export function validateReviewReply(text, reviewMeta = {}) {
     const reasons = [];
     const trimmed = (text || '').trim();
 
@@ -184,7 +165,7 @@ function validateReviewReply(text, reviewMeta = {}) {
  *     or emergencies — those need a human.
  *   - Skip very long complaints (>600 chars).
  */
-function isSafeForAutoReply(review) {
+export function isSafeForAutoReply(review) {
     const reasons = [];
     const stars = starToNumber(review.starRating);
     if (stars === null || stars < 4) reasons.push('low_or_unknown_star_rating');
@@ -207,11 +188,5 @@ function starToNumber(rating) {
     return map[(rating || '').toString().toUpperCase()] ?? null;
 }
 
-module.exports = {
-    validatePost,
-    validateReviewReply,
-    isSafeForAutoReply,
-    foreignUrls,
-    // exported for tests / debugging
-    _internal: { STRONG_CLAIMS, SUPERLATIVES, POST_MAX, REPLY_MAX },
-};
+export const _internal = { STRONG_CLAIMS, SUPERLATIVES, POST_MAX, REPLY_MAX };
+

@@ -1,5 +1,5 @@
-const gbpClient = require('../../utils/gbpClient');
-const logger = require('../../utils/logger');
+import gbpClient from '../../utils/gbpClient.js';
+import logger from '../../utils/logger.js';
 
 const handleDeleteReviewReply = async (req, res) => {
   const { reviewName } = req.body;
@@ -26,4 +26,4 @@ const handleDeleteReviewReply = async (req, res) => {
   }
 };
 
-module.exports = handleDeleteReviewReply;
+export default handleDeleteReviewReply;

@@ -1,4 +1,4 @@
-const logger = require('../../utils/logger');
+import logger from '../../utils/logger.js';
 
 // Google discontinued the My Business Q&A API on November 3, 2025.
 // The feature has been replaced by AI-powered Ask Maps (Gemini).
@@ -14,4 +14,4 @@ const handleReplyToQuestion = async (req, res) => {
   });
 };
 
-module.exports = handleReplyToQuestion;
+export default handleReplyToQuestion;

@@ -1,6 +1,6 @@
-require('dotenv').config();
-const { GoogleGenerativeAI } = require('@google/generative-ai');
-const gbpClient = require('./gbpClient');
+import 'dotenv/config';
+import { GoogleGenerativeAI } from '@google/generative-ai';
+import * as gbpClient from './gbpClient.js';
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
@@ -22,7 +22,8 @@ Behaviour rules:
 - Be professional, concise, and action-oriented
 - When fetching data, summarize key findings — don't dump raw JSON at the user
 - For reviews, highlight star distribution, unresponded reviews, and sentiment trends
-- For insights, interpret the numbers meaningfully (e.g. "searches are up 12% vs last period")
+- For insights, interpret the numbers meaningfully (e.g. "searches are up 12% vs last period"). The get_insights tool supports arbitrary ranges — use the period, days, or startDate/endDate arguments to match what the user asked for (e.g. "this month", "last 90 days", "last year"). Only say data is unavailable if the API returns truly empty results.
+- If get_insights returns a PERFORMANCE_API_NOT_FOUND or PERFORMANCE_API_PERMISSION_DENIED error, do NOT say "try again later". Instead, tell the user the two actionable steps: (1) enable the "Business Profile Performance API" in their GCP console at console.cloud.google.com/apis/library, and (2) confirm the business location is verified on Google Maps. Quote the Google error detail from the message field if present.
 - When taking write actions (replies, posts, profile updates), confirm exactly what you did
 - Always think like a business growth advisor, not just a data retriever
 - If the user asks for "everything" or a "full overview", use the get_all_gbp_data tool`;
@@ -158,8 +159,30 @@ const toolDeclarations = [
   },
   {
     name: 'get_insights',
-    description: 'Fetch 28-day performance metrics: search impressions, Maps views, website clicks, phone call clicks, and direction requests.',
-    parameters: { type: 'object', properties: {}, required: [] }
+    description: 'Fetch Google Business Profile performance metrics (search impressions, Maps views, website clicks, phone call clicks, direction requests) for any supported range. Defaults to the last 28 days. Google exposes up to ~18 months of history.',
+    parameters: {
+      type: 'object',
+      properties: {
+        period: {
+          type: 'string',
+          enum: ['last7', 'last28', 'last90', 'last180', 'last365', 'thisMonth', 'lastMonth', 'thisYear'],
+          description: 'Named preset range. Use this for requests like "this month", "last 90 days", "this year".'
+        },
+        days: {
+          type: 'integer',
+          description: 'Rolling window ending today, in days (1–540). Ignored if period or startDate/endDate is supplied.'
+        },
+        startDate: {
+          type: 'string',
+          description: 'Explicit start date in YYYY-MM-DD. Must be paired with endDate.'
+        },
+        endDate: {
+          type: 'string',
+          description: 'Explicit end date in YYYY-MM-DD. Must be paired with startDate.'
+        }
+      },
+      required: []
+    }
   }
 ];
 
@@ -237,8 +260,14 @@ async function executeTool(name, args) {
         await gbpClient.deleteMedia(args.mediaId);
         return { success: true };
 
-      case 'get_insights':
-        return await gbpClient.getInsights();
+      case 'get_insights': {
+        const opts = {};
+        if (args.startDate) opts.startDate = args.startDate;
+        if (args.endDate)   opts.endDate   = args.endDate;
+        if (args.period)    opts.period    = args.period;
+        if (args.days)      opts.days      = args.days;
+        return await gbpClient.getInsights(opts);
+      }
 
       default:
         return { error: `Unknown tool: ${name}` };
@@ -273,7 +302,7 @@ async function sendWithRetry(chat, payload, maxRetries = 1) {
   }
 }
 
-async function runAgentChat(userMessage, history = []) {
+export async function runAgentChat(userMessage, history = []) {
   const model = genAI.getGenerativeModel({
     model: 'gemini-2.5-flash',
     tools: [{ functionDeclarations: toolDeclarations }],
@@ -305,6 +334,12 @@ async function runAgentChat(userMessage, history = []) {
     response = result.response;
   }
 
+  // If Gemini still wants more tools after hitting the cap, force a text reply.
+  if (response.functionCalls() && response.functionCalls().length > 0) {
+    result = await sendWithRetry(chat, [{ text: 'Please summarize your findings now and respond with text only.' }]);
+    response = result.response;
+  }
+
   // Safely extract reply text — response.text() throws on safety blocks or empty candidates
   let reply;
   try {
@@ -318,19 +353,12 @@ async function runAgentChat(userMessage, history = []) {
 
   const updatedHistory = await chat.getHistory();
 
-  // Strip function-call and function-response parts before returning to client.
-  // Raw tool results (reviews JSON, posts JSON, etc.) can be 50k+ tokens each.
-  // Sending them back on every subsequent turn burns through free-tier quota instantly.
-  // Keeping only human-readable text turns is sufficient for conversational context.
-  const lightHistory = updatedHistory
-    .map(turn => {
-      const textParts = (turn.parts || []).filter(p => typeof p.text === 'string' && p.text.trim());
-      return textParts.length > 0 ? { role: turn.role, parts: textParts } : null;
-    })
-    .filter(Boolean)
-    .slice(-10); // cap at last 10 text turns (~5 exchanges)
+  // We keep the full history so the model knows what it has already fetched
+  // and doesn't hit rate limits by re-fetching the same data every turn.
+  // We only cap the total length to keep the context window manageable.
+  const trimmedHistory = updatedHistory.slice(-20);
 
-  return { reply, history: lightHistory };
+  return { reply, history: trimmedHistory };
 }
 
 /**
@@ -338,7 +366,7 @@ async function runAgentChat(userMessage, history = []) {
  * orchestrator to draft a post body or a review reply that will be
  * validated by policyGuard before publishing.
  */
-async function generateText(prompt, { temperature = 0.7, maxOutputTokens = 400 } = {}) {
+export async function generateText(prompt, { temperature = 0.7, maxOutputTokens = 400 } = {}) {
   const model = genAI.getGenerativeModel({
     model: 'gemini-2.5-flash',
     generationConfig: { temperature, maxOutputTokens },
@@ -360,4 +388,3 @@ async function generateText(prompt, { temperature = 0.7, maxOutputTokens = 400 }
   }
 }
 
-module.exports = { runAgentChat, generateText };

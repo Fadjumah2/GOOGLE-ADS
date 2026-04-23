@@ -1,12 +1,12 @@
-const autonomous = require('../../utils/autonomousAgent');
-const { getUpcomingTopics } = require('../../utils/contentStrategy');
-const logger = require('../../utils/logger');
+import * as autonomous from '../../utils/autonomousAgent.js';
+import { getUpcomingTopics } from '../../utils/contentStrategy.js';
+import logger from '../../utils/logger.js';
 
 /**
  * GET /api/agent/status
  * Snapshot of autonomous-agent state for the Autopilot UI panel.
  */
-module.exports = async (req, res) => {
+export default async (req, res) => {
     try {
         const status = await autonomous.getStatus();
         res.json({

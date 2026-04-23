@@ -1,4 +1,4 @@
-const normalizeReviews = (data) => {
+export const normalizeReviews = (data) => {
   if (!data || !Array.isArray(data.reviews)) {
     return {
       success: false,
@@ -32,7 +32,7 @@ const normalizeReviews = (data) => {
   };
 };
 
-const normalizeQuestions = (data) => {
+export const normalizeQuestions = (data) => {
   if (!data || !Array.isArray(data.questions)) {
     return {
       success: false,
@@ -54,7 +54,7 @@ const normalizeQuestions = (data) => {
   };
 };
 
-const normalizeMedia = (data) => {
+export const normalizeMedia = (data) => {
   if (!data || !Array.isArray(data.mediaItems)) {
     return {
       success: false,
@@ -76,7 +76,7 @@ const normalizeMedia = (data) => {
   };
 };
 
-const normalizeServices = (data) => {
+export const normalizeServices = (data) => {
   if (!data || !Array.isArray(data.serviceItems)) {
     return {
       success: false,
@@ -114,7 +114,7 @@ const normalizeServices = (data) => {
   };
 };
 
-const normalizeProfile = (data) => {
+export const normalizeProfile = (data) => {
   if (!data) {
     return {
       success: false,
@@ -129,7 +129,7 @@ const normalizeProfile = (data) => {
       title: data.title || '',
       address: data.storefrontAddress || {},
       website: data.websiteUri || '',
-      description: data.description || '',
+      description: (data.profile && data.profile.description) || data.description || '',
       phone: data.phoneNumbers ? (data.phoneNumbers.primaryPhone || '') : '',
       categories: data.categories ? {
         primary: data.categories.primaryCategory ? data.categories.primaryCategory.displayName : '',
@@ -142,25 +142,36 @@ const normalizeProfile = (data) => {
   };
 };
 
-const normalizeInsights = (data) => {
+export const normalizeInsights = (data) => {
   if (!data) return { success: false, error: "NO_DATA", insights: [] };
 
-  // Handle various Performance API response formats
-  // 1. fetchMultiDailyMetricsTimeSeries (array)
-  // 2. getDailyMetricsTimeSeries (direct object with dailyMetricTimeSeries)
-  // 3. getDailyMetricsTimeSeries (direct object with timeSeries/datedValues)
-  
-  let seriesArray = [];
-  if (data.multiDailyMetricTimeSeries) {
-    seriesArray = data.multiDailyMetricTimeSeries;
+  // fetchMultiDailyMetricsTimeSeries returns:
+  //   { multiDailyMetricTimeSeries: [
+  //       { dailyMetricTimeSeries: [
+  //           { dailyMetric, timeSeries: { datedValues: [{date, value}] } }
+  //       ] }
+  //   ] }
+  // getDailyMetricsTimeSeries (single-metric) returns the inner object directly.
+
+  const entries = [];
+  if (Array.isArray(data.multiDailyMetricTimeSeries)) {
+    for (const outer of data.multiDailyMetricTimeSeries) {
+      const inner = outer?.dailyMetricTimeSeries;
+      if (Array.isArray(inner)) {
+        for (const series of inner) entries.push(series);
+      } else if (outer?.timeSeries) {
+        entries.push(outer);
+      }
+    }
+  } else if (data.timeSeries) {
+    entries.push(data);
   } else if (data.dailyMetricTimeSeries) {
-    seriesArray = [data];
-  } else if (data.timeSeries && data.timeSeries.datedValues) {
-    // This is the format seen in the recent test (direct timeSeries object)
-    seriesArray = [data];
+    if (Array.isArray(data.dailyMetricTimeSeries)) {
+      for (const series of data.dailyMetricTimeSeries) entries.push(series);
+    }
   }
 
-  if (seriesArray.length === 0) {
+  if (entries.length === 0) {
     return {
       success: true,
       message: "No performance data found for the selected period.",
@@ -168,35 +179,18 @@ const normalizeInsights = (data) => {
     };
   }
 
-  const insights = seriesArray.map(metricSeries => {
-    // Format A: dailyMetricTimeSeries[0]
-    const seriesA = metricSeries.dailyMetricTimeSeries && metricSeries.dailyMetricTimeSeries[0];
-    // Format B: timeSeries
-    const seriesB = metricSeries.timeSeries;
-
-    if (seriesA) {
-      const dailyValues = seriesA.dailyValues || [];
-      const total = dailyValues.reduce((sum, dv) => sum + (parseInt(dv.value) || 0), 0);
-      return {
-        metric: seriesA.dailyMetric,
-        total: total,
-        raw: dailyValues
-      };
-    }
-
-    if (seriesB) {
-      const datedValues = seriesB.datedValues || [];
-      const total = datedValues.reduce((sum, dv) => sum + (parseInt(dv.value) || 0), 0);
-      // Metric is usually provided in the request, but we can label it here
-      return {
-        metric: 'BUSINESS_IMPRESSIONS_DESKTOP_MAPS', // Default if not in response
-        total: total,
-        raw: datedValues
-      };
-    }
-
-    return null;
-  }).filter(Boolean);
+  const insights = entries.map(series => {
+    const datedValues =
+      series?.timeSeries?.datedValues ||
+      series?.dailyValues ||
+      [];
+    const total = datedValues.reduce((sum, dv) => sum + (parseInt(dv.value, 10) || 0), 0);
+    return {
+      metric: series?.dailyMetric || series?.metric || null,
+      total,
+      raw: datedValues
+    };
+  });
 
   return {
     success: true,
@@ -204,7 +198,7 @@ const normalizeInsights = (data) => {
   };
 };
 
-const normalizePosts = (data) => {
+export const normalizePosts = (data) => {
   if (!data || !Array.isArray(data.localPosts)) {
     return {
       success: false,
@@ -231,12 +225,3 @@ const normalizePosts = (data) => {
   };
 };
 
-module.exports = { 
-  normalizeReviews, 
-  normalizeQuestions, 
-  normalizeMedia, 
-  normalizeServices,
-  normalizeProfile,
-  normalizeInsights,
-  normalizePosts
-};

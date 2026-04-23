@@ -1,10 +1,10 @@
-const auditLog = require('../../utils/auditLog');
+import * as auditLog from '../../utils/auditLog.js';
 
 /**
  * GET /api/agent/auditLog?limit=100&prefix=autopilot.
  * Returns the recent audit-log entries (autonomous actions, rejections, cycles).
  */
-module.exports = async (req, res) => {
+export default async (req, res) => {
     const limit = Math.min(parseInt(req.query.limit, 10) || 100, 500);
     const prefix = req.query.prefix || null;
     res.json({
@@ -13,3 +13,4 @@ module.exports = async (req, res) => {
         entries: auditLog.recent(limit, prefix),
     });
 };
+
