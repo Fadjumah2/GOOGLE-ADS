@@ -67,7 +67,12 @@ export default function App() {
 
   const [reviews, setReviews] = useState([]);
   useEffect(() => {
-    API.reviews().then(data => setReviews(data.reviews || []));
+    API.reviews()
+      .then(data => setReviews(data.reviews || []))
+      .catch(e => {
+        console.error('Failed to fetch reviews:', e);
+        setReviews([]);
+      });
   }, []);
 
   const [searchTerm, setSearchTerm] = useState("");
