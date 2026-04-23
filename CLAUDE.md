@@ -223,15 +223,15 @@ curl -s https://www.trendexhub.com/api/gbp/getProfile \
 
 ---
 
-## Last Session Snapshot (auto-updated: 2026-04-20 21:57 UTC)
-- **Branch:** `main`
+## Last Session Snapshot (auto-updated: 2026-04-23 20:06 UTC)
+- **Branch:** `claude/fix-broken-site-p6yqp`
 - **Last 5 commits:**
 ```
-3be4747 chore: auto-update CLAUDE.md session snapshot [2026-04-20 21:55 UTC]
-b299429 fix: resolve endless thinking and silent failures in AI chat
-b673d5d chore: auto-update CLAUDE.md session snapshot [2026-04-20 21:50 UTC]
-0f1f7df chore: auto-update CLAUDE.md session snapshot [2026-04-20 21:46 UTC]
-d7fa764 chore: auto-update CLAUDE.md session snapshot [2026-04-20 21:45 UTC]
+6323521 fix: complete ESM migration to fix FUNCTION_INVOCATION_FAILED crash
+af9852d refactor: update server.js for Vite and convert more modules to ESM
+af19116 refactor: convert util and api modules to ES modules
+0111f98 refactor: migrate to vite for frontend build
+31ae70b fix(frontend): add missing onClick handlers
 ```
 - **Billing:** Activated and linked to project `468613454814` ✅
 - **APIs enabled:** My Business Reviews, Business Information, Account Management ✅
