@@ -14,18 +14,25 @@ export function DashboardView({ onNavigate, reviews, lastRefreshed }) {
   const [running, setRunning] = useState(false);
 
   const load = useCallback(async (p = period) => {
-    setLoading(true);
-    const [pro, ins, ap, log] = await Promise.all([
-      API.profile().catch(() => null),
-      API.insights(p).catch(() => null),
-      API.apStatus().catch(() => null),
-      API.auditLog(10).catch(() => null),
-    ]);
-    setProfile(pro?.profile || null);
-    setInsights(ins?.insights || []);
-    setApData(ap || null);
-    setAuditEntries(log?.entries || []);
-    setLoading(false);
+    try {
+      setLoading(true);
+      console.log('[Dashboard] Loading data...');
+      const [pro, ins, ap, log] = await Promise.all([
+        API.profile().catch(e => { console.error('[Dashboard] profile error:', e); return null; }),
+        API.insights(p).catch(e => { console.error('[Dashboard] insights error:', e); return null; }),
+        API.apStatus().catch(e => { console.error('[Dashboard] apStatus error:', e); return null; }),
+        API.auditLog(10).catch(e => { console.error('[Dashboard] auditLog error:', e); return null; }),
+      ]);
+      console.log('[Dashboard] Data loaded:', { pro, ins, ap, log });
+      setProfile(pro?.profile || null);
+      setInsights(ins?.insights || []);
+      setApData(ap || null);
+      setAuditEntries(log?.entries || []);
+      setLoading(false);
+    } catch (e) {
+      console.error('[Dashboard] Load failed:', e);
+      setLoading(false);
+    }
   }, [period]);
 
   useEffect(() => { load(period); }, [period, lastRefreshed]);

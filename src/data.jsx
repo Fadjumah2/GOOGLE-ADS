@@ -7,22 +7,35 @@ export const API = {
   clearKey: () => localStorage.removeItem(STORAGE_KEY),
 
   call: async (path, opts = {}) => {
-    const res = await fetch(path, {
-      ...opts,
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": API.getKey(),
-        ...(opts.headers || {})
+    console.log(`[API] ${opts.method || 'GET'} ${path}`);
+    try {
+      const res = await fetch(path, {
+        ...opts,
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": API.getKey(),
+          ...(opts.headers || {})
+        }
+      });
+      console.log(`[API] Response: ${res.status} ${res.statusText}`);
+
+      if (res.status === 401) {
+        console.error('[API] Unauthorized - clearing key and re-prompting');
+        API.clearKey();
+        window.dispatchEvent(new CustomEvent("synapse-unauthorized"));
+        throw Object.assign(new Error("Unauthorized - please re-enter your API key"), { status: 401 });
       }
-    });
-    if (res.status === 401) {
-      API.clearKey();
-      window.dispatchEvent(new CustomEvent("synapse-unauthorized"));
-      throw Object.assign(new Error("Unauthorized"), { status: 401 });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const errMsg = json.error || json.message || `HTTP ${res.status}`;
+        console.error(`[API] Error: ${errMsg}`);
+        throw new Error(errMsg);
+      }
+      return json;
+    } catch (e) {
+      console.error(`[API] Exception on ${path}:`, e);
+      throw e;
     }
-    const json = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(json.error || json.message || `HTTP ${res.status}`);
-    return json;
   },
 
   // ── GBP ──

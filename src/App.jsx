@@ -145,17 +145,32 @@ export default function App() {
   useEffect(() => {
     const checkAuth = () => {
       if (!API.getKey()) {
+        console.log('[Auth] No API key found, opening auth modal');
         openModal(<ApiKeyModal />);
+      } else {
+        console.log('[Auth] API key found, proceeding');
       }
     };
     checkAuth();
 
-    const handleUnauthorized = () => {
+    const handleUnauthorized = (e) => {
+      console.log('[Auth] Unauthorized event received, prompting for new key');
       openModal(<ApiKeyModal />);
     };
 
     window.addEventListener("synapse-unauthorized", handleUnauthorized);
-    return () => window.removeEventListener("synapse-unauthorized", handleUnauthorized);
+
+    // Global error handler for uncaught promise rejections
+    const handleUnhandledRejection = (e) => {
+      console.error('[Global] Unhandled promise rejection:', e.reason);
+      showToast(`Error: ${e.reason?.message || e.reason}`, "bad");
+    };
+    window.addEventListener("unhandledrejection", handleUnhandledRejection);
+
+    return () => {
+      window.removeEventListener("synapse-unauthorized", handleUnauthorized);
+      window.removeEventListener("unhandledrejection", handleUnhandledRejection);
+    };
   }, []);
 
   const cfg = VIEWS[view];
