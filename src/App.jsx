@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { API } from './data.jsx';
 import { T, Btn, Ico, ModalHost, ToastHost, openModal, showToast } from './primitives.jsx';
 import { Sidebar, Topbar } from './shell.jsx';
-import { AutopilotView, ChatView, AuditView, PostsView, ReviewsView, MediaView, ServicesView, AnalyticsView } from './views.jsx';
+import { AutopilotView, ChatView, AuditView, PostsView, ReviewsView, MediaView, ServicesView, AnalyticsView, SettingsView } from './views.jsx';
 import { DashboardView } from './dashboard.jsx';
 
 class ErrorBoundary extends React.Component {
@@ -123,8 +123,9 @@ export default function App() {
     posts: { title: "Posts", sub: "Your published Google posts.", Comp: PostsView },
     reviews: { title: "Reviews", sub: `${totalReviews} total · ${unansweredReviews} awaiting action.`, Comp: ReviewsView },
     media: { title: "Media", sub: "Photos and videos on your listing.", Comp: MediaView },
-    services: { title: "Services", sub: "What patients see when they search.", Comp: ServicesView },
-    analytics: { title: "Analytics", sub: "Trends, response times, rating distribution.", Comp: AnalyticsView }
+    services:  { title: "Services",  sub: "What patients see when they search.", Comp: ServicesView },
+    analytics: { title: "Analytics", sub: "Trends, response times, rating distribution.", Comp: AnalyticsView },
+    settings:  { title: "Settings",  sub: "API key, business info, and feature flags.", Comp: SettingsView },
   };
 
   const isMobile = useIsMobile();

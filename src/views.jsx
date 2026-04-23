@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { API, starNum, starStr, relTime, fmtDate, fmtNum, auditTypeLabel, sparkFrom, findMetric } from './data.jsx';
-import { T, Card, CardHead, Pill, Skel, Mono, Btn, Ico, openModal, closeModal } from './primitives.jsx';
+import { T, Card, CardHead, Pill, Skel, Mono, Btn, Ico, openModal, closeModal, showToast } from './primitives.jsx';
 import { NewPostModal } from './NewPostModal.jsx';
 import { NewMediaModal } from './NewMediaModal.jsx';
 
@@ -665,6 +665,118 @@ export function ServicesView({ lastRefreshed }) {
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+export function SettingsView() {
+  const [keyVisible, setKeyVisible] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [newKey, setNewKey] = useState("");
+  const currentKey = API.getKey();
+  const masked = currentKey
+    ? currentKey.slice(0, 6) + "••••••••••••••••••••" + currentKey.slice(-4)
+    : "(none set)";
+
+  const handleSave = () => {
+    if (!newKey.trim()) return;
+    API.setKey(newKey.trim());
+    setEditing(false);
+    setNewKey("");
+    showToast("API key updated — reloading…", "good");
+    setTimeout(() => window.location.reload(), 900);
+  };
+
+  const handleClear = () => {
+    API.clearKey();
+    showToast("API key cleared", "warn");
+    setTimeout(() => window.location.reload(), 900);
+  };
+
+  return (
+    <div style={{ padding: "28px 32px 60px", display: "flex", flexDirection: "column", gap: 20, maxWidth: 640 }}>
+
+      {/* API Key */}
+      <Card>
+        <CardHead eyebrow="Authentication" title="API key" sub="Authenticates every request from this browser to your Synapse backend." />
+        {editing ? (
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            <input
+              type="password"
+              value={newKey}
+              onChange={e => setNewKey(e.target.value)}
+              onKeyDown={e => e.key === "Enter" && handleSave()}
+              placeholder="Paste new API key…"
+              autoFocus
+              style={{ padding: "10px 12px", border: `1px solid ${T.lineStrong}`, borderRadius: 6, fontFamily: T.fontMono, fontSize: 13, background: T.bgElev, color: T.ink, outline: "none", width: "100%", boxSizing: "border-box" }}
+            />
+            <div style={{ display: "flex", gap: 8 }}>
+              <Btn tone="solid" size="sm" onClick={handleSave}>Save</Btn>
+              <Btn size="sm" onClick={() => { setEditing(false); setNewKey(""); }}>Cancel</Btn>
+            </div>
+          </div>
+        ) : (
+          <>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 12px", background: T.bgSoft, borderRadius: 6, border: `1px solid ${T.line}`, marginBottom: 12 }}>
+              <Mono size={12} style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {keyVisible ? currentKey : masked}
+              </Mono>
+              <Btn size="sm" onClick={() => setKeyVisible(v => !v)}>
+                <Ico name="eye" size={12} /> {keyVisible ? "Hide" : "Show"}
+              </Btn>
+              <Btn size="sm" onClick={() => setEditing(true)}>
+                <Ico name="edit" size={12} /> Change
+              </Btn>
+            </div>
+            <Btn size="sm" tone="danger" onClick={handleClear}>
+              <Ico name="trash" size={12} /> Clear key &amp; sign out
+            </Btn>
+          </>
+        )}
+      </Card>
+
+      {/* Business info */}
+      <Card>
+        <CardHead eyebrow="Business" title="Eritage ENT Care" sub="Entebbe, Uganda · Google Business Profile." />
+        <div style={{ display: "flex", flexDirection: "column", border: `1px solid ${T.line}`, borderRadius: 8, overflow: "hidden" }}>
+          {[
+            { k: "Business name",    v: "Eritage ENT Care" },
+            { k: "Location",         v: "Entebbe, Uganda" },
+            { k: "Platform",         v: "Google Business Profile" },
+            { k: "Owner",            v: "Fahad Juma" },
+            { k: "Synapse version",  v: "1.0.0 MVP" },
+          ].map((row, i) => (
+            <div key={row.k} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 16px", borderTop: i > 0 ? `1px solid ${T.line}` : "none" }}>
+              <Mono size={11}>{row.k}</Mono>
+              <span style={{ fontSize: 13, fontWeight: 500 }}>{row.v}</span>
+            </div>
+          ))}
+        </div>
+      </Card>
+
+      {/* Autopilot flags */}
+      <Card>
+        <CardHead eyebrow="Autopilot" title="Feature flags" sub="Set in Vercel → Project Settings → Environment Variables. Require a redeploy to take effect." />
+        <div style={{ display: "flex", flexDirection: "column", border: `1px solid ${T.line}`, borderRadius: 8, overflow: "hidden" }}>
+          {[
+            { k: "AUTOPILOT_ENABLED",       desc: "Master kill switch" },
+            { k: "AUTOPILOT_DAILY_POST",     desc: "Publish one post per day at 09:00 EAT" },
+            { k: "AUTOPILOT_AUTO_REPLY",     desc: "Auto-reply to safe 4★/5★ reviews" },
+            { k: "AUTOPILOT_POST_DRY_RUN",   desc: "Generate posts but don't publish" },
+            { k: "AUTOPILOT_REPLY_DRY_RUN",  desc: "Draft replies but don't send" },
+            { k: "CRON_SECRET",              desc: "Bearer token for Vercel Cron auth" },
+          ].map((f, i) => (
+            <div key={f.k} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 16px", borderTop: i > 0 ? `1px solid ${T.line}` : "none" }}>
+              <div>
+                <Mono size={11} color={T.ink}>{f.k}</Mono>
+                <div style={{ fontSize: 12, color: T.ink60, marginTop: 3 }}>{f.desc}</div>
+              </div>
+              <Pill tone="neutral">Vercel env</Pill>
+            </div>
+          ))}
+        </div>
+      </Card>
+
     </div>
   );
 }
