@@ -11,8 +11,7 @@ function loadFromDisk() {
     try {
         if (!fs.existsSync(LOG_PATH)) return;
         const raw = fs.readFileSync(LOG_PATH, 'utf8');
-        raw.split('
-').forEach(line => {
+        raw.split('\n').forEach(line => {
             if (!line.trim()) return;
             try {
                 const entry = JSON.parse(line);
@@ -41,8 +40,7 @@ export function record(type, payload = {}) {
 
     if (fileWritable) {
         try {
-            fs.appendFileSync(LOG_PATH, JSON.stringify(entry) + '
-');
+            fs.appendFileSync(LOG_PATH, JSON.stringify(entry) + '\n');
         } catch {
             fileWritable = false;
         }
