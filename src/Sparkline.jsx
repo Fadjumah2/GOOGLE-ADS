@@ -3,7 +3,7 @@ import { T } from './primitives.jsx';
 
 export function Sparkline({ data, color = T.accent, w = 80, h = 24 }) {
   const vals = (data || []).map(Number);
-  if (!vals.length) return null;
+  if (vals.length < 2) return null;
   const max = Math.max(...vals), min = Math.min(...vals);
   const range = max - min || 1;
   const pts = vals.map((v, i) => `${(i / (vals.length - 1)) * w},${h - ((v - min) / range) * h}`).join(" ");

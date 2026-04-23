@@ -33,6 +33,32 @@ class ErrorBoundary extends React.Component {
   }
 }
 
+class ViewErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+  static getDerivedStateFromError(e) {
+    return { hasError: true, error: e };
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{ padding: 48, textAlign: 'center', fontFamily: T.fontSans }}>
+          <div style={{ fontSize: 15, fontWeight: 500, color: T.bad }}>This page encountered an error.</div>
+          <div style={{ fontSize: 13, color: T.ink60, marginTop: 6 }}>{this.state.error?.message}</div>
+          <button
+            onClick={() => this.setState({ hasError: false, error: null })}
+            style={{ marginTop: 16, padding: '8px 16px', cursor: 'pointer', border: `1px solid ${T.lineStrong}`, borderRadius: 6, background: T.bgElev, fontFamily: T.fontSans, fontSize: 13 }}>
+            Try again
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 function useIsMobile() {
   const [m, setM] = useState(() => typeof window !== "undefined" && window.innerWidth < 900);
   useEffect(() => {
@@ -263,7 +289,9 @@ export default function App() {
           isMobile={isMobile}
         />
         <div style={{ flex: 1 }}>
-          <Comp isMobile={isMobile} reviews={reviews} searchTerm={searchTerm} lastRefreshed={lastRefreshed} />
+          <ViewErrorBoundary key={view}>
+            <Comp isMobile={isMobile} reviews={reviews} searchTerm={searchTerm} lastRefreshed={lastRefreshed} onNavigate={pickView} />
+          </ViewErrorBoundary>
         </div>
       </main>
 
