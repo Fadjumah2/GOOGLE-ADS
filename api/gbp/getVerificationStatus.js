@@ -1,5 +1,5 @@
-const gbpClient = require('../../utils/gbpClient');
-const logger = require('../../utils/logger');
+import gbpClient from '../../utils/gbpClient.js';
+import logger from '../../utils/logger.js';
 
 const handleGetVerificationStatus = async (req, res) => {
   try {
@@ -17,4 +17,4 @@ const handleGetVerificationStatus = async (req, res) => {
   }
 };
 
-module.exports = handleGetVerificationStatus;
+export default handleGetVerificationStatus;

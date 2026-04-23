@@ -1,6 +1,6 @@
-const gbpClient = require('../../utils/gbpClient');
-const { normalizeInsights } = require('../../utils/normalizeGBPResponse');
-const logger = require('../../utils/logger');
+import gbpClient from '../../utils/gbpClient.js';
+import { normalizeInsights } from '../../utils/normalizeGBPResponse.js';
+import logger from '../../utils/logger.js';
 
 const handleGetInsights = async (req, res) => {
   try {
@@ -29,4 +29,4 @@ const handleGetInsights = async (req, res) => {
   }
 };
 
-module.exports = handleGetInsights;
+export default handleGetInsights;

@@ -1,5 +1,5 @@
-const gbpClient = require('../../utils/gbpClient');
-const logger = require('../../utils/logger');
+import gbpClient from '../../utils/gbpClient.js';
+import logger from '../../utils/logger.js';
 
 const handleDeleteMedia = async (req, res) => {
   const { mediaId } = req.body;
@@ -26,4 +26,4 @@ const handleDeleteMedia = async (req, res) => {
   }
 };
 
-module.exports = handleDeleteMedia;
+export default handleDeleteMedia;

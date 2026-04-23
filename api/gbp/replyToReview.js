@@ -1,5 +1,5 @@
-const gbpClient = require('../../utils/gbpClient');
-const logger = require('../../utils/logger');
+import gbpClient from '../../utils/gbpClient.js';
+import logger from '../../utils/logger.js';
 
 const handleReplyToReview = async (req, res) => {
   const { reviewName, replyText } = req.body;
@@ -26,4 +26,4 @@ const handleReplyToReview = async (req, res) => {
   }
 };
 
-module.exports = handleReplyToReview;
+export default handleReplyToReview;

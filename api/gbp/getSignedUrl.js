@@ -1,5 +1,5 @@
-const gbpClient = require('../../utils/gbpClient');
-const logger = require('../../utils/logger');
+import gbpClient from '../../utils/gbpClient.js';
+import logger from '../../utils/logger.js';
 
 const handleGetSignedUrl = async (req, res) => {
   const { filename, contentType } = req.body;
@@ -22,4 +22,4 @@ const handleGetSignedUrl = async (req, res) => {
   }
 };
 
-module.exports = handleGetSignedUrl;
+export default handleGetSignedUrl;

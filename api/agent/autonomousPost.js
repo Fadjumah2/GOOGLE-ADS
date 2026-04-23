@@ -1,5 +1,5 @@
-const autonomous = require('../../utils/autonomousAgent');
-const logger = require('../../utils/logger');
+import * as autonomous from '../../utils/autonomousAgent.js';
+import logger from '../../utils/logger.js';
 
 /**
  * POST /api/agent/autonomousPost
@@ -8,7 +8,7 @@ const logger = require('../../utils/logger');
  * Manually trigger the daily-post job. Idempotent: if a post already went
  * live today, returns a "skipped" report unless force=true.
  */
-module.exports = async (req, res) => {
+export default async (req, res) => {
     try {
         const { force, dryRun } = req.body || {};
         if (dryRun) process.env.AUTOPILOT_POST_DRY_RUN = 'true';

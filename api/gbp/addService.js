@@ -1,5 +1,5 @@
-const gbpClient = require('../../utils/gbpClient');
-const logger = require('../../utils/logger');
+import gbpClient from '../../utils/gbpClient.js';
+import logger from '../../utils/logger.js';
 
 const handleAddService = async (req, res) => {
   const { serviceItem } = req.body;
@@ -37,4 +37,4 @@ const handleAddService = async (req, res) => {
   }
 };
 
-module.exports = handleAddService;
+export default handleAddService;

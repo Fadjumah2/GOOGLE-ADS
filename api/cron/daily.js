@@ -1,6 +1,6 @@
-const autonomous = require('../../utils/autonomousAgent');
-const auditLog = require('../../utils/auditLog');
-const logger = require('../../utils/logger');
+import * as autonomous from '../../utils/autonomousAgent.js';
+import * as auditLog from '../../utils/auditLog.js';
+import logger from '../../utils/logger.js';
 
 /**
  * GET /api/cron/daily
@@ -16,7 +16,7 @@ const logger = require('../../utils/logger');
  * entry. Behaviour on a MISSING secret: fails closed (refuses to run)
  * so a misconfigured deployment can't be abused as a posting bot.
  */
-module.exports = async (req, res) => {
+export default async (req, res) => {
     const expected = process.env.CRON_SECRET;
     const provided = (req.headers.authorization || '').replace(/^Bearer\s+/i, '').trim();
 

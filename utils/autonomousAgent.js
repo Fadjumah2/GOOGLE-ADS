@@ -17,13 +17,13 @@
  * describing what they did or why they skipped.
  */
 
-const gbpClient = require('./gbpClient');
-const { generateText } = require('./geminiClient');
-const { getTopicForToday, CLINIC } = require('./contentStrategy');
-const { validatePost, validateReviewReply, isSafeForAutoReply } = require('./policyGuard');
-const auditLog = require('./auditLog');
-const { normalizePosts, normalizeReviews, normalizeProfile } = require('./normalizeGBPResponse');
-const logger = require('./logger');
+import gbpClient from './gbpClient.js';
+import { generateText } from './geminiClient.js';
+import { getTopicForToday, CLINIC } from './contentStrategy.js';
+import { validatePost, validateReviewReply, isSafeForAutoReply } from './policyGuard.js';
+import * as auditLog from './auditLog.js';
+import { normalizePosts, normalizeReviews, normalizeProfile } from './normalizeGBPResponse.js';
+import logger from './logger.js';
 
 /* ------------------------------------------------------------------ */
 /* Env / feature flags                                                */
@@ -418,7 +418,7 @@ async function getStatus() {
     };
 }
 
-module.exports = {
+export {
     runDailyPost,
     runAutoReplies,
     runDailyCycle,
