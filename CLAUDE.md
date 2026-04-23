@@ -236,3 +236,4 @@ ddfcc17 fix: replace literal newlines with \n in auditLog.js (SyntaxError crash)
 - **Billing:** Activated and linked to project `468613454814` ✅
 - **APIs enabled:** My Business Reviews, Business Information, Account Management ✅
 - **Next action:** Start server and test all endpoints — run `node server.js &` then `curl -s http://localhost:3000/api/gbp/getProfile`
+
