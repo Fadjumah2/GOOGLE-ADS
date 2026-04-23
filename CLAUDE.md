@@ -223,17 +223,16 @@ curl -s https://www.trendexhub.com/api/gbp/getProfile \
 
 ---
 
-## Last Session Snapshot (auto-updated: 2026-04-23 20:22 UTC)
+## Last Session Snapshot (auto-updated: 2026-04-23 20:38 UTC)
 - **Branch:** `main`
 - **Last 5 commits:**
 ```
+90f782f chore: trigger Vercel redeploy for ESM fix
+cccdb7c chore: auto-update CLAUDE.md session snapshot [2026-04-23 20:22 UTC]
 2104a33 fix: add default export to gbpClient.js for ESM compatibility
 ef05ec7 Merge branch 'main' of http://127.0.0.1:22359/git/Fadjumah/Synapse
 30562c7 chore: auto-update CLAUDE.md session snapshot [2026-04-23 20:11 UTC]
-ddfcc17 fix: replace literal newlines with \n in auditLog.js (SyntaxError crash)
-318ec7d Merge pull request #9 from Fadjumah/claude/fix-broken-site-p6yqp
 ```
 - **Billing:** Activated and linked to project `468613454814` ✅
 - **APIs enabled:** My Business Reviews, Business Information, Account Management ✅
 - **Next action:** Start server and test all endpoints — run `node server.js &` then `curl -s http://localhost:3000/api/gbp/getProfile`
-
