@@ -223,15 +223,15 @@ curl -s https://www.trendexhub.com/api/gbp/getProfile \
 
 ---
 
-## Last Session Snapshot (auto-updated: 2026-04-23 20:07 UTC)
+## Last Session Snapshot (auto-updated: 2026-04-23 20:11 UTC)
 - **Branch:** `claude/fix-broken-site-p6yqp`
 - **Last 5 commits:**
 ```
+ddfcc17 fix: replace literal newlines with \n in auditLog.js (SyntaxError crash)
+7a3ae2f chore: auto-update CLAUDE.md session snapshot [2026-04-23 20:07 UTC]
 2e54ae9 chore: update package-lock.json
 290f7a4 chore: auto-update CLAUDE.md session snapshot [2026-04-23 20:06 UTC]
 6323521 fix: complete ESM migration to fix FUNCTION_INVOCATION_FAILED crash
-af9852d refactor: update server.js for Vite and convert more modules to ESM
-af19116 refactor: convert util and api modules to ES modules
 ```
 - **Billing:** Activated and linked to project `468613454814` ✅
 - **APIs enabled:** My Business Reviews, Business Information, Account Management ✅
