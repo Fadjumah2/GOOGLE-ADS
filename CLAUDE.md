@@ -223,15 +223,15 @@ curl -s https://www.trendexhub.com/api/gbp/getProfile \
 
 ---
 
-## Last Session Snapshot (auto-updated: 2026-04-23 20:41 UTC)
+## Last Session Snapshot (auto-updated: 2026-04-23 20:44 UTC)
 - **Branch:** `main`
 - **Last 5 commits:**
 ```
+9e90ab7 build: add built frontend to repository
+71a7403 fix: include dist directory in Vercel Node.js build
+1f82d13 chore: auto-update CLAUDE.md session snapshot [2026-04-23 20:41 UTC]
 6b03913 fix: add build command to vercel.json to build frontend with Vite
 8832019 chore: auto-update CLAUDE.md session snapshot [2026-04-23 20:38 UTC]
-90f782f chore: trigger Vercel redeploy for ESM fix
-cccdb7c chore: auto-update CLAUDE.md session snapshot [2026-04-23 20:22 UTC]
-2104a33 fix: add default export to gbpClient.js for ESM compatibility
 ```
 - **Billing:** Activated and linked to project `468613454814` ✅
 - **APIs enabled:** My Business Reviews, Business Information, Account Management ✅
