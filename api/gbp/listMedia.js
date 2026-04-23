@@ -1,6 +1,6 @@
-const gbpClient = require('../../utils/gbpClient');
-const { normalizeMedia } = require('../../utils/normalizeGBPResponse');
-const logger = require('../../utils/logger');
+import gbpClient from '../../utils/gbpClient.js';
+import { normalizeMedia } from '../../utils/normalizeGBPResponse.js';
+import logger from '../../utils/logger.js';
 
 const handleListMedia = async (req, res) => {
   try {
@@ -23,4 +23,4 @@ const handleListMedia = async (req, res) => {
   }
 };
 
-module.exports = handleListMedia;
+export default handleListMedia;

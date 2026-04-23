@@ -1,5 +1,5 @@
-const gbpClient = require('../../utils/gbpClient');
-const logger = require('../../utils/logger');
+import gbpClient from '../../utils/gbpClient.js';
+import logger from '../../utils/logger.js';
 
 const handleCreatePost = async (req, res) => {
   const { postData } = req.body;
@@ -45,4 +45,4 @@ const handleCreatePost = async (req, res) => {
   }
 };
 
-module.exports = handleCreatePost;
+export default handleCreatePost;

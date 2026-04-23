@@ -1,5 +1,5 @@
-const gbpClient = require('../../utils/gbpClient');
-const logger = require('../../utils/logger');
+import gbpClient from '../../utils/gbpClient.js';
+import logger from '../../utils/logger.js';
 
 const handleUploadMedia = async (req, res) => {
   const { mediaData } = req.body;
@@ -36,4 +36,4 @@ const handleUploadMedia = async (req, res) => {
   }
 };
 
-module.exports = handleUploadMedia;
+export default handleUploadMedia;

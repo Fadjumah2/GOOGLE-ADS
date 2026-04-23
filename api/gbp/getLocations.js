@@ -1,5 +1,5 @@
-const gbpClient = require('../../utils/gbpClient');
-const logger = require('../../utils/logger');
+import gbpClient from '../../utils/gbpClient.js';
+import logger from '../../utils/logger.js';
 
 const handleGetLocations = async (req, res) => {
   try {
@@ -18,4 +18,4 @@ const handleGetLocations = async (req, res) => {
   }
 };
 
-module.exports = handleGetLocations;
+export default handleGetLocations;

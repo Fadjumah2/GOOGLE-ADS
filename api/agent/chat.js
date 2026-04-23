@@ -1,4 +1,4 @@
-const { runAgentChat } = require('../../utils/geminiClient');
+import { runAgentChat } from '../../utils/geminiClient.js';
 
 const SERVER_TIMEOUT_MS = 50000; // 50s — ensures clean JSON response before Vercel's 60s kill
 
@@ -26,7 +26,7 @@ function friendlyError(err) {
   return 'The AI encountered an error. Please try again.';
 }
 
-module.exports = async (req, res) => {
+export default async (req, res) => {
   const { message, history = [] } = req.body;
 
   if (!message || typeof message !== 'string' || !message.trim()) {
