@@ -223,15 +223,15 @@ curl -s https://www.trendexhub.com/api/gbp/getProfile \
 
 ---
 
-## Last Session Snapshot (auto-updated: 2026-04-24 20:31 UTC)
+## Last Session Snapshot (auto-updated: 2026-04-24 20:45 UTC)
 - **Branch:** `main`
 - **Last 5 commits:**
 ```
+96f6485 fix: simplify vercel.json to let auto-detection serve static files
+23279b7 fix: use correct vercel.json schema to prevent API function auto-detection
+73878a0 chore: auto-update CLAUDE.md session snapshot [2026-04-24 20:31 UTC]
 8070613 fix: prevent Vercel from auto-detecting /api directory as separate functions
 24f0f36 chore: auto-update CLAUDE.md session snapshot [2026-04-24 20:15 UTC]
-86d5a11 Merge pull request #10 from Fadjumah/claude/fix-missing-index-html-l3fdr
-756258d fix: add proper build configuration to vite.config.js
-26c7963 fix: add proper build configuration to vite.config.js
 ```
 - **Billing:** Activated and linked to project `468613454814` ✅
 - **APIs enabled:** My Business Reviews, Business Information, Account Management ✅
