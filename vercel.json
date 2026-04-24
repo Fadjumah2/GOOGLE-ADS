@@ -5,7 +5,9 @@
     "server.js": {
       "maxDuration": 60,
       "includeFiles": "dist/**"
-    }
+    },
+    "api/**": false,
+    "api": false
   },
   "rewrites": [
     { "source": "/(.*)", "destination": "/server.js" }
