@@ -223,15 +223,15 @@ curl -s https://www.trendexhub.com/api/gbp/getProfile \
 
 ---
 
-## Last Session Snapshot (auto-updated: 2026-04-24 19:38 UTC)
+## Last Session Snapshot (auto-updated: 2026-04-24 20:15 UTC)
 - **Branch:** `main`
 - **Last 5 commits:**
 ```
+756258d fix: add proper build configuration to vite.config.js
+c10f1d8 fix: replace builds with functions in vercel.json so vite build runs on deploy
+ee1763d chore: auto-update CLAUDE.md session snapshot [2026-04-24 19:38 UTC]
 c0d6536 feat: add Home/Back navigation buttons and global search (⌘K)
 224d7e1 Merge branch 'claude/fix-app-crash-empty-pages-9DWT7'
-5596652 chore: auto-update CLAUDE.md session snapshot [2026-04-23 22:21 UTC]
-c2bd61d fix: resolve app crash on empty pages and missing onNavigate prop
-d8bb31c feat: implement Settings page
 ```
 - **Billing:** Activated and linked to project `468613454814` ✅
 - **APIs enabled:** My Business Reviews, Business Information, Account Management ✅
