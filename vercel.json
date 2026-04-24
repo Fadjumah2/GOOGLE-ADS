@@ -1,11 +1,14 @@
 {
   "version": 2,
   "buildCommand": "npm run build",
-  "builds": [
-    { "src": "server.js", "use": "@vercel/node", "config": { "maxDuration": 60, "includeFiles": "dist/**" } }
-  ],
-  "routes": [
-    { "src": "/(.*)", "dest": "/server.js" }
+  "functions": {
+    "server.js": {
+      "maxDuration": 60,
+      "includeFiles": "dist/**"
+    }
+  },
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/server.js" }
   ],
   "crons": [
     { "path": "/api/cron/daily", "schedule": "15 23 * * *" }
