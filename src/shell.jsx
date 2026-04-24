@@ -102,15 +102,32 @@ export function Sidebar({ view, setView, open, onClose, isMobile, reviewBadge, b
   );
 }
 
-export function Topbar({ view, title, sub, right, onMenu, sidebarOpen, isMobile }) {
+export function Topbar({ view, title, sub, right, onMenu, sidebarOpen, isMobile, canGoBack, goBack, onHome, onSearch }) {
+  const navBtnStyle = { width:36, height:36, borderRadius:8, border:`1px solid ${T.line}`, background:T.bgElev, display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", flexShrink:0, padding:0, transition:"background 0.15s" };
   return (
     <div style={{ position:"sticky", top:0, zIndex:10, background:`color-mix(in oklch, ${T.bg} 88%, transparent)`, backdropFilter:"blur(12px)", borderBottom:`1px solid ${T.line}`, padding: isMobile ? "14px 18px" : "16px 32px", display:"flex", alignItems:"center", justifyContent:"space-between", gap:12 }}>
-      <div style={{ display:"flex", alignItems:"center", gap:12, minWidth:0 }}>
-        <button onClick={onMenu} aria-label="Toggle sidebar" style={{ width:36, height:36, borderRadius:8, border:`1px solid ${T.line}`, background: sidebarOpen ? T.bgSoft : T.bgElev, display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", flexShrink:0, padding:0, transition:"background 0.15s" }}>
+      <div style={{ display:"flex", alignItems:"center", gap:8, minWidth:0 }}>
+        {/* Hamburger */}
+        <button onClick={onMenu} aria-label="Toggle sidebar" style={{ ...navBtnStyle, background: sidebarOpen ? T.bgSoft : T.bgElev }}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={T.ink} strokeWidth="1.75" strokeLinecap="round">
             <line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/>
           </svg>
         </button>
+        {/* Back button — visible only when there is navigation history */}
+        {canGoBack && (
+          <button onClick={goBack} aria-label="Go back" style={navBtnStyle}
+            onMouseOver={e => e.currentTarget.style.background = T.bgSoft}
+            onMouseOut={e => e.currentTarget.style.background = T.bgElev}>
+            <Ico name="arrowLeft" size={14} color={T.ink70} />
+          </button>
+        )}
+        {/* Home button — always visible */}
+        <button onClick={onHome} aria-label="Go to dashboard" style={{ ...navBtnStyle, background: view === "dashboard" ? T.bgSoft : T.bgElev }}
+          onMouseOver={e => e.currentTarget.style.background = T.bgSoft}
+          onMouseOut={e => e.currentTarget.style.background = view === "dashboard" ? T.bgSoft : T.bgElev}>
+          <Ico name="home" size={14} color={view === "dashboard" ? T.accent : T.ink70} />
+        </button>
+        {/* Title block */}
         <div style={{ minWidth:0 }}>
           {!isMobile && (
             <div style={{ display:"flex", alignItems:"center", gap:10 }}>
@@ -123,7 +140,17 @@ export function Topbar({ view, title, sub, right, onMenu, sidebarOpen, isMobile 
           {sub && !isMobile && <div style={{ fontSize:13, color:T.ink70, marginTop:4 }}>{sub}</div>}
         </div>
       </div>
-      <div style={{ display:"flex", gap:8, alignItems:"center", flexShrink:0 }}>{right}</div>
+      <div style={{ display:"flex", gap:8, alignItems:"center", flexShrink:0 }}>
+        {/* Mobile search icon */}
+        {isMobile && (
+          <button onClick={onSearch} aria-label="Search" style={navBtnStyle}
+            onMouseOver={e => e.currentTarget.style.background = T.bgSoft}
+            onMouseOut={e => e.currentTarget.style.background = T.bgElev}>
+            <Ico name="search" size={15} color={T.ink70} />
+          </button>
+        )}
+        {right}
+      </div>
     </div>
   );
 }

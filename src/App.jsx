@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { API } from './data.jsx';
-import { T, Btn, Ico, ModalHost, ToastHost, openModal, showToast } from './primitives.jsx';
+import { T, Btn, Ico, ModalHost, ToastHost, openModal, closeModal, showToast } from './primitives.jsx';
+import { GlobalSearch } from './GlobalSearch.jsx';
 import { Sidebar, Topbar } from './shell.jsx';
 import { AutopilotView, ChatView, AuditView, PostsView, ReviewsView, MediaView, ServicesView, AnalyticsView, SettingsView } from './views.jsx';
 import { DashboardView } from './dashboard.jsx';
@@ -117,6 +118,7 @@ function ApiKeyModal() {
 
 export default function App() {
   const [view, setView] = useState(() => localStorage.getItem("synapse-view") || "dashboard");
+  const [viewHistory, setViewHistory] = useState([]);
   useEffect(() => localStorage.setItem("synapse-view", view), [view]);
 
   const [reviews, setReviews] = useState([]);
@@ -204,9 +206,22 @@ export default function App() {
   const Comp = cfg.Comp;
 
   const pickView = (v) => {
+    if (v !== view) setViewHistory(h => [...h, view]);
     setView(v);
     if (isMobile) setSidebarOpen(false);
   };
+
+  const goBack = () => {
+    setViewHistory(h => {
+      if (h.length === 0) return h;
+      const prev = h[h.length - 1];
+      setView(prev);
+      if (isMobile) setSidebarOpen(false);
+      return h.slice(0, -1);
+    });
+  };
+
+  const canGoBack = viewHistory.length > 0;
 
   const handleRunNow = async () => {
     try {
@@ -215,24 +230,38 @@ export default function App() {
     } catch(e) { showToast(e.message, "bad"); }
   };
 
+  const openSearch = () => {
+    openModal(
+      <GlobalSearch
+        reviews={reviews}
+        onNavigate={(viewId) => { closeModal(); pickView(viewId); }}
+      />
+    );
+  };
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        openSearch();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [reviews]);
+
   const topbarRight = (
     <>
       {!isMobile && (
-        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 12px", border: `1px solid ${T.line}`, borderRadius: 6, background: T.bgElev }}>
+        <button
+          onClick={openSearch}
+          aria-label="Global search (⌘K)"
+          title="Search everything  ⌘K"
+          style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 12px", border: `1px solid ${T.line}`, borderRadius: 6, background: T.bgElev, cursor: "pointer", color: T.ink60, fontFamily: T.fontSans, fontSize: 12 }}>
           <Ico name="search" size={13} color={T.ink60} />
-          <input
-            type="text"
-            placeholder="Search..."
-            value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
-            style={{ border: "none", background: "transparent", outline: "none", color: T.ink }}
-          />
-          {searchTerm && (
-            <button onClick={() => setSearchTerm("")} style={{ border: "none", background: "transparent", cursor: "pointer" }}>
-              <Ico name="x" size={13} color={T.ink60} />
-            </button>
-          )}
-        </div>
+          <span>Search…</span>
+          <span style={{ fontFamily: T.fontMono, fontSize: 10, padding: "1px 5px", borderRadius: 4, border: `1px solid ${T.lineStrong}`, color: T.ink60, letterSpacing: "0.04em" }}>⌘K</span>
+        </button>
       )}
       {!isMobile && <Btn size="sm" onClick={() => setLastRefreshed(Date.now())}><Ico name="refresh" size={12} /> Sync</Btn>}
       <Btn size="sm" tone="solid" onClick={handleRunNow}>
@@ -287,6 +316,10 @@ export default function App() {
           onMenu={() => setSidebarOpen(o => !o)}
           sidebarOpen={sidebarOpen}
           isMobile={isMobile}
+          canGoBack={canGoBack}
+          goBack={goBack}
+          onHome={() => pickView("dashboard")}
+          onSearch={openSearch}
         />
         <div style={{ flex: 1 }}>
           <ViewErrorBoundary key={view}>

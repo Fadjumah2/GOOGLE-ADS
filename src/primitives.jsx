@@ -111,6 +111,8 @@ export const Ico = ({ name, size = 14, color = "currentColor", stroke = 1.5 }) =
     arrow:     "M5 12h14M13 5l7 7-7 7",
     arrowDown: "M6 9l6 6 6-6",
     arrowUp:   "M18 15l-6-6-6 6",
+    arrowLeft: "M19 12H5M12 19l-7-7 7-7",
+    home:      "M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H5a1 1 0 01-1-1V9.5zM9 21V12h6v9",
     alert:     "M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3l-8.5-14.1a2 2 0 00-3.4 0z",
     shield:    "M12 2l9 4v6c0 5-4 9-9 10-5-1-9-5-9-10V6z",
     bolt:      "M13 2L3 14h8v8l10-12h-8z",
