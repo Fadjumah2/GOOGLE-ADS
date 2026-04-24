@@ -223,15 +223,15 @@ curl -s https://www.trendexhub.com/api/gbp/getProfile \
 
 ---
 
-## Last Session Snapshot (auto-updated: 2026-04-23 22:21 UTC)
-- **Branch:** `claude/fix-app-crash-empty-pages-9DWT7`
+## Last Session Snapshot (auto-updated: 2026-04-24 19:38 UTC)
+- **Branch:** `main`
 - **Last 5 commits:**
 ```
+c0d6536 feat: add Home/Back navigation buttons and global search (⌘K)
+224d7e1 Merge branch 'claude/fix-app-crash-empty-pages-9DWT7'
+5596652 chore: auto-update CLAUDE.md session snapshot [2026-04-23 22:21 UTC]
 c2bd61d fix: resolve app crash on empty pages and missing onNavigate prop
 d8bb31c feat: implement Settings page
-ce610b4 chore: auto-update CLAUDE.md session snapshot [2026-04-23 21:51 UTC]
-aae7f1b chore: auto-update CLAUDE.md session snapshot [2026-04-23 21:50 UTC]
-934ce4a fix: resolve starStr crash and blank Services/Analytics pages
 ```
 - **Billing:** Activated and linked to project `468613454814` ✅
 - **APIs enabled:** My Business Reviews, Business Information, Account Management ✅
