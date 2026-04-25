@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Btn, T } from './primitives.jsx';
+import { Btn, T, showToast } from './primitives.jsx';
 import { API } from './data.jsx';
 
 export function NewMediaModal({ onClose }) {
@@ -8,23 +8,29 @@ export function NewMediaModal({ onClose }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleFileChange = (e) => {
-    setFile(e.target.files[0]);
+    setFile(e.target.files[0] || null);
   };
 
   const handleSubmit = async () => {
-    if (!file) return;
+    if (!file) {
+      showToast("Choose a file to upload.", "bad");
+      return;
+    }
 
     setIsSubmitting(true);
     try {
       const { signedUrl, publicUrl } = await API.getSignedUrl(file.name, file.type);
 
-      await fetch(signedUrl, {
+      const uploadRes = await fetch(signedUrl, {
         method: 'PUT',
         body: file,
         headers: {
           'Content-Type': file.type,
         },
       });
+      if (!uploadRes.ok) {
+        throw new Error(`Upload to storage failed (${uploadRes.status})`);
+      }
 
       await API.uploadMedia({
         mediaFormat: file.type.startsWith('video/') ? 'VIDEO' : 'PHOTO',
@@ -35,9 +41,11 @@ export function NewMediaModal({ onClose }) {
         }
       });
 
+      showToast("Media uploaded.", "good");
       onClose();
     } catch (e) {
       console.error(e);
+      showToast(e.message || "Failed to upload media.", "bad");
     } finally {
       setIsSubmitting(false);
     }

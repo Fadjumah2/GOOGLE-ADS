@@ -131,6 +131,13 @@ export default function App() {
       });
   }, []);
 
+  const [autopilotEnabled, setAutopilotEnabled] = useState(null);
+  useEffect(() => {
+    API.apStatus()
+      .then(data => setAutopilotEnabled(data?.status?.enabled ?? null))
+      .catch(() => setAutopilotEnabled(null));
+  }, []);
+
   const [searchTerm, setSearchTerm] = useState("");
   const [lastRefreshed, setLastRefreshed] = useState(Date.now());
 
@@ -299,6 +306,7 @@ export default function App() {
         open={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
         isMobile={isMobile}
+        reviewBadge={unansweredReviews}
         businessName={businessName}
         businessLocation={businessLocation}
       />
@@ -320,6 +328,7 @@ export default function App() {
           goBack={goBack}
           onHome={() => pickView("dashboard")}
           onSearch={openSearch}
+          autopilotEnabled={autopilotEnabled}
         />
         <div style={{ flex: 1 }}>
           <ViewErrorBoundary key={view}>

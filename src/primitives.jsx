@@ -92,7 +92,7 @@ export const Btn = ({ children, tone = "ghost", size = "md", onClick, style, dis
   );
 };
 
-export const Ico = ({ name, size = 14, color = "currentColor", stroke = 1.5 }) => {
+export const Ico = ({ name, size = 14, color = "currentColor", stroke = 1.5, style }) => {
   const paths = {
     dashboard: "M3 3h7v9H3zM14 3h7v5h-7zM14 12h7v9h-7zM3 16h7v5H3z",
     reviews:   "M12 2l3 6.5 7 .8-5.2 4.8 1.4 7L12 17.8 5.8 21l1.4-7L2 9.3l7-.8z",
@@ -140,9 +140,10 @@ export const Ico = ({ name, size = 14, color = "currentColor", stroke = 1.5 }) =
     lock:      "M19 11H5a2 2 0 00-2 2v7a2 2 0 002 2h14a2 2 0 002-2v-7a2 2 0 00-2-2zM17 11V7a5 5 0 00-10 0v4",
     unlock:    "M19 11H5a2 2 0 00-2 2v7a2 2 0 002 2h14a2 2 0 002-2v-7a2 2 0 00-2-2zM17 11V7a5 5 0 00-9.9-1",
     copy:      "M20 9h-9a2 2 0 00-2 2v9a2 2 0 002 2h9a2 2 0 002-2v-9a2 2 0 00-2-2zM5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1",
+    external:  "M14 3h7v7M21 3l-9 9M19 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h6",
   };
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={stroke} strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink:0 }}>
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={stroke} strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink:0, ...style }}>
       <path d={paths[name] || ""} />
     </svg>
   );
@@ -153,11 +154,11 @@ export const Skel = ({ w = "100%", h = 16, r = 6, style }) => (
   <div style={{ width: w, height: h, borderRadius: r, background: `linear-gradient(90deg, ${T.bgSoft} 25%, ${T.line} 50%, ${T.bgSoft} 75%)`, backgroundSize: "200% 100%", animation: "skel 1.4s ease infinite", ...style }} />
 );
 
-// Inject skeleton keyframe once
+// Inject skeleton + pulse keyframes once
 if (typeof document !== 'undefined' && !document.getElementById("skel-kf")) {
   const s = document.createElement("style");
   s.id = "skel-kf";
-  s.textContent = "@keyframes skel { 0%{background-position:200% 0} 100%{background-position:-200% 0} }";
+  s.textContent = "@keyframes skel { 0%{background-position:200% 0} 100%{background-position:-200% 0} } @keyframes pulse { 0%,80%,100%{opacity:0.2;transform:scale(0.8)} 40%{opacity:1;transform:scale(1.4)} }";
   document.head.appendChild(s);
 }
 

@@ -102,7 +102,10 @@ export function Sidebar({ view, setView, open, onClose, isMobile, reviewBadge, b
   );
 }
 
-export function Topbar({ view, title, sub, right, onMenu, sidebarOpen, isMobile, canGoBack, goBack, onHome, onSearch }) {
+export function Topbar({ view, title, sub, right, onMenu, sidebarOpen, isMobile, canGoBack, goBack, onHome, onSearch, autopilotEnabled }) {
+  const apDot = autopilotEnabled === true ? T.good : autopilotEnabled === false ? T.warn : T.ink40;
+  const apLabel = autopilotEnabled === true ? "AUTOPILOT ON" : autopilotEnabled === false ? "AUTOPILOT OFF" : "AUTOPILOT —";
+  const apColor = autopilotEnabled === true ? T.good : autopilotEnabled === false ? T.warn : T.ink60;
   const navBtnStyle = { width:36, height:36, borderRadius:8, border:`1px solid ${T.line}`, background:T.bgElev, display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", flexShrink:0, padding:0, transition:"background 0.15s" };
   return (
     <div style={{ position:"sticky", top:0, zIndex:10, background:`color-mix(in oklch, ${T.bg} 88%, transparent)`, backdropFilter:"blur(12px)", borderBottom:`1px solid ${T.line}`, padding: isMobile ? "14px 18px" : "16px 32px", display:"flex", alignItems:"center", justifyContent:"space-between", gap:12 }}>
@@ -132,8 +135,8 @@ export function Topbar({ view, title, sub, right, onMenu, sidebarOpen, isMobile,
           {!isMobile && (
             <div style={{ display:"flex", alignItems:"center", gap:10 }}>
               <Mono size={11}>synapse / {view}</Mono>
-              <span style={{ width:6, height:6, borderRadius:"50%", background:T.good }} />
-              <Mono size={10} color={T.good}>AUTOPILOT ON</Mono>
+              <span style={{ width:6, height:6, borderRadius:"50%", background:apDot }} />
+              <Mono size={10} color={apColor}>{apLabel}</Mono>
             </div>
           )}
           <div style={{ fontFamily:T.fontDisp, fontSize: isMobile ? 22 : 28, letterSpacing:"-0.02em", marginTop: isMobile ? 0 : 4, lineHeight:1.1, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{title}</div>

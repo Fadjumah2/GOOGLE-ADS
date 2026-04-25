@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Btn, T } from './primitives.jsx';
+import { Btn, T, showToast } from './primitives.jsx';
 import { API } from './data.jsx';
 
 export function NewPostModal({ onClose }) {
@@ -7,12 +7,18 @@ export function NewPostModal({ onClose }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async () => {
+    if (!summary.trim()) {
+      showToast("Post summary is required.", "bad");
+      return;
+    }
     setIsSubmitting(true);
     try {
       await API.createPost({ postData: { summary, languageCode: 'en' } });
+      showToast("Post created.", "good");
       onClose();
     } catch (e) {
       console.error(e);
+      showToast(e.message || "Failed to create post.", "bad");
     } finally {
       setIsSubmitting(false);
     }

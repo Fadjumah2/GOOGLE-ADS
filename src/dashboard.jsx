@@ -35,7 +35,7 @@ export function DashboardView({ onNavigate, reviews, lastRefreshed }) {
     }
   }, [period]);
 
-  useEffect(() => { load(period); }, [period, lastRefreshed]);
+  useEffect(() => { load(period); }, [period, lastRefreshed, load]);
 
   const handleRunNow = async () => {
     setRunning(true);
