@@ -223,15 +223,15 @@ curl -s https://www.trendexhub.com/api/gbp/getProfile \
 
 ---
 
-## Last Session Snapshot (auto-updated: 2026-04-25 21:51 UTC)
+## Last Session Snapshot (auto-updated: 2026-04-25 21:56 UTC)
 - **Branch:** `claude/implement-feature-usage-tcfS9`
 - **Last 5 commits:**
 ```
+9f4b758 chore: update CLAUDE.md session snapshot
 7f5c731 feat(frontend): forced re-auth, 5-min idle timeout, dark theme, Media + Sync fixes
 4d8f0d3 fix(vercel): collapse /api into a single function and stop chore-commit floods
 ec2cefa chore: auto-update CLAUDE.md session snapshot [2026-04-25 16:02 UTC]
 ef4d61e fix(vercel): make build config explicit so deploys don't stall in Queue
-0917c11 chore: auto-update CLAUDE.md session snapshot [2026-04-25 15:53 UTC]
 ```
 - **Billing:** Activated and linked to project `468613454814` ✅
 - **APIs enabled:** My Business Reviews, Business Information, Account Management ✅
