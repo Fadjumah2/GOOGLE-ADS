@@ -1,7 +1,16 @@
 {
   "version": 2,
+  "framework": "vite",
   "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "installCommand": "npm install",
   "crons": [
     { "path": "/api/cron/daily", "schedule": "15 23 * * *" }
-  ]
+  ],
+  "git": {
+    "deploymentEnabled": {
+      "main": true
+    }
+  }
 }
+
