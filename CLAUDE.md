@@ -223,15 +223,15 @@ curl -s https://www.trendexhub.com/api/gbp/getProfile \
 
 ---
 
-## Last Session Snapshot (auto-updated: 2026-04-25 12:00 UTC)
+## Last Session Snapshot (auto-updated: 2026-04-25 15:52 UTC)
 - **Branch:** `main`
 - **Last 5 commits:**
 ```
+5c83976 fix(frontend): repair UI bugs across primitives, shell, views, modals
+1eb7e3c fix: remove dist from git tracking and add to .gitignore
+b8e7277 chore: auto-update CLAUDE.md session snapshot [2026-04-25 12:00 UTC]
 57aa806 chore: auto-update CLAUDE.md session snapshot [2026-04-25 11:59 UTC]
 002e424 chore: auto-update CLAUDE.md session snapshot [2026-04-24 20:46 UTC]
-420040b chore: auto-update CLAUDE.md session snapshot [2026-04-24 20:45 UTC]
-96f6485 fix: simplify vercel.json to let auto-detection serve static files
-23279b7 fix: use correct vercel.json schema to prevent API function auto-detection
 ```
 - **Billing:** Activated and linked to project `468613454814` ✅
 - **APIs enabled:** My Business Reviews, Business Information, Account Management ✅
