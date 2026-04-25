@@ -366,6 +366,41 @@ export function PostsView({ searchTerm, lastRefreshed }) {
   );
 }
 
+function MediaTile({ item, index }) {
+  const type = (item.type || item.mediaFormat || "").toUpperCase();
+  const isVideo = type === "VIDEO";
+  const url = item.thumbnailUrl || item.googleUrl || item.mediaUrl || item.sourceUrl || null;
+  const [broken, setBroken] = useState(false);
+  const showImage = !!url && !broken;
+  const placeholder = `repeating-linear-gradient(${45 + index * 15}deg, oklch(0.32 0.02 ${50 + index * 10}), oklch(0.32 0.02 ${50 + index * 10}) 4px, oklch(0.28 0.02 ${50 + index * 10}) 4px, oklch(0.28 0.02 ${50 + index * 10}) 12px)`;
+  return (
+    <div style={{
+      aspectRatio: "1",
+      background: showImage ? T.bgSoft : placeholder,
+      borderRadius: 8, border: `1px solid ${T.line}`,
+      position: "relative", overflow: "hidden"
+    }}>
+      {showImage && (
+        <img
+          src={url}
+          alt={item.description || (isVideo ? "video" : "photo")}
+          loading="lazy"
+          onError={() => setBroken(true)}
+          style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+        />
+      )}
+      {isVideo && (
+        <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: 40, height: 40, borderRadius: "50%", background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <Ico name="play" size={16} color={T.bg} />
+        </div>
+      )}
+      <div style={{ position: "absolute", bottom: 8, left: 8, padding: "2px 6px", borderRadius: 4, background: "rgba(0,0,0,0.55)" }}>
+        <Mono size={9} color={T.ink80}>{isVideo ? "[ video ]" : "[ photo ]"}</Mono>
+      </div>
+    </div>
+  );
+}
+
 export function MediaView({ searchTerm, lastRefreshed }) {
   const [loading, setLoading] = useState(true);
   const [media, setMedia] = useState([]);
@@ -389,8 +424,8 @@ export function MediaView({ searchTerm, lastRefreshed }) {
     return description.includes(lowerSearchTerm);
   });
 
-  const photoCount = filteredMedia.filter(m => (m.mediaFormat || "").toUpperCase() === "PHOTO").length;
-  const videoCount = filteredMedia.filter(m => (m.mediaFormat || "").toUpperCase() === "VIDEO").length;
+  const photoCount = filteredMedia.filter(m => (m.type || m.mediaFormat || "").toUpperCase() === "PHOTO").length;
+  const videoCount = filteredMedia.filter(m => (m.type || m.mediaFormat || "").toUpperCase() === "VIDEO").length;
 
   return (
     <div style={{ padding: "28px 32px 60px" }}>
@@ -406,29 +441,7 @@ export function MediaView({ searchTerm, lastRefreshed }) {
         <Card><Mono size={12}>No media found. Upload photos or videos to get started.</Mono></Card>
       ) : (
         <div data-keep-grid="4" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}>
-          {filteredMedia.map((m, i) => {
-            const isVideo = (m.mediaFormat || "").toUpperCase() === "VIDEO";
-            const hasUrl = m.mediaUrl || m.sourceUrl;
-            return (
-              <div key={m.mediaId || i} style={{
-                aspectRatio: "1",
-                background: hasUrl && m.mediaUrl ? `url(${m.mediaUrl})` : `repeating-linear-gradient(${45 + i * 15}deg, oklch(0.92 0.02 ${50 + i * 10}), oklch(0.92 0.02 ${50 + i * 10}) 4px, oklch(0.88 0.02 ${50 + i * 10}) 4px, oklch(0.88 0.02 ${50 + i * 10}) 12px)`,
-                backgroundSize: "cover",
-                backgroundPosition: "center",
-                borderRadius: 8, border: `1px solid ${T.line}`,
-                position: "relative", overflow: "hidden"
-              }}>
-                {isVideo && (
-                  <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: 40, height: 40, borderRadius: "50%", background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    <Ico name="play" size={16} color={T.bg} />
-                  </div>
-                )}
-                <div style={{ position: "absolute", bottom: 8, left: 8 }}>
-                  <Mono size={9} color="oklch(0.4 0.02 60)">{isVideo ? "[ video ]" : "[ photo ]"}</Mono>
-                </div>
-              </div>
-            );
-          })}
+          {filteredMedia.map((m, i) => <MediaTile key={m.mediaId || i} item={m} index={i} />)}
         </div>
       )}
     </div>

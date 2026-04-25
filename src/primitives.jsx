@@ -1,27 +1,30 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 
 // ============ DESIGN TOKENS ============
+// Dark theme — the surface tokens (bg/bgSoft/bgElev) are dark, ink tokens
+// invert to near-white. accent/good/warn/bad keep their hues so badges,
+// charts, and toasts read the same.
 export const T = {
-  bg:        "oklch(0.985 0.005 75)",
-  bgSoft:    "oklch(0.965 0.008 75)",
-  bgElev:    "#ffffff",
-  bgDark:    "oklch(0.18 0.01 60)",
-  ink:       "oklch(0.18 0.01 60)",
-  ink80:     "oklch(0.32 0.01 60)",
-  ink70:     "oklch(0.45 0.01 60)",
-  ink60:     "oklch(0.58 0.01 60)",
-  ink40:     "oklch(0.72 0.01 60)",
-  line:      "oklch(0.92 0.005 75)",
-  lineStrong:"oklch(0.85 0.008 75)",
-  accent:    "oklch(0.62 0.14 40)",
-  accentSoft:"oklch(0.94 0.04 60)",
-  accentInk: "oklch(0.32 0.1 40)",
-  good:      "oklch(0.55 0.12 150)",
-  goodSoft:  "oklch(0.94 0.04 150)",
-  warn:      "oklch(0.65 0.13 75)",
-  warnSoft:  "oklch(0.95 0.05 80)",
-  bad:       "oklch(0.55 0.15 25)",
-  badSoft:   "oklch(0.94 0.04 25)",
+  bg:        "oklch(0.18 0.01 60)",
+  bgSoft:    "oklch(0.22 0.01 60)",
+  bgElev:    "oklch(0.24 0.01 60)",
+  bgDark:    "oklch(0.14 0.01 60)",
+  ink:       "oklch(0.96 0.005 75)",
+  ink80:     "oklch(0.85 0.005 75)",
+  ink70:     "oklch(0.72 0.005 75)",
+  ink60:     "oklch(0.6 0.005 75)",
+  ink40:     "oklch(0.45 0.005 75)",
+  line:      "oklch(0.28 0.01 60)",
+  lineStrong:"oklch(0.36 0.01 60)",
+  accent:    "oklch(0.7 0.14 40)",
+  accentSoft:"oklch(0.32 0.1 40)",
+  accentInk: "oklch(0.85 0.08 60)",
+  good:      "oklch(0.7 0.14 150)",
+  goodSoft:  "oklch(0.3 0.06 150)",
+  warn:      "oklch(0.78 0.14 75)",
+  warnSoft:  "oklch(0.32 0.07 75)",
+  bad:       "oklch(0.7 0.16 25)",
+  badSoft:   "oklch(0.32 0.08 25)",
   fontSans:  "'Geist', system-ui, sans-serif",
   fontMono:  "'Geist Mono', ui-monospace, monospace",
   fontDisp:  "'Instrument Serif', serif"
@@ -158,7 +161,7 @@ export const Skel = ({ w = "100%", h = 16, r = 6, style }) => (
 if (typeof document !== 'undefined' && !document.getElementById("skel-kf")) {
   const s = document.createElement("style");
   s.id = "skel-kf";
-  s.textContent = "@keyframes skel { 0%{background-position:200% 0} 100%{background-position:-200% 0} } @keyframes pulse { 0%,80%,100%{opacity:0.2;transform:scale(0.8)} 40%{opacity:1;transform:scale(1.4)} }";
+  s.textContent = "@keyframes skel { 0%{background-position:200% 0} 100%{background-position:-200% 0} } @keyframes pulse { 0%,80%,100%{opacity:0.2;transform:scale(0.8)} 40%{opacity:1;transform:scale(1.4)} } @keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }";
   document.head.appendChild(s);
 }
 
@@ -233,8 +236,8 @@ export function ModalHost() {
   return (
     <div style={{ position:"fixed", inset:0, zIndex:200, display:"flex", alignItems:"center", justifyContent:"center", padding:20 }}
       onClick={e => e.target === e.currentTarget && closeModal()}>
-      <div style={{ position:"absolute", inset:0, background:"oklch(0.18 0.01 60 / 0.4)", backdropFilter:"blur(4px)" }} onClick={closeModal} />
-      <div style={{ position:"relative", background:T.bgElev, borderRadius:12, border:`1px solid ${T.line}`, boxShadow:"0 24px 48px -8px rgba(0,0,0,0.18)", width:"100%", maxWidth:520, maxHeight:"90vh", overflowY:"auto" }}>
+      <div style={{ position:"absolute", inset:0, background:"oklch(0.08 0.005 60 / 0.65)", backdropFilter:"blur(4px)" }} onClick={closeModal} />
+      <div style={{ position:"relative", background:T.bgElev, borderRadius:12, border:`1px solid ${T.line}`, boxShadow:"0 24px 48px -8px rgba(0,0,0,0.55)", width:"100%", maxWidth:520, maxHeight:"90vh", overflowY:"auto" }}>
         {content}
       </div>
     </div>

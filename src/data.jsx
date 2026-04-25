@@ -1,10 +1,12 @@
 // Synapse — API client (replaces MOCK data)
+// Auth key is held in sessionStorage so closing the tab/window forces
+// re-sign-in next time the app is opened (per security requirement).
 const STORAGE_KEY = "synapse-api-key";
 
 export const API = {
-  getKey: () => localStorage.getItem(STORAGE_KEY) || "",
-  setKey: (k) => localStorage.setItem(STORAGE_KEY, k.trim()),
-  clearKey: () => localStorage.removeItem(STORAGE_KEY),
+  getKey: () => sessionStorage.getItem(STORAGE_KEY) || "",
+  setKey: (k) => sessionStorage.setItem(STORAGE_KEY, k.trim()),
+  clearKey: () => sessionStorage.removeItem(STORAGE_KEY),
 
   call: async (path, opts = {}) => {
     console.log(`[API] ${opts.method || 'GET'} ${path}`);

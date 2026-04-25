@@ -121,6 +121,10 @@ export default function App() {
   const [viewHistory, setViewHistory] = useState([]);
   useEffect(() => localStorage.setItem("synapse-view", view), [view]);
 
+  const [searchTerm, setSearchTerm] = useState("");
+  const [lastRefreshed, setLastRefreshed] = useState(Date.now());
+  const [syncing, setSyncing] = useState(false);
+
   const [reviews, setReviews] = useState([]);
   useEffect(() => {
     API.reviews()
@@ -129,17 +133,44 @@ export default function App() {
         console.error('Failed to fetch reviews:', e);
         setReviews([]);
       });
-  }, []);
+  }, [lastRefreshed]);
 
   const [autopilotEnabled, setAutopilotEnabled] = useState(null);
   useEffect(() => {
     API.apStatus()
       .then(data => setAutopilotEnabled(data?.status?.enabled ?? null))
       .catch(() => setAutopilotEnabled(null));
-  }, []);
+  }, [lastRefreshed]);
 
-  const [searchTerm, setSearchTerm] = useState("");
-  const [lastRefreshed, setLastRefreshed] = useState(Date.now());
+  const handleSync = () => {
+    setSyncing(true);
+    setLastRefreshed(Date.now());
+    showToast("Pulling fresh GBP data…", "neutral");
+    setTimeout(() => setSyncing(false), 1500);
+  };
+
+  // 5-minute inactivity auto sign-out — clears the API key and reopens
+  // the auth modal via the existing 'synapse-unauthorized' channel.
+  useEffect(() => {
+    const IDLE_MS = 5 * 60 * 1000;
+    let timer = null;
+    const reset = () => {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => {
+        if (!API.getKey()) return;
+        API.clearKey();
+        showToast("Signed out — 5 min of inactivity", "warn");
+        window.dispatchEvent(new CustomEvent("synapse-unauthorized"));
+      }, IDLE_MS);
+    };
+    const events = ["mousemove", "mousedown", "keydown", "touchstart", "scroll", "focus"];
+    events.forEach(e => window.addEventListener(e, reset, { passive: true }));
+    reset();
+    return () => {
+      events.forEach(e => window.removeEventListener(e, reset));
+      if (timer) clearTimeout(timer);
+    };
+  }, []);
 
   const totalReviews = reviews.length;
   const unansweredReviews = reviews.filter(r => !r.hasReply).length;
@@ -270,7 +301,12 @@ export default function App() {
           <span style={{ fontFamily: T.fontMono, fontSize: 10, padding: "1px 5px", borderRadius: 4, border: `1px solid ${T.lineStrong}`, color: T.ink60, letterSpacing: "0.04em" }}>⌘K</span>
         </button>
       )}
-      {!isMobile && <Btn size="sm" onClick={() => setLastRefreshed(Date.now())}><Ico name="refresh" size={12} /> Sync</Btn>}
+      {!isMobile && (
+        <Btn size="sm" onClick={handleSync} disabled={syncing}>
+          <Ico name="refresh" size={12} style={syncing ? { animation: "spin 0.9s linear infinite" } : undefined} />
+          {syncing ? "Syncing…" : "Sync"}
+        </Btn>
+      )}
       <Btn size="sm" tone="solid" onClick={handleRunNow}>
         <Ico name="bolt" size={12} />
         {isMobile ? "Run" : "Run daily cycle"}

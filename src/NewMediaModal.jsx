@@ -33,11 +33,11 @@ export function NewMediaModal({ onClose }) {
       }
 
       await API.uploadMedia({
-        mediaFormat: file.type.startsWith('video/') ? 'VIDEO' : 'PHOTO',
-        sourceUrl: publicUrl,
-        description: description,
-        locationAssociation: {
-          category: 'ADDITIONAL'
+        mediaData: {
+          mediaFormat: file.type.startsWith('video/') ? 'VIDEO' : 'PHOTO',
+          sourceUrl: publicUrl,
+          description: description,
+          locationAssociation: { category: 'ADDITIONAL' }
         }
       });
 
