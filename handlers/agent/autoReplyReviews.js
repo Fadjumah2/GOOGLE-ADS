@@ -10,9 +10,9 @@ import logger from '../../utils/logger.js';
 export default async (req, res) => {
     try {
         const { maxReplies, dryRun } = req.body || {};
-        if (dryRun) process.env.AUTOPILOT_REPLY_DRY_RUN = 'true';
         const report = await autonomous.runAutoReplies({
             maxReplies: Number.isFinite(maxReplies) ? maxReplies : 5,
+            dryRun: dryRun === true ? true : null,
         });
         res.json({ success: true, report });
     } catch (err) {

@@ -36,6 +36,7 @@ export const WEEKLY_THEMES = [
     // Sunday — gentle awareness / community
     {
         theme: 'community_awareness',
+        tagline: 'Everyday ENT awareness tip for your community',
         topicType: 'STANDARD',
         callToAction: { actionType: 'LEARN_MORE', useWebsite: true },
         prompt:
@@ -51,6 +52,7 @@ export const WEEKLY_THEMES = [
     // Monday — "Meet the team" / clinic culture (no person-specific claims)
     {
         theme: 'clinic_culture',
+        tagline: 'A look at the patient experience at Eritage ENT Care',
         topicType: 'STANDARD',
         callToAction: { actionType: 'LEARN_MORE', useWebsite: true },
         prompt:
@@ -64,6 +66,7 @@ export const WEEKLY_THEMES = [
     // Tuesday — service spotlight (informational, not promotional/medical advice)
     {
         theme: 'service_spotlight',
+        tagline: 'Spotlight on one of our ENT service categories',
         topicType: 'STANDARD',
         callToAction: { actionType: 'BOOK', useWebsite: true },
         prompt:
@@ -77,6 +80,7 @@ export const WEEKLY_THEMES = [
     // Wednesday — everyday ENT wellness tip
     {
         theme: 'wellness_tip',
+        tagline: 'A practical wellness tip for ear, nose & throat health',
         topicType: 'STANDARD',
         callToAction: { actionType: 'LEARN_MORE', useWebsite: true },
         prompt:
@@ -90,6 +94,7 @@ export const WEEKLY_THEMES = [
     // Thursday — FAQ / "did you know" (educational, neutral)
     {
         theme: 'did_you_know',
+        tagline: 'An interesting ENT fact your patients will appreciate',
         topicType: 'STANDARD',
         callToAction: { actionType: 'LEARN_MORE', useWebsite: true },
         prompt:
@@ -104,6 +109,7 @@ export const WEEKLY_THEMES = [
     // Friday — gentle seasonal/weekly reminder
     {
         theme: 'weekly_reminder',
+        tagline: 'End-of-week reminder — new patients welcome this weekend',
         topicType: 'STANDARD',
         callToAction: { actionType: 'CALL', useWebsite: false },
         prompt:
@@ -116,6 +122,7 @@ export const WEEKLY_THEMES = [
     // Saturday — weekend soft awareness (family/kids angle)
     {
         theme: 'family_wellness',
+        tagline: 'Family ENT wellness — caring for children and adults',
         topicType: 'STANDARD',
         callToAction: { actionType: 'LEARN_MORE', useWebsite: true },
         prompt:

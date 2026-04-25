@@ -7,44 +7,65 @@ import { NewMediaModal } from './NewMediaModal.jsx';
 export function AutopilotView({ lastRefreshed }) {
   const [loading, setLoading] = useState(true);
   const [apData, setApData] = useState(null);
+  const [actionLoading, setActionLoading] = useState(null); // 'post' | 'replies' | 'cycle'
+  const [actionResult, setActionResult] = useState(null);   // { type, data }
 
-  useEffect(() => {
-    const load = async () => {
-      setLoading(true);
-      try {
-        const data = await API.apStatus();
-        setApData(data);
-      } catch (e) { console.error(e); }
-      finally { setLoading(false); }
-    };
-    load();
-  }, [lastRefreshed]);
+  const reload = async () => {
+    setLoading(true);
+    try {
+      const data = await API.apStatus();
+      setApData(data);
+    } catch (e) { console.error(e); }
+    finally { setLoading(false); }
+  };
+
+  useEffect(() => { reload(); }, [lastRefreshed]);
 
   const status = apData?.status || {};
   const calendar = apData?.calendar || [];
-  const themeNames = { community_awareness:"Community", clinic_culture:"Clinic Culture", service_spotlight:"Services", wellness_tip:"Wellness Tip", did_you_know:"Did You Know", weekly_reminder:"Weekly Reminder", family_wellness:"Family" };
+  const themeNames = { community_awareness: "Community", clinic_culture: "Clinic Culture", service_spotlight: "Services", wellness_tip: "Wellness Tip", did_you_know: "Did You Know", weekly_reminder: "Weekly Reminder", family_wellness: "Family" };
+
+  const lastCycleTs = status.lastCycle?.ts;
+  const postedToday = status.dailyPost?.postedToday;
+  const nextRunLabel = postedToday ? "Tomorrow 09:00 EAT" : "Today 09:00 EAT";
+
+  const runAction = async (type, apiFn, label) => {
+    setActionLoading(type);
+    setActionResult(null);
+    try {
+      const data = await apiFn();
+      setActionResult({ type, data });
+      showToast(`${label} complete. See result below.`, "good");
+      reload();
+    } catch (e) {
+      showToast(e.message || `${label} failed.`, "bad");
+    } finally {
+      setActionLoading(null);
+    }
+  };
 
   return (
     <div style={{ padding: "28px 32px 60px", display: "flex", flexDirection: "column", gap: 20 }}>
+
       {/* Status banner */}
       {loading ? (
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 20 }}>
-          {[0,1,2,3].map(i => <Skel key={i} h={80} />)}
+          {[0, 1, 2, 3].map(i => <Skel key={i} h={80} />)}
         </div>
       ) : (
         <div style={{ padding: 24, borderRadius: 10, background: T.bgDark, color: T.bg, display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 24, position: "relative", overflow: "hidden" }}>
           <div style={{ position: "absolute", top: 0, right: 0, width: 200, height: "100%", background: `radial-gradient(circle at top right, ${T.accent}, transparent 70%)`, opacity: 0.2 }} />
           {[
-            { k: "Status", v: status.enabled ? "Running" : "Disabled", tone: status.enabled ? "good" : "warn" },
-            { k: "Last run", v: status.lastRun ? relTime(status.lastRun) : "—" },
-            { k: "Next run", v: "Tomorrow 09:00" },
-            { k: "Uptime", v: status.uptime || "—" }
+            { k: "Status",    v: status.enabled ? "Running" : "Disabled", tone: status.enabled ? "good" : "warn" },
+            { k: "Last cycle", v: lastCycleTs ? relTime(lastCycleTs) : "Never" },
+            { k: "Next run",  v: nextRunLabel },
+            { k: "Uptime",    v: status.uptime || "—" },
           ].map((s, i) => (
             <div key={i} style={{ position: "relative", borderLeft: i === 0 ? "none" : "1px solid oklch(0.3 0.01 60)", paddingLeft: i === 0 ? 0 : 20 }}>
               <Mono size={10} color="oklch(0.6 0.01 60)">{s.k}</Mono>
-              <div style={{ fontFamily: T.fontDisp, fontSize: 28, marginTop: 6, color: T.bg, letterSpacing: "-0.02em", display: "flex", alignItems: "center", gap: 8 }}>
-                {s.tone === "good" && <span style={{ width: 10, height: 10, borderRadius: "50%", background: T.good }} />}
-                {s.tone === "warn" && <span style={{ width: 10, height: 10, borderRadius: "50%", background: T.warn }} />}
+              <div style={{ fontFamily: T.fontDisp, fontSize: 26, marginTop: 6, color: T.bg, letterSpacing: "-0.02em", display: "flex", alignItems: "center", gap: 8 }}>
+                {s.tone === "good" && <span style={{ width: 10, height: 10, borderRadius: "50%", background: T.good, flexShrink: 0 }} />}
+                {s.tone === "warn" && <span style={{ width: 10, height: 10, borderRadius: "50%", background: T.warn, flexShrink: 0 }} />}
                 {s.v}
               </div>
             </div>
@@ -52,22 +73,115 @@ export function AutopilotView({ lastRefreshed }) {
         </div>
       )}
 
-      {/* Config flags */}
+      {/* Manual controls */}
       <Card>
-        <CardHead eyebrow="Configuration" title="Feature flags" sub="Control what Autopilot is allowed to do." />
+        <CardHead eyebrow="Controls" title="Manual actions" sub="Override the schedule or preview what the agent would publish — all go through the same policy guard as the cron job." />
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+          <Btn
+            size="sm"
+            disabled={!!actionLoading}
+            onClick={() => runAction("post", () => API.previewPost(), "Post preview")}
+          >
+            {actionLoading === "post" ? <Mono size={11}>Generating…</Mono> : <><Ico name="sparkle" size={12} /> Preview today's post (dry-run)</>}
+          </Btn>
+          <Btn
+            size="sm"
+            disabled={!!actionLoading}
+            onClick={() => runAction("replies", () => API.autoReply({ dryRun: true }), "Reply drafts")}
+          >
+            {actionLoading === "replies" ? <Mono size={11}>Drafting…</Mono> : <><Ico name="sparkle" size={12} /> Draft reply queue (dry-run)</>}
+          </Btn>
+          <Btn
+            size="sm"
+            tone="solid"
+            disabled={!!actionLoading}
+            onClick={() => runAction("cycle", () => API.runDaily({ force: false }), "Daily cycle")}
+          >
+            {actionLoading === "cycle" ? <Mono size={11}>Running…</Mono> : <><Ico name="play" size={12} /> Run full daily cycle</>}
+          </Btn>
+        </div>
+
+        {/* Inline result panel */}
+        {actionResult && (
+          <div style={{ marginTop: 16, padding: 16, borderRadius: 8, background: T.bgSoft, border: `1px solid ${T.line}` }}>
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10 }}>
+              <Mono size={11} color={T.ink}>{actionResult.type === "post" ? "Post preview" : actionResult.type === "replies" ? "Reply drafts" : "Cycle result"}</Mono>
+              <button onClick={() => setActionResult(null)} style={{ border: "none", background: "none", cursor: "pointer", fontSize: 12, color: T.ink60 }}>dismiss</button>
+            </div>
+            {actionResult.type === "post" && (() => {
+              const r = actionResult.data?.report;
+              if (r?.skipped) return <div style={{ fontSize: 13, color: T.ink70 }}>Skipped: {(r.reasons || []).join(", ") || "unknown reason"}</div>;
+              if (r?.dryRun) return (
+                <div>
+                  <Pill tone="warn" style={{ marginBottom: 8 }}>Dry-run — not published</Pill>
+                  <div style={{ fontSize: 13, lineHeight: 1.6, color: T.ink, marginTop: 8 }}>{r.payload?.summary || "No text generated."}</div>
+                  <Mono size={10} style={{ marginTop: 8 }}>Theme: {r.theme} · {r.dayName}</Mono>
+                </div>
+              );
+              if (r?.error) return <div style={{ fontSize: 13, color: T.bad }}>{JSON.stringify(r.error)}</div>;
+              return <div style={{ fontSize: 13, color: T.ink70 }}>No result data.</div>;
+            })()}
+            {actionResult.type === "replies" && (() => {
+              const r = actionResult.data?.report;
+              const candidates = r?.candidates || [];
+              if (!candidates.length) return <div style={{ fontSize: 13, color: T.ink70 }}>No eligible reviews for auto-reply at this time.</div>;
+              return (
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  {candidates.map((c, i) => (
+                    <div key={i} style={{ padding: 12, borderRadius: 6, background: T.bgElev, border: `1px solid ${T.line}` }}>
+                      <div style={{ display: "flex", gap: 8, marginBottom: 6 }}>
+                        <Mono size={11}>{c.reviewer}</Mono>
+                        <Mono size={11} color={T.ink60}>{c.starRating}</Mono>
+                        {c.dryRun && <Pill tone="warn">dry-run</Pill>}
+                        {c.published && <Pill tone="good">published</Pill>}
+                        {c.skipped && <Pill tone="bad">rejected</Pill>}
+                      </div>
+                      <div style={{ fontSize: 13, lineHeight: 1.55, color: T.ink80 }}>{c.draft || c.reply || (c.reasons || []).join(", ")}</div>
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
+            {actionResult.type === "cycle" && (() => {
+              const s = actionResult.data?.summary;
+              if (!s) return <div style={{ fontSize: 13, color: T.ink70 }}>No summary returned.</div>;
+              return (
+                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                  <div style={{ fontSize: 13 }}>
+                    <strong>Post:</strong> {s.postReport?.skipped ? `Skipped (${(s.postReport.reasons || []).join(", ")})` : s.postReport?.published ? "Published" : s.postReport?.dryRun ? "Dry-run" : s.postReport?.error ? "Error" : "—"}
+                  </div>
+                  <div style={{ fontSize: 13 }}>
+                    <strong>Replies:</strong> {s.replyReport?.skipped ? `Skipped (${(s.replyReport.reasons || []).join(", ")})` : `${(s.replyReport?.candidates || []).filter(c => c.published).length} published, ${(s.replyReport?.candidates || []).filter(c => c.dryRun).length} dry-run`}
+                  </div>
+                  <Mono size={10}>Completed in {s.durationMs}ms</Mono>
+                </div>
+              );
+            })()}
+          </div>
+        )}
+      </Card>
+
+      {/* Feature flags */}
+      <Card>
+        <CardHead eyebrow="Configuration" title="Feature flags" sub="Set in Vercel → Project Settings → Environment Variables. Require a redeploy to take effect." />
         <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 0, border: `1px solid ${T.line}`, borderRadius: 8, overflow: "hidden" }}>
           {[
-            { k: "AUTOPILOT_ENABLED", on: status.enabled, desc: "Master kill switch" },
-            { k: "AUTOPILOT_DAILY_POST", on: status.dailyPost?.enabled, desc: "Publish one post per day" },
-            { k: "AUTOPILOT_AUTO_REPLY", on: status.autoReplies?.enabled, desc: "Reply to safe 4★/5★ reviews" },
-            { k: "AUTOPILOT_POST_DRY_RUN", on: false, desc: "Generate but don't publish" }
+            { k: "AUTOPILOT_ENABLED",       on: status.enabled,                desc: "Master kill switch" },
+            { k: "AUTOPILOT_DAILY_POST",     on: status.dailyPost?.enabled,     desc: "Publish one post per day at 09:00 EAT" },
+            { k: "AUTOPILOT_AUTO_REPLY",     on: status.autoReplies?.enabled,   desc: "Auto-reply to safe 4★/5★ reviews" },
+            { k: "AUTOPILOT_POST_DRY_RUN",   on: status.dailyPost?.dryRun,      desc: "Generate posts but don't publish" },
+            { k: "AUTOPILOT_REPLY_DRY_RUN",  on: status.autoReplies?.dryRun,    desc: "Draft replies but don't send" },
+            { k: "CRON_SECRET",              on: true,                          desc: "Bearer token for Vercel Cron auth (always set)" },
           ].map((f, i) => (
             <div key={f.k} style={{ padding: 16, borderLeft: i % 2 === 1 ? `1px solid ${T.line}` : "none", borderTop: i >= 2 ? `1px solid ${T.line}` : "none", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <div>
                 <Mono size={11} color={T.ink}>{f.k}</Mono>
                 <div style={{ fontSize: 12, color: T.ink60, marginTop: 3 }}>{f.desc}</div>
               </div>
-              <div onClick={() => showToast(`${f.k} is set in Vercel env — redeploy to change.`, "neutral")} style={{ width: 36, height: 20, borderRadius: 999, background: f.on ? T.good : T.lineStrong, padding: 2, display: "flex", justifyContent: f.on ? "flex-end" : "flex-start", cursor: "pointer" }}>
+              <div
+                onClick={() => showToast(`${f.k} is set in Vercel env — redeploy to change.`, "neutral")}
+                style={{ width: 36, height: 20, borderRadius: 999, background: f.on ? T.good : T.lineStrong, padding: 2, display: "flex", justifyContent: f.on ? "flex-end" : "flex-start", cursor: "pointer", flexShrink: 0 }}
+              >
                 <div style={{ width: 16, height: 16, borderRadius: "50%", background: T.bg }} />
               </div>
             </div>
@@ -75,30 +189,30 @@ export function AutopilotView({ lastRefreshed }) {
         </div>
       </Card>
 
-      {/* Content calendar detail */}
+      {/* Content calendar */}
       <Card>
-        <CardHead eyebrow="Content strategy" title="Weekly rotation" sub="Themes cycle each day. Edit here or let Synapse AI adapt based on engagement." right={<Btn size="sm" onClick={() => showToast("Customize coming soon — themes are configured in utils/contentStrategy.js for now.", "neutral")}><Ico name="edit" size={12} /> Customize</Btn>} />
+        <CardHead eyebrow="Content strategy" title="Weekly rotation" sub="Themes cycle deterministically by day of week. Today's theme is highlighted." />
         {loading ? (
           <Skel h={200} />
         ) : calendar.length > 0 ? (
           <div data-keep-grid="7" style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 8 }}>
             {calendar.map((d, i) => {
               const dDate = new Date(d.date);
-              const today = new Date();
-              const isToday = dDate.toDateString() === today.toDateString();
+              const todayDate = new Date();
+              const isToday = dDate.toDateString() === todayDate.toDateString();
+              const isPast = dDate < todayDate && !isToday;
               const dayLabel = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][dDate.getDay()];
-              const dateNum = dDate.getDate();
-              const isDone = dDate < today && !isToday;
+              const shippedToday = isToday && postedToday;
               return (
-                <div key={i} style={{ padding: 14, borderRadius: 8, background: isToday ? T.ink : T.bgSoft, border: `1px solid ${isToday ? T.ink : T.line}`, color: isToday ? T.bg : T.ink, minHeight: 140, display: "flex", flexDirection: "column" }}>
+                <div key={i} style={{ padding: 14, borderRadius: 8, background: isToday ? T.ink : T.bgSoft, border: `1px solid ${isToday ? T.ink : T.line}`, color: isToday ? T.bg : T.ink, minHeight: 160, display: "flex", flexDirection: "column" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
                     <Mono size={10} color={isToday ? T.accent : T.ink60}>{dayLabel.toUpperCase()}</Mono>
-                    <div style={{ fontFamily: T.fontDisp, fontSize: 22, color: isToday ? T.bg : T.ink }}>{dateNum}</div>
+                    <div style={{ fontFamily: T.fontDisp, fontSize: 22, color: isToday ? T.bg : T.ink }}>{dDate.getDate()}</div>
                   </div>
-                  <div style={{ fontSize: 12, fontWeight: 500, marginTop: 12, color: isToday ? T.bg : T.ink }}>{themeNames[d.theme] || d.theme}</div>
-                  <div style={{ fontSize: 11, color: isToday ? "oklch(0.75 0.01 60)" : T.ink60, marginTop: 4, lineHeight: 1.35 }}>{d.topic || "—"}</div>
+                  <div style={{ fontSize: 12, fontWeight: 600, marginTop: 10, color: isToday ? T.bg : T.ink }}>{themeNames[d.theme] || d.theme}</div>
+                  <div style={{ fontSize: 11, color: isToday ? "oklch(0.75 0.01 60)" : T.ink60, marginTop: 4, lineHeight: 1.4 }}>{d.tagline || "—"}</div>
                   <div style={{ flex: 1 }} />
-                  {isDone ? <Pill tone="good">Shipped</Pill> : isToday ? <Pill tone="accent" dot>Today</Pill> : <Mono size={10}>Pending</Mono>}
+                  {shippedToday ? <Pill tone="good" dot>Shipped today</Pill> : isPast ? <Pill tone="good">Shipped</Pill> : isToday ? <Pill tone="accent" dot>Today</Pill> : <Mono size={10}>Pending</Mono>}
                 </div>
               );
             })}
@@ -495,7 +609,7 @@ export function AuditView({ searchTerm, lastRefreshed }) {
               const tone = l.type?.includes("rejected") || l.type?.includes("unauthorized") ? "bad" : l.type?.includes("skip") ? "warn" : "good";
               return (
                 <div key={i} style={{ padding: "12px 20px", display: "grid", gridTemplateColumns: "140px 180px 90px 1fr", gap: 16, alignItems: "center", borderTop: i > 0 ? `1px solid ${T.line}` : "none", background: i % 2 === 0 ? "transparent" : T.bgSoft }}>
-                  <Mono size={11}>{new Date(l.ts).toLocaleTimeString("en-UG", { hour: "2-digit", minute: "2-digit" })}</Mono>
+                  <Mono size={11}>{new Date(l.ts).toLocaleDateString("en-UG", { month: "short", day: "numeric" })} {new Date(l.ts).toLocaleTimeString("en-UG", { hour: "2-digit", minute: "2-digit" })}</Mono>
                   <Mono size={11} color={T.ink}>{auditTypeLabel(l.type)}</Mono>
                   <Pill tone={tone}>{tone === "bad" ? "error" : tone}</Pill>
                   <span style={{ fontSize: 13, color: T.ink80 }}>{l.payload?.msg || l.payload?.reason || l.type}</span>

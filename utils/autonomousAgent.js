@@ -22,8 +22,10 @@ import { generateText } from './geminiClient.js';
 import { getTopicForToday, CLINIC } from './contentStrategy.js';
 import { validatePost, validateReviewReply, isSafeForAutoReply } from './policyGuard.js';
 import * as auditLog from './auditLog.js';
-import { normalizePosts, normalizeReviews, normalizeProfile } from './normalizeGBPResponse.js';
+import { normalizePosts, normalizeReviews } from './normalizeGBPResponse.js';
 import logger from './logger.js';
+
+const processStartTime = Date.now();
 
 /* ------------------------------------------------------------------ */
 /* Env / feature flags                                                */
@@ -62,34 +64,33 @@ function postWindowStart() {
 }
 
 /**
- * Query GBP for posts and report whether any LIVE post was published within
- * the last POST_INTERVAL_HOURS hours (default 48). This is the authoritative
- * idempotency check — more trustworthy than the local audit log.
+ * Query GBP for posts and report whether any LIVE post was published today
+ * (current UTC calendar date). This is the authoritative idempotency check —
+ * more trustworthy than the local audit log.
  */
 async function alreadyPostedToday() {
-    const windowStart = postWindowStart();
+    const todayUtc = new Date().toISOString().slice(0, 10); // "YYYY-MM-DD"
     const raw = await gbpClient.getPosts();
     if (raw && raw.error) {
-        // On API failure, fall back to the local audit log so we still avoid duplicates.
+        // On API failure fall back to the local audit log.
         const logged = auditLog.findLast('autopilot.post.published');
-        return logged && Date.parse(logged.ts) >= windowStart;
+        return !!(logged && logged.ts.slice(0, 10) === todayUtc);
     }
     const { posts } = normalizePosts(raw);
-    return posts.some(p => {
-        const t = p.createTime ? Date.parse(p.createTime) : 0;
-        return t >= windowStart && p.state !== 'REJECTED';
-    });
+    return posts.some(p => p.createTime &&
+        p.createTime.slice(0, 10) === todayUtc &&
+        p.state !== 'REJECTED');
 }
 
-function buildCallToAction(topic, profile) {
+// rawProfile is the raw GBP API response (has .websiteUri directly).
+function buildCallToAction(topic, rawProfile) {
     if (!topic.callToAction) return null;
     const { actionType, useWebsite } = topic.callToAction;
     if (actionType === 'CALL') {
-        // GBP infers the phone from the profile for CALL CTAs — no URL needed.
         return { actionType: 'CALL' };
     }
     const url = useWebsite
-        ? (profile?.websiteUri || CLINIC.website)
+        ? (rawProfile?.websiteUri || CLINIC.website)
         : CLINIC.website;
     if (!url) return null;
     return { actionType, url };
@@ -99,7 +100,7 @@ function buildCallToAction(topic, profile) {
 /* Job 1 — Daily post                                                 */
 /* ------------------------------------------------------------------ */
 
-async function runDailyPost({ force = false } = {}) {
+async function runDailyPost({ force = false, dryRun = null } = {}) {
     const report = { job: 'daily_post', skipped: false, reasons: [], attempts: [] };
 
     if (!isEnabled()) {
@@ -134,16 +135,18 @@ async function runDailyPost({ force = false } = {}) {
     report.theme = topic.theme;
     report.dayName = topic.dayName;
 
-    // Fetch current profile once — used for CTA URL + extra grounding context
-    let profile = null;
+    // Fetch current profile once — raw response used for CTA URL + grounding context.
+    // We keep the raw GBP response (.websiteUri, .title, .categories) so both
+    // buildCallToAction and buildDailyPostPrompt can access fields without re-nesting.
+    let rawProfile = null;
     try {
-        const rawProfile = await gbpClient.getProfile();
-        if (rawProfile && !rawProfile.error) profile = normalizeProfile(rawProfile);
+        const profileData = await gbpClient.getProfile();
+        if (profileData && !profileData.error) rawProfile = profileData;
     } catch (e) {
         logger.error('getProfile failed in runDailyPost: ' + e.message);
     }
 
-    const prompt = buildDailyPostPrompt(topic, profile);
+    const prompt = buildDailyPostPrompt(topic, rawProfile);
 
     // Generate + validate; retry with stricter instruction if policyGuard rejects
     let drafted = null;
@@ -179,7 +182,7 @@ async function runDailyPost({ force = false } = {}) {
     }
 
     // Build GBP payload
-    const callToAction = buildCallToAction(topic, profile);
+    const callToAction = buildCallToAction(topic, rawProfile);
     const payload = {
         languageCode: LANGUAGE,
         summary: validation.cleaned,
@@ -187,7 +190,8 @@ async function runDailyPost({ force = false } = {}) {
     };
     if (callToAction) payload.callToAction = callToAction;
 
-    if (postDryRun()) {
+    const isDryRun = dryRun !== null ? dryRun : postDryRun();
+    if (isDryRun) {
         report.dryRun = true;
         report.payload = payload;
         auditLog.record('autopilot.post.dry_run', report);
@@ -209,12 +213,13 @@ async function runDailyPost({ force = false } = {}) {
     return report;
 }
 
-function buildDailyPostPrompt(topic, profile) {
+// rawProfile is the raw GBP API response: .title, .categories.primaryCategory.displayName, etc.
+function buildDailyPostPrompt(topic, rawProfile) {
     const titleBits = [];
-    if (profile?.title) titleBits.push(`Clinic name: ${profile.title}`);
+    if (rawProfile?.title) titleBits.push(`Clinic name: ${rawProfile.title}`);
     titleBits.push(`Location: Entebbe, Uganda`);
-    if (profile?.categories?.primaryCategory?.displayName) {
-        titleBits.push(`Category: ${profile.categories.primaryCategory.displayName}`);
+    if (rawProfile?.categories?.primaryCategory?.displayName) {
+        titleBits.push(`Category: ${rawProfile.categories.primaryCategory.displayName}`);
     }
     return [
         `You are drafting a Google Business Profile "local post" for a healthcare clinic.`,
@@ -236,7 +241,7 @@ function buildDailyPostPrompt(topic, profile) {
 /* Job 2 — Auto-reply to safe reviews                                  */
 /* ------------------------------------------------------------------ */
 
-async function runAutoReplies({ maxReplies = 5 } = {}) {
+async function runAutoReplies({ maxReplies = 5, dryRun = null } = {}) {
     const report = { job: 'auto_replies', skipped: false, reasons: [], candidates: [] };
 
     if (!isEnabled()) {
@@ -316,7 +321,8 @@ async function runAutoReplies({ maxReplies = 5 } = {}) {
             continue;
         }
 
-        if (replyDryRun()) {
+        const isReplyDryRun = dryRun !== null ? dryRun : replyDryRun();
+        if (isReplyDryRun) {
             entry.dryRun = true;
             entry.draft = validation.cleaned;
             auditLog.record('autopilot.reply.dry_run', entry);
@@ -398,8 +404,16 @@ async function getStatus() {
     try { postedToday = await alreadyPostedToday(); }
     catch { postedToday = null; }
 
+    const uptimeSecs = Math.floor((Date.now() - processStartTime) / 1000);
+    const uptimeStr = uptimeSecs < 60
+        ? `${uptimeSecs}s`
+        : uptimeSecs < 3600
+            ? `${Math.floor(uptimeSecs / 60)}m`
+            : `${Math.floor(uptimeSecs / 3600)}h ${Math.floor((uptimeSecs % 3600) / 60)}m`;
+
     return {
         enabled: isEnabled(),
+        uptime: uptimeStr,
         dailyPost: {
             enabled: dailyPostEnabled(),
             dryRun: postDryRun(),

@@ -11,8 +11,10 @@ import logger from '../../utils/logger.js';
 export default async (req, res) => {
     try {
         const { force, dryRun } = req.body || {};
-        if (dryRun) process.env.AUTOPILOT_POST_DRY_RUN = 'true';
-        const report = await autonomous.runDailyPost({ force: !!force });
+        const report = await autonomous.runDailyPost({
+            force: !!force,
+            dryRun: dryRun === true ? true : null,
+        });
         res.json({ success: true, report });
     } catch (err) {
         logger.error('autonomousPost failed: ' + err.message);

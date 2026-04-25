@@ -13,7 +13,7 @@
     { "source": "/dashboard-new", "destination": "/api" }
   ],
   "crons": [
-    { "path": "/api/cron/daily", "schedule": "15 23 * * *" }
+    { "path": "/api/cron/daily", "schedule": "0 6 * * *" }
   ],
   "git": {
     "deploymentEnabled": {
