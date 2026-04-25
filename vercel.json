@@ -4,6 +4,14 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "installCommand": "npm install",
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api" },
+    { "source": "/ping", "destination": "/api" },
+    { "source": "/privacy", "destination": "/api" },
+    { "source": "/terms", "destination": "/api" },
+    { "source": "/home", "destination": "/api" },
+    { "source": "/dashboard-new", "destination": "/api" }
+  ],
   "crons": [
     { "path": "/api/cron/daily", "schedule": "15 23 * * *" }
   ],
@@ -13,4 +21,3 @@
     }
   }
 }
-

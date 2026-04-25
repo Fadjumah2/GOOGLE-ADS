@@ -42,10 +42,9 @@ else
   printf '\n---\n\n%s\n' "$NEW_STATUS" >> CLAUDE.md
 fi
 
-# Stage and commit the updated CLAUDE.md
-git add CLAUDE.md 2>/dev/null || true
-git diff --cached --quiet 2>/dev/null || \
-  git commit -m "chore: auto-update CLAUDE.md session snapshot [$NOW]" \
-             --no-verify 2>/dev/null || true
-
+# NOTE: We deliberately do NOT auto-commit the snapshot anymore.
+# Each chore commit triggered a fresh Vercel deploy, which cancelled
+# the previous one in queue — so the actual code-change deploys never
+# advanced past "Queued". The local CLAUDE.md update is enough; commit
+# it manually if/when you want it persisted.
 exit 0

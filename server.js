@@ -5,34 +5,34 @@ import express from 'express';
 import { google } from 'googleapis';
 import gbpClient from './utils/gbpClient.js';
 import requireApiKey from './middleware/requireApiKey.js';
-import handleReplyToReview from './api/gbp/replyToReview.js';
-import handleDeleteReviewReply from './api/gbp/deleteReviewReply.js';
-import handleGetReviews from './api/gbp/fetchReviews.js';
-import handleGetPosts from './api/gbp/getPosts.js';
-import handleGetProfile from './api/gbp/getProfile.js';
-import handleUpdateProfile from './api/gbp/updateProfile.js';
-import handleGetInsights from './api/gbp/getInsights.js';
-import handleCreatePost from './api/gbp/createPost.js';
-import handleFetchQuestions from './api/gbp/fetchQuestions.js';
-import handleReplyToQuestion from './api/gbp/replyToQuestion.js';
-import handleListMedia from './api/gbp/listMedia.js';
-import handleUploadMedia from './api/gbp/uploadMedia.js';
-import handleDeleteMedia from './api/gbp/deleteMedia.js';
-import handleGetServiceList from './api/gbp/getServiceList.js';
-import handleUpdateServiceList from './api/gbp/updateServiceList.js';
-import handleAddService from './api/gbp/addService.js';
-import handleGetSignedUrl from './api/gbp/getSignedUrl.js';
-import handleDeletePost from './api/gbp/deletePost.js';
-import handleGetLocations from './api/gbp/getLocations.js';
-import handleGetVerificationStatus from './api/gbp/getVerificationStatus.js';
-import handleGetAttributes from './api/gbp/getAttributes.js';
-import handleAgentChat from './api/agent/chat.js';
-import handleAutonomousPost from './api/agent/autonomousPost.js';
-import handleAutoReplyReviews from './api/agent/autoReplyReviews.js';
-import handleRunDaily from './api/agent/runDaily.js';
-import handleAgentStatus from './api/agent/status.js';
-import handleAuditLog from './api/agent/auditLog.js';
-import handleCronDaily from './api/cron/daily.js';
+import handleReplyToReview from './handlers/gbp/replyToReview.js';
+import handleDeleteReviewReply from './handlers/gbp/deleteReviewReply.js';
+import handleGetReviews from './handlers/gbp/fetchReviews.js';
+import handleGetPosts from './handlers/gbp/getPosts.js';
+import handleGetProfile from './handlers/gbp/getProfile.js';
+import handleUpdateProfile from './handlers/gbp/updateProfile.js';
+import handleGetInsights from './handlers/gbp/getInsights.js';
+import handleCreatePost from './handlers/gbp/createPost.js';
+import handleFetchQuestions from './handlers/gbp/fetchQuestions.js';
+import handleReplyToQuestion from './handlers/gbp/replyToQuestion.js';
+import handleListMedia from './handlers/gbp/listMedia.js';
+import handleUploadMedia from './handlers/gbp/uploadMedia.js';
+import handleDeleteMedia from './handlers/gbp/deleteMedia.js';
+import handleGetServiceList from './handlers/gbp/getServiceList.js';
+import handleUpdateServiceList from './handlers/gbp/updateServiceList.js';
+import handleAddService from './handlers/gbp/addService.js';
+import handleGetSignedUrl from './handlers/gbp/getSignedUrl.js';
+import handleDeletePost from './handlers/gbp/deletePost.js';
+import handleGetLocations from './handlers/gbp/getLocations.js';
+import handleGetVerificationStatus from './handlers/gbp/getVerificationStatus.js';
+import handleGetAttributes from './handlers/gbp/getAttributes.js';
+import handleAgentChat from './handlers/agent/chat.js';
+import handleAutonomousPost from './handlers/agent/autonomousPost.js';
+import handleAutoReplyReviews from './handlers/agent/autoReplyReviews.js';
+import handleRunDaily from './handlers/agent/runDaily.js';
+import handleAgentStatus from './handlers/agent/status.js';
+import handleAuditLog from './handlers/agent/auditLog.js';
+import handleCronDaily from './handlers/cron/daily.js';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -159,6 +159,15 @@ if (process.env.NODE_ENV === 'production') {
   });
 }
 
-app.listen(port, () => {
-  console.log(`Server listening at http://localhost:${port}`);
-});
+// Only start the HTTP listener when this file is the entry point
+// (i.e. local dev: `node server.js`). On Vercel the app is imported
+// by `api/index.js` and run inside a serverless function, so we must
+// not call app.listen there.
+const isDirectEntry = process.argv[1] && path.resolve(process.argv[1]) === __filename;
+if (isDirectEntry) {
+  app.listen(port, () => {
+    console.log(`Server listening at http://localhost:${port}`);
+  });
+}
+
+export default app;
