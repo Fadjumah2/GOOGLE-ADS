@@ -227,11 +227,11 @@ curl -s https://www.trendexhub.com/api/gbp/getProfile \
 - **Branch:** `main`
 - **Last 5 commits:**
 ```
+d820610 chore: update CLAUDE.md session snapshot
 33cdbf9 feat(autopilot): enrich agent with live GBP profile context and Google format specs
 39f378d chore: update CLAUDE.md session snapshot
 0694628 chore: update CLAUDE.md session snapshot
 4cc9c1f fix(autopilot): fix 9 bugs and fully implement autonomous agent
-e3ce074 chore: update CLAUDE.md session snapshot
 ```
 - **Billing:** Activated and linked to project `468613454814` ✅
 - **APIs enabled:** My Business Reviews, Business Information, Account Management ✅
