@@ -79,10 +79,12 @@ async function refreshOAuthToken() {
             }, { ...(httpsAgent && { httpsAgent, proxy: false }) });
 
             const { access_token, expires_in } = response.data;
+            if (!access_token) throw new Error('OAuth response missing access_token');
+            const safeExpiry = typeof expires_in === 'number' ? expires_in : 3600;
             cachedToken = access_token;
-            expiryTime = Date.now() + (expires_in * 1000);
+            expiryTime = Date.now() + (safeExpiry * 1000);
             console.log("[GBP AUTH] OAuth token refreshed successfully");
-            return { access_token, expires_in };
+            return { access_token, expires_in: safeExpiry };
         } catch (error) {
             const detail = error.response ? error.response.data : error.message;
             console.error("[GBP AUTH] OAuth token refresh failed:", detail);

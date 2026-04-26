@@ -242,13 +242,17 @@ async function executeTool(name, args) {
       case 'fetch_reviews':
         return await gbpClient.fetchReviews();
 
-      case 'reply_to_review':
-        await gbpClient.replyToReview(args.reviewName, args.replyText);
+      case 'reply_to_review': {
+        const resp = await gbpClient.replyToReview(args.reviewName, args.replyText);
+        if (resp && resp.error) return { error: resp.error };
         return { success: true };
+      }
 
-      case 'delete_review_reply':
-        await gbpClient.deleteReviewReply(args.reviewName);
+      case 'delete_review_reply': {
+        const resp = await gbpClient.deleteReviewReply(args.reviewName);
+        if (resp && resp.error) return { error: resp.error };
         return { success: true };
+      }
 
       case 'get_posts':
         return await gbpClient.getPosts();
@@ -260,18 +264,22 @@ async function executeTool(name, args) {
           if (args.callToActionUrl) postData.callToAction.url = args.callToActionUrl;
         }
         const post = await gbpClient.createPost(postData);
+        if (post && post.error) return { error: post.error };
         return { success: true, post };
       }
 
-      case 'delete_post':
-        await gbpClient.deletePost(args.postName);
+      case 'delete_post': {
+        const resp = await gbpClient.deletePost(args.postName);
+        if (resp && resp.error) return { error: resp.error };
         return { success: true };
+      }
 
       case 'get_profile':
         return await gbpClient.getProfile();
 
       case 'update_profile': {
         const result = await gbpClient.updateProfile(args.updateData, args.updateMask);
+        if (result && result.error) return { error: result.error };
         return { success: true, result };
       }
 
@@ -285,12 +293,15 @@ async function executeTool(name, args) {
         const mediaData = { mediaFormat: args.mediaFormat, sourceUrl: args.sourceUrl };
         if (args.description) mediaData.description = args.description;
         const media = await gbpClient.uploadMedia(mediaData);
+        if (media && media.error) return { error: media.error };
         return { success: true, media };
       }
 
-      case 'delete_media':
-        await gbpClient.deleteMedia(args.mediaId);
+      case 'delete_media': {
+        const resp = await gbpClient.deleteMedia(args.mediaId);
+        if (resp && resp.error) return { error: resp.error };
         return { success: true };
+      }
 
       case 'get_insights': {
         const opts = {};

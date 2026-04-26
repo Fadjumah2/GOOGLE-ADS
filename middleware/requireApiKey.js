@@ -7,6 +7,8 @@
  * Set API_KEY in your .env file to a long random secret.
  * Generate one with:  node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
  */
+import { timingSafeEqual } from 'crypto';
+
 const API_KEY = process.env.API_KEY;
 
 if (!API_KEY) {
@@ -23,7 +25,11 @@ export default function requireApiKey(req, res, next) {
 
   const provided = req.headers['x-api-key'];
 
-  if (!provided || provided !== API_KEY) {
+  const valid = provided &&
+    provided.length === API_KEY.length &&
+    timingSafeEqual(Buffer.from(provided), Buffer.from(API_KEY));
+
+  if (!valid) {
     return res.status(401).json({
       success: false,
       error: 'Unauthorized: missing or invalid x-api-key header.'

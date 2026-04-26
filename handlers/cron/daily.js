@@ -1,3 +1,4 @@
+import { timingSafeEqual } from 'crypto';
 import * as autonomous from '../../utils/autonomousAgent.js';
 import * as auditLog from '../../utils/auditLog.js';
 import logger from '../../utils/logger.js';
@@ -28,7 +29,10 @@ export default async (req, res) => {
             message: 'Set CRON_SECRET in the deployment env before enabling cron.',
         });
     }
-    if (!provided || provided !== expected) {
+    const valid = provided &&
+        provided.length === expected.length &&
+        timingSafeEqual(Buffer.from(provided), Buffer.from(expected));
+    if (!valid) {
         auditLog.record('autopilot.cron.unauthorized', {
             reason: provided ? 'bad_token' : 'missing_token',
             ua: req.headers['user-agent'] || null,

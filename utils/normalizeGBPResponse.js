@@ -36,6 +36,7 @@ export const normalizeQuestions = (data) => {
   if (!data || !Array.isArray(data.questions)) {
     return {
       success: false,
+      error: "NORMALIZATION_FAILED",
       questions: []
     };
   }

@@ -25,7 +25,7 @@ const handleGetInsights = async (req, res) => {
     res.json(normalizedData);
   } catch (error) {
     logger.error(`Failed to fetch insights: ${error.message}`);
-    res.status(400).json({ success: false, error: 'GET_INSIGHTS_FAILED', message: error.message });
+    res.status(500).json({ success: false, error: 'GET_INSIGHTS_FAILED', message: error.message });
   }
 };
 

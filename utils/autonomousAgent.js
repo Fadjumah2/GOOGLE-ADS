@@ -160,6 +160,10 @@ async function runDailyPost({ force = false, dryRun = null } = {}) {
             }
         } catch (e) {
             logger.error('alreadyPostedToday check failed: ' + e.message);
+            report.skipped = true;
+            report.reasons.push('idempotency_check_error');
+            auditLog.record('autopilot.post.skipped', report);
+            return report;
         }
     }
 
@@ -333,24 +337,25 @@ async function runAutoReplies({ maxReplies = 5, dryRun = null } = {}) {
     }
     const { reviews = [] } = normalizeReviews(raw);
 
+    // Evaluate each review once and cache the result
+    const reviewed = reviews.map(r => ({ r, safe: isSafeForAutoReply(r) }));
+
     // Safe candidates, newest first, up to maxReplies
-    const candidates = reviews
-        .filter(r => {
-            const safe = isSafeForAutoReply(r);
-            return safe.ok;
-        })
+    const candidates = reviewed
+        .filter(x => x.safe.ok)
+        .map(x => x.r)
         .sort((a, b) => Date.parse(b.createTime || 0) - Date.parse(a.createTime || 0))
         .slice(0, maxReplies);
 
-    const flaggedForHuman = reviews
-        .filter(r => !r.hasReply && !isSafeForAutoReply(r).ok)
+    const flaggedForHuman = reviewed
+        .filter(x => !x.r.hasReply && !x.safe.ok)
         .slice(0, 20)
-        .map(r => ({
-            reviewName: r.reviewName,
-            reviewer: r.reviewer,
-            starRating: r.starRating,
-            createTime: r.createTime,
-            reasons: isSafeForAutoReply(r).reasons,
+        .map(x => ({
+            reviewName: x.r.reviewName,
+            reviewer: x.r.reviewer,
+            starRating: x.r.starRating,
+            createTime: x.r.createTime,
+            reasons: x.safe.reasons,
         }));
 
     report.flaggedForHuman = flaggedForHuman;
@@ -419,7 +424,7 @@ function buildReplyPrompt(review, attempt, lastReasons, rawProfile) {
     const specialty   = rawProfile?.categories?.primaryCategory?.displayName || CLINIC.primarySpecialty;
     const description = rawProfile?.profile?.description || rawProfile?.description || CLINIC.description;
     const stars       = review.starRating;
-    const comment     = (review.comment || '').slice(0, 500);
+    const comment     = (review.comment || '').replace(/[\r\n]+/g, ' ').trim().slice(0, 300);
 
     const clinicContext = [
         `You are the owner of ${name}, a specialist ${specialty} clinic in ${CLINIC.city}, Uganda.`,

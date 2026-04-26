@@ -9,11 +9,6 @@ const handleCreatePost = async (req, res) => {
     return res.status(400).json({ success: false, message: 'Missing postData in request body.' });
   }
 
-  // Set default topicType to STANDARD if not provided
-  if (!postData.topicType) {
-    postData.topicType = 'STANDARD';
-  }
-
   // GBP API requires languageCode and summary on every post
   if (!postData.languageCode) {
     logger.error('postData.languageCode is required.');
@@ -28,9 +23,12 @@ const handleCreatePost = async (req, res) => {
     return res.status(400).json({ success: false, message: `postData.summary exceeds 1500 character limit (got ${postData.summary.length}).` });
   }
 
+  // Build a local copy so we never mutate req.body
+  const data = { topicType: 'STANDARD', ...postData };
+
   try {
     logger.info('Creating local post...');
-    const result = await gbpClient.createPost(postData);
+    const result = await gbpClient.createPost(data);
     
     if (result.error) {
         logger.error(`GBP error creating post: ${result.error}`);

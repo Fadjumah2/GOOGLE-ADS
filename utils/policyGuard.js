@@ -150,7 +150,7 @@ export function validateReviewReply(text, reviewMeta = {}) {
     // reveal any personal info the reviewer shared.
     if (reviewMeta.comment) {
         const revSnippet = reviewMeta.comment.trim().slice(0, 40).toLowerCase();
-        if (revSnippet.length > 20 && trimmed.toLowerCase().includes(revSnippet)) {
+        if (revSnippet.length > 5 && trimmed.toLowerCase().includes(revSnippet)) {
             reasons.push('quotes_reviewer_text');
         }
     }
