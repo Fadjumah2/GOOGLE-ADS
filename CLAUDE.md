@@ -223,15 +223,15 @@ curl -s https://www.trendexhub.com/api/gbp/getProfile \
 
 ---
 
-## Last Session Snapshot (auto-updated: 2026-04-25 22:11 UTC)
+## Last Session Snapshot (auto-updated: 2026-04-26 15:03 UTC)
 - **Branch:** `main`
 - **Last 5 commits:**
 ```
+33cdbf9 feat(autopilot): enrich agent with live GBP profile context and Google format specs
+39f378d chore: update CLAUDE.md session snapshot
 0694628 chore: update CLAUDE.md session snapshot
 4cc9c1f fix(autopilot): fix 9 bugs and fully implement autonomous agent
 e3ce074 chore: update CLAUDE.md session snapshot
-9f4b758 chore: update CLAUDE.md session snapshot
-7f5c731 feat(frontend): forced re-auth, 5-min idle timeout, dark theme, Media + Sync fixes
 ```
 - **Billing:** Activated and linked to project `468613454814` ✅
 - **APIs enabled:** My Business Reviews, Business Information, Account Management ✅
