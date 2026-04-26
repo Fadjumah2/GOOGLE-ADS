@@ -1,8 +1,10 @@
-import { CONTENT_CONSTRAINTS, CLINIC } from './contentStrategy.js';
+import { CONTENT_CONSTRAINTS, CLINIC, GBP_FORMAT } from './contentStrategy.js';
 
-const POST_MAX = 1400;
-const POST_MIN = 40;
-const REPLY_MAX = 4000;
+// POST_MAX: Google hard limit is 1,500. We enforce 1,400 (100-char safety margin
+// for encoding edge cases and API strictness variations).
+const POST_MAX = GBP_FORMAT.POST_SAFETY_MAX;  // 1400
+const POST_MIN = 80;   // Matches CONTENT_CONSTRAINTS.minLength; posts under 80 chars lack substance
+const REPLY_MAX = GBP_FORMAT.REPLY_MAX;        // 4000 — Google's published limit
 const REPLY_MIN = 12;
 
 const URL_RE = /\bhttps?:\/\/[^\s)]+/gi;

@@ -16,15 +16,34 @@
  * so we always know today's topic and can avoid repeats.
  */
 
+// Official Google Business Profile format specifications.
+// Used by policyGuard, autonomousAgent, and geminiClient as a single source of truth.
+export const GBP_FORMAT = {
+    POST_MAX: 1500,           // Google hard limit
+    POST_SAFETY_MAX: 1400,    // Our enforced ceiling (100-char safety margin)
+    POST_OPTIMAL_MIN: 150,    // Google engagement sweet spot — lower bound
+    POST_OPTIMAL_MAX: 300,    // Google engagement sweet spot — upper bound
+    REPLY_MAX: 4000,
+    REPLY_OPTIMAL_MAX: 600,   // Warm and readable; longer replies lose attention
+    DESCRIPTION_MAX: 750,
+    DESCRIPTION_CRITICAL: 250, // First 250 chars shown in truncated search preview
+    POST_EXPIRY_DAYS: 7,       // STANDARD posts expire after 7 days
+    EVENT_TITLE_MAX: 58,
+};
+
 export const CLINIC = {
     name: 'Eritage ENT Care',
     city: 'Entebbe',
     country: 'Uganda',
-    phone: '+256', // kept generic; the real phone lives on the GBP profile itself
+    // phone, description, services are populated at runtime from the live GBP profile.
+    // These empty defaults ensure the prompt builder never crashes if the API is down.
+    phone: '',
     website: 'https://eritageentcare.com',
     primarySpecialty: 'Ear, Nose & Throat (ENT)',
     audience: 'adults and children in and around Entebbe and greater Kampala',
     tone: 'warm, professional, reassuring, plain-English',
+    description: '',
+    services: [],
 };
 
 /**
@@ -140,8 +159,8 @@ export const WEEKLY_THEMES = [
  * Defined here so generation and validation stay in sync.
  */
 export const CONTENT_CONSTRAINTS = {
-    maxLength: 1400,       // GBP hard limit is 1500; we leave headroom.
-    minLength: 60,
+    maxLength: GBP_FORMAT.POST_SAFETY_MAX,
+    minLength: 80, // Posts under 80 chars are too thin for a meaningful ENT message
     bannedTerms: [
         'cure', 'cures', 'cured',
         'guarantee', 'guaranteed', 'guarantees',

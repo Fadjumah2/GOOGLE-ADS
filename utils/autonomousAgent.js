@@ -22,10 +22,43 @@ import { generateText } from './geminiClient.js';
 import { getTopicForToday, CLINIC } from './contentStrategy.js';
 import { validatePost, validateReviewReply, isSafeForAutoReply } from './policyGuard.js';
 import * as auditLog from './auditLog.js';
-import { normalizePosts, normalizeReviews } from './normalizeGBPResponse.js';
+import { normalizePosts, normalizeReviews, normalizeServices } from './normalizeGBPResponse.js';
 import logger from './logger.js';
 
 const processStartTime = Date.now();
+
+/* ------------------------------------------------------------------ */
+/* Clinic context — fetched once per job run                           */
+/* ------------------------------------------------------------------ */
+
+function formatHours(regularHours) {
+    if (!regularHours?.periods?.length) return null;
+    const abbr = { MONDAY: 'Mon', TUESDAY: 'Tue', WEDNESDAY: 'Wed', THURSDAY: 'Thu', FRIDAY: 'Fri', SATURDAY: 'Sat', SUNDAY: 'Sun' };
+    const fmt = t => {
+        const [h, m] = (t || '00:00').split(':');
+        const hr = parseInt(h, 10);
+        return `${hr > 12 ? hr - 12 : hr || 12}${m && m !== '00' ? ':' + m : ''}${hr >= 12 ? 'pm' : 'am'}`;
+    };
+    return regularHours.periods
+        .map(p => `${abbr[p.openDay] || p.openDay} ${fmt(p.openTime)}–${fmt(p.closeTime)}`)
+        .join(', ')
+        .slice(0, 120);
+}
+
+async function fetchClinicContext() {
+    const [profileRes, servicesRes] = await Promise.allSettled([
+        gbpClient.getProfile(),
+        gbpClient.getServiceList(),
+    ]);
+    const rawProfile = (profileRes.status === 'fulfilled' && !profileRes.value?.error)
+        ? profileRes.value : null;
+    let services = [];
+    if (servicesRes.status === 'fulfilled' && !servicesRes.value?.error) {
+        const { services: list } = normalizeServices(servicesRes.value);
+        services = list.map(s => s.displayName).filter(Boolean).slice(0, 12);
+    }
+    return { rawProfile, services };
+}
 
 /* ------------------------------------------------------------------ */
 /* Env / feature flags                                                */
@@ -135,18 +168,19 @@ async function runDailyPost({ force = false, dryRun = null } = {}) {
     report.theme = topic.theme;
     report.dayName = topic.dayName;
 
-    // Fetch current profile once — raw response used for CTA URL + grounding context.
-    // We keep the raw GBP response (.websiteUri, .title, .categories) so both
-    // buildCallToAction and buildDailyPostPrompt can access fields without re-nesting.
+    // Fetch live profile + services in parallel — used for CTA URL, grounding context,
+    // and injecting real clinic services into the Gemini prompt.
     let rawProfile = null;
+    let clinicServices = [];
     try {
-        const profileData = await gbpClient.getProfile();
-        if (profileData && !profileData.error) rawProfile = profileData;
+        const ctx = await fetchClinicContext();
+        rawProfile = ctx.rawProfile;
+        clinicServices = ctx.services;
     } catch (e) {
-        logger.error('getProfile failed in runDailyPost: ' + e.message);
+        logger.error('fetchClinicContext failed in runDailyPost: ' + e.message);
     }
 
-    const prompt = buildDailyPostPrompt(topic, rawProfile);
+    const prompt = buildDailyPostPrompt(topic, rawProfile, clinicServices);
 
     // Generate + validate; retry with stricter instruction if policyGuard rejects
     let drafted = null;
@@ -158,8 +192,8 @@ async function runDailyPost({ force = false, dryRun = null } = {}) {
                 i === 0
                     ? prompt
                     : prompt + `\n\nIMPORTANT: your previous draft was rejected (${(validation?.reasons || []).join(',')}). ` +
-                      `Rewrite in plain English, 3–5 short sentences, no hashtags, no emojis, no foreign URLs, no phone numbers.`,
-                { temperature: 0.6 + i * 0.1, maxOutputTokens: 400 }
+                      `Rewrite in plain English, 2–4 short sentences, aim for 150–300 characters, no hashtags, no emojis, no URLs, no phone numbers.`,
+                { temperature: 0.6 + i * 0.1, maxOutputTokens: 600 }
             );
         } catch (err) {
             attempt.error = err.message;
@@ -213,27 +247,52 @@ async function runDailyPost({ force = false, dryRun = null } = {}) {
     return report;
 }
 
-// rawProfile is the raw GBP API response: .title, .categories.primaryCategory.displayName, etc.
-function buildDailyPostPrompt(topic, rawProfile) {
-    const titleBits = [];
-    if (rawProfile?.title) titleBits.push(`Clinic name: ${rawProfile.title}`);
-    titleBits.push(`Location: Entebbe, Uganda`);
-    if (rawProfile?.categories?.primaryCategory?.displayName) {
-        titleBits.push(`Category: ${rawProfile.categories.primaryCategory.displayName}`);
-    }
+// rawProfile is the raw GBP API response; services is string[] of real clinic service names.
+function buildDailyPostPrompt(topic, rawProfile, services = []) {
+    const name        = rawProfile?.title || CLINIC.name;
+    const category    = rawProfile?.categories?.primaryCategory?.displayName || CLINIC.primarySpecialty;
+    const website     = rawProfile?.websiteUri || CLINIC.website;
+    const phone       = rawProfile?.phoneNumbers?.primaryPhone || CLINIC.phone;
+    const description = rawProfile?.profile?.description || rawProfile?.description || CLINIC.description;
+    const hours       = formatHours(rawProfile?.regularHours);
+    const address     = rawProfile?.storefrontAddress
+        ? [rawProfile.storefrontAddress.addressLines?.[0], rawProfile.storefrontAddress.locality].filter(Boolean).join(', ')
+        : CLINIC.city;
+    const serviceStr  = services.length > 0
+        ? services.join(', ')
+        : CLINIC.primarySpecialty;
+
+    const facts = [
+        `  Name: ${name}`,
+        `  Location: ${address}, Entebbe, Uganda`,
+        `  Category: ${category}`,
+        website ? `  Website: ${website}` : null,
+        phone   ? `  Phone: ${phone}` : null,
+        description ? `  About: ${description.slice(0, 200)}` : null,
+        `  Services offered: ${serviceStr}`,
+        hours   ? `  Hours: ${hours}` : null,
+    ].filter(Boolean).join('\n');
+
     return [
         `You are drafting a Google Business Profile "local post" for a healthcare clinic.`,
-        titleBits.join('\n'),
-        '',
-        `TASK:\n${topic.prompt}`,
-        '',
-        `HARD CONSTRAINTS (non-negotiable):`,
-        `- Output ONLY the post body — no title, no "here is the post" preamble, no quotation marks.`,
-        `- 40–1400 characters.`,
-        `- No hashtags, no emojis, no all-caps words longer than 3 letters.`,
-        `- No phone numbers, no email addresses, no URLs in the body.`,
-        `- No medical claims: do not use cure, guarantee, miracle, best, #1, diagnose, prescription, dosage.`,
-        `- Plain conversational English only. No bullet points, no markdown.`,
+        ``,
+        `CLINIC FACTS (ground every post in these real details — do not invent services or claims):`,
+        facts,
+        ``,
+        `TASK:`,
+        topic.prompt,
+        ``,
+        `FORMAT RULES — Google Business Profile specifications (non-negotiable):`,
+        `- Output ONLY the post body. No title, no "Here is the post:" preamble, no quotation marks.`,
+        `- TARGET length: 150–300 characters. This range achieves the best Google Search engagement.`,
+        `  Hard maximum: 1,400 characters. Never exceed it.`,
+        `  Note: STANDARD posts expire after 7 days — write timely, evergreen-friendly content.`,
+        `- Plain conversational English only. No bullet points, no markdown, no numbered lists.`,
+        `- No hashtags. No emojis. No ALL-CAPS words longer than 3 letters.`,
+        `- No phone numbers in the body (Google displays the phone separately on the profile).`,
+        `- No email addresses. No URLs anywhere in the body text.`,
+        `- No medical claims: never use cure, cures, guarantee, miracle, #1, best, diagnose, prescription, dosage.`,
+        `- Reference only services the clinic actually offers (listed above). Do not invent services.`,
     ].join('\n');
 }
 
@@ -255,6 +314,15 @@ async function runAutoReplies({ maxReplies = 5, dryRun = null } = {}) {
         report.reasons.push('auto_replies_disabled');
         auditLog.record('autopilot.reply.skipped', report);
         return report;
+    }
+
+    // Fetch clinic profile for reply grounding context (phone, description, specialty).
+    let rawProfile = null;
+    try {
+        const ctx = await fetchClinicContext();
+        rawProfile = ctx.rawProfile;
+    } catch (e) {
+        logger.error('fetchClinicContext failed in runAutoReplies: ' + e.message);
     }
 
     const raw = await gbpClient.fetchReviews();
@@ -296,9 +364,9 @@ async function runAutoReplies({ maxReplies = 5, dryRun = null } = {}) {
         };
         let drafted, validation;
         for (let i = 0; i < ATTEMPTS_PER_DAY; i++) {
-            const prompt = buildReplyPrompt(review, i, validation?.reasons);
+            const prompt = buildReplyPrompt(review, i, validation?.reasons, rawProfile);
             try {
-                drafted = await generateText(prompt, { temperature: 0.5, maxOutputTokens: 220 });
+                drafted = await generateText(prompt, { temperature: 0.5, maxOutputTokens: 300 });
             } catch (err) {
                 entry.attempts.push({ n: i + 1, error: err.message });
                 continue;
@@ -345,28 +413,42 @@ async function runAutoReplies({ maxReplies = 5, dryRun = null } = {}) {
     return report;
 }
 
-function buildReplyPrompt(review, attempt, lastReasons) {
-    const stars = review.starRating;
-    const comment = (review.comment || '').slice(0, 500);
+// rawProfile is the raw GBP API response — used to ground the reply in real clinic details.
+function buildReplyPrompt(review, attempt, lastReasons, rawProfile) {
+    const name        = rawProfile?.title || CLINIC.name;
+    const specialty   = rawProfile?.categories?.primaryCategory?.displayName || CLINIC.primarySpecialty;
+    const description = rawProfile?.profile?.description || rawProfile?.description || CLINIC.description;
+    const stars       = review.starRating;
+    const comment     = (review.comment || '').slice(0, 500);
+
+    const clinicContext = [
+        `You are the owner of ${name}, a specialist ${specialty} clinic in ${CLINIC.city}, Uganda.`,
+        description ? `About the clinic: ${description.slice(0, 180)}` : null,
+    ].filter(Boolean).join('\n');
+
     const correction = attempt > 0
-        ? `\n\nYour previous draft was rejected (${(lastReasons || []).join(',')}). Rewrite plainly, no links, no phone numbers, no quotes of the reviewer.`
+        ? `\nYour previous draft was rejected (${(lastReasons || []).join(', ')}). Rewrite plainly: 2–3 sentences, no links, no phone numbers, no quoting the reviewer.`
         : '';
+
     return [
-        `You are the owner of ${CLINIC.name} in ${CLINIC.city}, ${CLINIC.country}.`,
-        `Write a short, warm, personal reply (2–4 sentences) to the following Google review.`,
-        `Star rating: ${stars}`,
-        comment ? `Review text: "${comment}"` : `(The reviewer left no text comment.)`,
+        clinicContext,
         ``,
-        `HARD CONSTRAINTS (non-negotiable):`,
-        `- Thank the reviewer sincerely. Use the reviewer's first name only if it is clearly present in review metadata; otherwise say "Thank you".`,
-        `- Do NOT quote the reviewer's text back at them.`,
-        `- Do NOT mention any specific diagnosis, treatment, or medical outcome.`,
-        `- Do NOT include URLs, phone numbers, or email addresses.`,
-        `- No hashtags, no emojis, no all-caps words.`,
+        `Write a short, warm, personal reply (2–4 sentences) to this Google Business Profile review.`,
+        `Star rating: ${stars}`,
+        comment ? `Review text: "${comment}"` : `(The reviewer left no written comment.)`,
+        ``,
+        `REPLY FORMAT RULES — Google Business Profile specifications (non-negotiable):`,
+        `- Maximum 4,000 characters. TARGET 100–400 characters — warm and readable wins over long.`,
+        `- Thank the reviewer sincerely. Use their first name if it is clearly present; otherwise say "Thank you".`,
+        `- Do NOT quote the reviewer's exact words back at them (Google privacy policy).`,
+        `- Do NOT mention any specific diagnosis, treatment, medication, or medical outcome.`,
+        `- For any concern, you may invite them to call the clinic — but do NOT include a phone number in the reply.`,
+        `- No URLs, email addresses, or social media handles.`,
+        `- No hashtags. No emojis. No ALL-CAPS words.`,
         `- Do not use "cure", "guarantee", "miracle", "best".`,
-        `- Output ONLY the reply text. No preamble, no quotation marks, no sign-off line breaks.`,
+        `- Output ONLY the reply text. No title, no preamble, no quotation marks, no trailing line breaks.`,
         correction,
-    ].join('\n');
+    ].filter(Boolean).join('\n');
 }
 
 /* ------------------------------------------------------------------ */
