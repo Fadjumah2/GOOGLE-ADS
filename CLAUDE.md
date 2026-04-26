@@ -227,11 +227,11 @@ curl -s https://www.trendexhub.com/api/gbp/getProfile \
 - **Branch:** `claude/bug-audit-iKXEj`
 - **Last 5 commits:**
 ```
+6f48eea chore: update CLAUDE.md session snapshot
 cf6d1f0 fix: full bug audit — security, logic, and correctness fixes
 ee6ba0e chore: update CLAUDE.md session snapshot
 d15a900 docs: add GEMINI.md with strict coding guardrails for Gemini Code Assistant
 95ceae9 chore: update CLAUDE.md session snapshot
-3e87073 chore: update CLAUDE.md session snapshot
 ```
 - **Billing:** Activated and linked to project `468613454814` ✅
 - **APIs enabled:** My Business Reviews, Business Information, Account Management ✅
