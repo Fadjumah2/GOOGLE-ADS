@@ -162,13 +162,13 @@
 <body>
 
     <nav class="nav">
-        <a href="/" class="nav-brand">
+        <a href="/home" class="nav-brand">
             <img src="logo.jpg" alt="Synapse Logo">
             Synapse
         </a>
         <div class="nav-links">
-            <a href="/">Home</a>
-            <a href="/privacy.html">Privacy Policy</a>
+            <a href="/home">Home</a>
+            <a href="/privacy">Privacy Policy</a>
         </div>
     </nav>
 
@@ -176,88 +176,98 @@
         <div class="page-header">
             <span class="badge">Legal</span>
             <h1>Terms of Service</h1>
-            <p class="meta">Effective date: 19 April 2026 &nbsp;·&nbsp; Last updated: 19 April 2026</p>
+            <p class="meta">Effective date: 26 April 2026 &nbsp;·&nbsp; Last updated: 26 April 2026</p>
         </div>
 
         <h2>1. Acceptance of Terms</h2>
-        <p>These Terms of Service ("Terms") govern your access to and use of the Synapse platform ("Service"), operated by Trendex Hub ("we", "us", "our"). By accessing or using Synapse, you agree to be bound by these Terms. If you do not agree, you may not use the Service.</p>
+        <p>These Terms of Service govern your access to and use of the Synapse platform, operated by Trendex Hub, a software company based in Uganda. By accessing or using Synapse, you agree to be bound by these Terms. If you do not agree, you may not use the platform. For questions, contact us at <a href="mailto:info@trendexhub.com">info@trendexhub.com</a>.</p>
 
         <h2>2. Description of Service</h2>
-        <p>Synapse is an autonomous business management platform that integrates with Google Business Profile and Google Ads APIs to help businesses:</p>
+        <p>Synapse is an autonomous business management platform that connects to Google APIs on behalf of business owners to help them maintain an active, policy-compliant online presence. The platform currently provides:</p>
         <ul>
-            <li>Manage and update their Google Business Profile listing</li>
-            <li>Autonomously publish daily content posts to their Google Business Profile</li>
-            <li>Draft and submit replies to customer reviews using AI assistance</li>
-            <li>Monitor business performance metrics and analytics</li>
-            <li>Manage Google Ads campaigns (upcoming feature)</li>
-        </ul>
-        <p>The Service is currently operated as an autonomous agent platform. Certain features perform actions on your Google Business Profile automatically, subject to the policy safeguards described in Section 5.</p>
-
-        <h2>3. Account Access and Google API Authorisation</h2>
-        <p>To use Synapse, you must authorise the platform to access your Google Account via OAuth 2.0. By granting this authorisation, you acknowledge that:</p>
-        <ul>
-            <li>Synapse will access your Google Business Profile data and take automated actions on your behalf</li>
-            <li>You are the authorised account holder or have explicit permission from the account holder</li>
-            <li>You can revoke this access at any time via your Google Account settings</li>
-            <li>Synapse's use of Google API data is governed by the <a href="https://developers.google.com/terms/api-services-user-data-policy" target="_blank" rel="noopener">Google API Services User Data Policy</a></li>
+            <li><strong>Google Business Profile management</strong> — Publishing daily content posts, drafting and submitting replies to customer reviews, answering customer questions, managing photos and media, and updating business information including hours and services.</li>
+            <li><strong>Google Ads performance monitoring</strong> — Reading campaign performance data, impression counts, click metrics, and ad spend summaries to surface advertising insights within the Synapse dashboard. Synapse reads advertising data but does not autonomously create, pause, or delete campaigns.</li>
+            <li><strong>AI-assisted content generation</strong> — Using the Google Gemini API to draft business posts and review replies, subject to a built-in policy validation layer before any content is published.</li>
+            <li><strong>Audit and oversight tools</strong> — A complete log of all autonomous actions taken by the platform, accessible to the account holder at any time.</li>
         </ul>
 
-        <h2>4. User Responsibilities</h2>
-        <p>You are solely responsible for:</p>
+        <h2>3. Google API Authorisation</h2>
+        <p>To use Synapse, you must authorise the platform to access your Google Account via OAuth 2.0. By granting this authorisation, you confirm that:</p>
+        <ul>
+            <li>You are the authorised owner or manager of the Google Business Profile and/or Google Ads account being connected</li>
+            <li>You grant Synapse permission to access, read, and act on the Google services you explicitly authorise</li>
+            <li>Synapse's use of your Google data complies with the <a href="https://developers.google.com/terms/api-services-user-data-policy" target="_blank" rel="noopener">Google API Services User Data Policy</a>, including Limited Use requirements</li>
+            <li>You may revoke this authorisation at any time via your Google Account settings at <a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener">myaccount.google.com/permissions</a></li>
+        </ul>
+
+        <h2>4. Acceptable Use</h2>
+        <p>You agree to use Synapse only for lawful business management purposes. You may not use the platform to:</p>
+        <ul>
+            <li>Publish content that violates <a href="https://support.google.com/business/answer/3038177" target="_blank" rel="noopener">Google Business Profile policies</a> or <a href="https://support.google.com/adspolicy" target="_blank" rel="noopener">Google Ads policies</a></li>
+            <li>Publish false, misleading, or deceptive information about your business</li>
+            <li>Circumvent Google's rate limits, terms of service, or content policies</li>
+            <li>Access or attempt to access any Google account or resource you are not authorised to manage</li>
+            <li>Reverse-engineer, resell, or redistribute the Synapse platform or its API integrations</li>
+        </ul>
+
+        <h2>5. User Responsibilities</h2>
+        <p>You remain solely responsible for:</p>
         <ul>
             <li>Maintaining the security of your API credentials and access keys used to authenticate with Synapse</li>
-            <li>Ensuring that the content published to your Google Business Profile via Synapse complies with Google's <a href="https://support.google.com/business/answer/3038177" target="_blank" rel="noopener">Business Profile policies</a></li>
-            <li>Reviewing autonomous actions taken by Synapse via the audit log and flagging any inaccuracies</li>
-            <li>Ensuring that any Google Ads campaigns managed through the platform comply with <a href="https://support.google.com/adspolicy" target="_blank" rel="noopener">Google Ads policies</a></li>
-            <li>Providing accurate and lawful business information on your Google Business Profile</li>
-            <li>Notifying us promptly of any unauthorised access to your Synapse account</li>
+            <li>Reviewing the autonomous actions taken by Synapse via the audit log, and promptly correcting any content that does not meet your standards</li>
+            <li>Ensuring your Google Business Profile information (address, hours, services) is accurate before enabling autonomous posting</li>
+            <li>Compliance with all applicable laws and regulations relating to your business's advertising and public communications</li>
+            <li>Notifying Trendex Hub promptly at <a href="mailto:info@trendexhub.com">info@trendexhub.com</a> of any unauthorised access to your Synapse account</li>
         </ul>
 
-        <h2>5. Autonomous Agent Safeguards</h2>
-        <p>Synapse's autonomous features are designed with built-in policy safeguards. The agent will:</p>
+        <h2>6. Autonomous Agent Safeguards</h2>
+        <p>Synapse's autonomous features operate under strict built-in policy controls designed to protect your business reputation and comply with Google's content policies:</p>
         <ul>
-            <li>Only auto-reply to 4-star and 5-star reviews; all others are flagged for human review</li>
-            <li>Block content containing prohibited terms (medical claims, guarantees, or inappropriate language)</li>
-            <li>Publish a maximum of one post per day to avoid spam</li>
-            <li>Never include external URLs, contact information, or off-brand content in auto-generated posts</li>
+            <li>Every AI-generated post and review reply passes through a policy validation layer before publication — blocking medical claims, guarantees, foreign URLs, phone numbers, email addresses, hashtags, emojis, and banned terminology</li>
+            <li>Auto-replies are sent only to 4-star and 5-star reviews; all reviews rated 3 stars or below are flagged for human review and never auto-answered</li>
+            <li>A maximum of one post is published per day to prevent content spam</li>
+            <li>If all generation attempts for a post or reply fail policy validation, nothing is published and the failure is recorded in the audit log</li>
+            <li>All autonomous actions can be disabled immediately via environment variable kill switches, without requiring a code change</li>
         </ul>
-        <p>While these safeguards are designed to protect you, you remain responsible for reviewing and, if necessary, correcting any content published by the autonomous agent.</p>
+        <p>While these safeguards are designed to protect you, you remain responsible for reviewing the audit log and taking corrective action if needed. Trendex Hub is not liable for content published as a result of incorrect business information provided by you.</p>
 
-        <h2>6. Google Ads — Financial Responsibility</h2>
+        <h2>7. Google Ads — Scope of Access and Financial Responsibility</h2>
         <div class="highlight-box">
-            <p><strong>Important:</strong> All advertising costs (cost-per-click, impressions, campaign spend) incurred through Google Ads are your sole financial responsibility. Trendex Hub and the Synapse platform are not responsible for any ad spend, budget overruns, or billing charges on your Google Ads account. You must manage your campaign budgets and payment settings directly within your Google Ads account. Synapse only provides management and optimisation assistance — it does not control or hold funds on your behalf.</p>
+            <p><strong>Important:</strong> Synapse accesses your Google Ads account in read-only mode to retrieve campaign performance data for display in your dashboard. Trendex Hub does not control your advertising budget, bidding, or campaign settings. All advertising costs — including cost-per-click, impressions, and total ad spend — are your sole financial responsibility and are managed directly in your Google Ads account. Trendex Hub is not responsible for any ad spend, budget overruns, or billing charges on your Google Ads account.</p>
         </div>
 
-        <h2>7. Intellectual Property</h2>
-        <p>The Synapse platform, including its source code, design, and AI agent logic, is proprietary to Trendex Hub. You are granted a limited, non-exclusive, non-transferable licence to use the Service for your own business management purposes. You may not copy, modify, reverse-engineer, or distribute any part of the Service.</p>
-        <p>AI-generated content (posts, review replies) produced by Synapse for your business profile is owned by you and published under your account. You are responsible for that content.</p>
+        <h2>8. Intellectual Property</h2>
+        <p>The Synapse platform, including its source code, design, autonomous agent logic, and policy engine, is proprietary to Trendex Hub. You are granted a limited, non-exclusive, non-transferable licence to use the service for your own business management purposes.</p>
+        <p>AI-generated content (posts, review replies) produced by Synapse and published to your Google Business Profile is published under your account and is your property. You are responsible for that content once it is published.</p>
 
-        <h2>8. Disclaimer of Warranties</h2>
-        <p>The Service is provided "as is" and "as available" without warranties of any kind, express or implied. We do not warrant that:</p>
+        <h2>9. Disclaimer of Warranties</h2>
+        <p>The Synapse platform is provided "as is" and "as available" without warranties of any kind. Trendex Hub does not warrant that:</p>
         <ul>
-            <li>The Service will be uninterrupted, error-free, or secure</li>
-            <li>AI-generated content will be accurate, complete, or suitable for all purposes</li>
-            <li>Google API changes will not affect Service functionality</li>
+            <li>The service will be uninterrupted, error-free, or free from data loss</li>
+            <li>AI-generated content will always be accurate, complete, or appropriate for your specific business context</li>
+            <li>Changes to Google APIs will not affect service functionality</li>
             <li>Autonomous actions will always produce the desired business outcome</li>
+            <li>Google Ads data retrieved will be real-time accurate at all moments</li>
         </ul>
 
-        <h2>9. Limitation of Liability</h2>
-        <p>To the maximum extent permitted by applicable law, Trendex Hub shall not be liable for any indirect, incidental, special, or consequential damages arising from your use of Synapse, including but not limited to: lost business, lost revenue, reputational harm, or ad spend overruns. Our total liability to you for any claim arising from use of the Service shall not exceed the fees paid by you to Trendex Hub in the three months preceding the claim.</p>
+        <h2>10. Limitation of Liability</h2>
+        <p>To the maximum extent permitted by applicable law, Trendex Hub shall not be liable for any indirect, incidental, special, or consequential damages arising from your use of Synapse, including but not limited to: lost revenue, reputational harm caused by published content, or ad spend on your Google Ads account. Trendex Hub's total liability for any claim arising from use of the service shall not exceed the fees paid by you to Trendex Hub in the three months preceding the claim.</p>
 
-        <h2>10. Termination</h2>
-        <p>You may stop using Synapse at any time by revoking Google API access and discontinuing use of the platform. We reserve the right to suspend or terminate access to the Service, with or without notice, if we determine that you have violated these Terms or applicable law.</p>
-        <p>Upon termination, our obligations to provide the Service cease, but Sections 6, 7, 8, 9, and 11 shall survive termination.</p>
+        <h2>11. Termination</h2>
+        <p>You may stop using Synapse at any time by revoking Google API access at <a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener">myaccount.google.com/permissions</a> and discontinuing use of the platform. Trendex Hub reserves the right to suspend or terminate access to the service if you have violated these Terms, violated Google's API policies, or engaged in conduct that may harm Trendex Hub or its users.</p>
+        <p>Upon termination, Sections 7, 8, 9, 10, and 12 survive.</p>
 
-        <h2>11. Governing Law</h2>
-        <p>These Terms are governed by the laws of Uganda. Any disputes arising from these Terms or your use of the Service shall be subject to the exclusive jurisdiction of the courts of Uganda.</p>
+        <h2>12. Governing Law</h2>
+        <p>These Terms are governed by the laws of the Republic of Uganda. Any disputes arising from these Terms or your use of Synapse shall be subject to the exclusive jurisdiction of the courts of Uganda.</p>
 
-        <h2>12. Changes to Terms</h2>
-        <p>We may modify these Terms at any time by posting the revised version on this page with an updated "Last updated" date. Your continued use of the Service after any changes constitutes acceptance of the new Terms.</p>
+        <h2>13. Changes to These Terms</h2>
+        <p>Trendex Hub may modify these Terms at any time by posting the revised version on this page with an updated effective date. Your continued use of the service after any changes constitutes acceptance of the revised Terms.</p>
 
-        <h2>13. Contact</h2>
-        <p>For questions about these Terms, please contact:</p>
+        <h2>14. Contact</h2>
+        <p>For questions about these Terms or the Synapse platform, please contact:</p>
         <p>
             <strong>Trendex Hub</strong><br>
+            Entebbe, Uganda<br>
             Email: <a href="mailto:info@trendexhub.com">info@trendexhub.com</a><br>
             Website: <a href="https://www.trendexhub.com" target="_blank" rel="noopener">www.trendexhub.com</a>
         </p>
@@ -265,9 +275,9 @@
 
     <footer>
         <div class="footer-links">
-            <a href="/">Home</a>
-            <a href="/privacy.html">Privacy Policy</a>
-            <a href="/terms.html">Terms of Service</a>
+            <a href="/home">Home</a>
+            <a href="/privacy">Privacy Policy</a>
+            <a href="/terms">Terms of Service</a>
             <a href="mailto:info@trendexhub.com">Contact</a>
         </div>
         <p>&copy; 2026 Trendex Hub. Synapse — Autonomous GBP Management Platform.</p>

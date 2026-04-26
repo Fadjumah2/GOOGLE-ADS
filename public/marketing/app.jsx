@@ -94,7 +94,7 @@ const Nav = () => (
         <a href="#how" style={linkStyle}>How it works</a>
         <a href="#safety" style={linkStyle}>Policy guard</a>
         <a href="#pricing" style={linkStyle}>Pricing</a>
-        <a href="#cta" style={{ ...linkStyle, padding: "8px 16px", background: "var(--ink-90)", color: "var(--bg)", borderRadius: 999 }}>Contact sales →</a>
+        <a href="mailto:info@trendexhub.com" style={{ ...linkStyle, padding: "8px 16px", background: "var(--ink-90)", color: "var(--bg)", borderRadius: 999 }}>Contact sales →</a>
       </div>
     </div>
   </nav>
@@ -538,7 +538,33 @@ const Testimonial = () => (
   <section style={{ background: "var(--accent-soft)", borderTop: "1px solid var(--line)", borderBottom: "1px solid var(--line)" }}>
     <div style={{ maxWidth: 1200, margin: "0 auto", padding: "120px 32px", display: "grid", gridTemplateColumns: "1fr 2fr", gap: 80, alignItems: "center" }}>
       <div>
-        <StripePlaceholder label="clinic photo" h={280} />
+        <div style={{
+          height: 280,
+          borderRadius: 4,
+          background: "linear-gradient(145deg, oklch(0.88 0.04 60), oklch(0.82 0.06 50))",
+          border: "1px solid var(--line)",
+          display: "flex", flexDirection: "column",
+          alignItems: "center", justifyContent: "center",
+          gap: 12,
+          padding: 32
+        }}>
+          <div style={{
+            width: 72, height: 72, borderRadius: "50%",
+            background: "var(--accent)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            color: "oklch(0.98 0.01 75)",
+            fontFamily: "var(--font-display)", fontSize: 32
+          }}>E</div>
+          <div style={{ textAlign: "center" }}>
+            <div style={{ fontFamily: "var(--font-display)", fontSize: 20, letterSpacing: "-0.01em", color: "var(--ink-90)" }}>Eritage ENT Care</div>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--ink-60)", marginTop: 4, letterSpacing: "0.06em" }}>Specialist ENT Clinic</div>
+          </div>
+          <div style={{ display: "flex", gap: 4, marginTop: 4 }}>
+            {"★★★★★".split("").map((s, i) => (
+              <span key={i} style={{ color: "var(--accent)", fontSize: 16 }}>{s}</span>
+            ))}
+          </div>
+        </div>
         <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--ink-60)", marginTop: 12 }}>
           Eritage ENT Care · Entebbe, Uganda
         </div>
@@ -631,7 +657,7 @@ const FinalCTA = () => (
         Let your business <span style={{ fontStyle: "italic", color: "var(--accent)" }}>run itself</span> while you see patients.
       </h2>
       <div style={{ marginTop: 40, display: "flex", gap: 12, justifyContent: "center" }}>
-        <a href="mailto:hello@synapse.app" style={{
+        <a href="mailto:info@trendexhub.com" style={{
           padding: "18px 32px",
           background: "var(--ink-90)",
           color: "var(--bg)",
@@ -679,21 +705,32 @@ const Footer = () => (
           </div>
         </div>
         {[
-          { h: "Product", links: ["Features", "Pricing", "Policy guard", "Changelog"] },
-          { h: "Company", links: ["About", "Customers", "Blog", "Contact"] },
-          { h: "Legal", links: ["Privacy", "Terms", "Security", "DPA"] },
+          { h: "Product", links: [
+            { l: "Features", href: "#features" },
+            { l: "Pricing", href: "#pricing" },
+            { l: "Policy guard", href: "#safety" },
+            { l: "How it works", href: "#how" },
+          ]},
+          { h: "Company", links: [
+            { l: "About Trendex Hub", href: "https://www.trendexhub.com" },
+            { l: "Contact", href: "mailto:info@trendexhub.com" },
+          ]},
+          { h: "Legal", links: [
+            { l: "Privacy Policy", href: "/privacy" },
+            { l: "Terms of Service", href: "/terms" },
+          ]},
         ].map(col => (
           <div key={col.h}>
             <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase", color: "oklch(0.65 0.01 60)", marginBottom: 16 }}>{col.h}</div>
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              {col.links.map(l => <a key={l} href="#" style={{ color: "oklch(0.85 0.01 60)", textDecoration: "none", fontSize: 14, fontFamily: "var(--font-body)" }}>{l}</a>)}
+              {col.links.map(item => <a key={item.l} href={item.href} style={{ color: "oklch(0.85 0.01 60)", textDecoration: "none", fontSize: 14, fontFamily: "var(--font-body)" }}>{item.l}</a>)}
             </div>
           </div>
         ))}
       </div>
       <div style={{ marginTop: 60, paddingTop: 24, borderTop: "1px solid oklch(0.3 0.01 60)", display: "flex", justifyContent: "space-between", fontFamily: "var(--font-mono)", fontSize: 11, color: "oklch(0.6 0.01 60)" }}>
-        <div>© 2026 Synapse. Made for local businesses.</div>
-        <div>hello@synapse.app</div>
+        <div>© 2026 Trendex Hub. Synapse — Autonomous GBP Management.</div>
+        <div>info@trendexhub.com</div>
       </div>
     </div>
   </footer>

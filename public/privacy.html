@@ -170,13 +170,13 @@
 <body>
 
     <nav class="nav">
-        <a href="/" class="nav-brand">
+        <a href="/home" class="nav-brand">
             <img src="logo.jpg" alt="Synapse Logo">
             Synapse
         </a>
         <div class="nav-links">
-            <a href="/">Home</a>
-            <a href="/terms.html">Terms of Service</a>
+            <a href="/home">Home</a>
+            <a href="/terms">Terms of Service</a>
         </div>
     </nav>
 
@@ -184,88 +184,96 @@
         <div class="page-header">
             <span class="badge">Legal</span>
             <h1>Privacy Policy</h1>
-            <p class="meta">Effective date: 19 April 2026 &nbsp;·&nbsp; Last updated: 19 April 2026</p>
+            <p class="meta">Effective date: 26 April 2026 &nbsp;·&nbsp; Last updated: 26 April 2026</p>
         </div>
 
         <h2>1. Introduction</h2>
-        <p>Synapse ("we", "our", or "us") is an autonomous business profile management platform developed and operated by Trendex Hub. This Privacy Policy explains how we collect, use, disclose, and protect information when you use the Synapse platform to manage your Google Business Profile and related Google services.</p>
-        <p>By using Synapse, you agree to the practices described in this policy. If you do not agree, please discontinue use of the platform.</p>
+        <p>Synapse is an autonomous business profile management platform developed and operated by Trendex Hub, a software company registered in Uganda. This Privacy Policy explains how Trendex Hub collects, uses, discloses, and protects information when you use the Synapse platform to manage your Google Business Profile, Google Ads campaigns, and related Google services.</p>
+        <p>By using Synapse, you agree to the practices described in this policy. If you do not agree, please discontinue use of the platform. For questions, contact us at <a href="mailto:info@trendexhub.com">info@trendexhub.com</a>.</p>
 
-        <h2>2. Google API Services Disclosure</h2>
+        <h2>2. Google API Services — Limited Use Disclosure</h2>
         <div class="highlight-box">
             <p><strong>Synapse's use and transfer to any other app of information received from Google APIs will adhere to the <a href="https://developers.google.com/terms/api-services-user-data-policy" target="_blank" rel="noopener">Google API Services User Data Policy</a>, including the Limited Use requirements.</strong></p>
         </div>
-        <p>Synapse accesses the following Google APIs on your behalf:</p>
+        <p>Synapse accesses the following Google APIs on your behalf, solely to provide the features described in this policy:</p>
         <ul>
-            <li><strong>Google Business Profile API</strong> — to manage your business listing, respond to reviews, publish posts, update business information, manage media, and retrieve performance insights.</li>
-            <li><strong>Google Ads API</strong> (upcoming feature) — to monitor advertising campaign performance, optimise bidding strategies, and manage ad spend for your business.</li>
+            <li><strong>Google Business Profile API</strong> — to manage your business listing, publish posts, respond to customer reviews, answer questions, update business information, manage photos and media, and retrieve performance insights.</li>
+            <li><strong>Google Ads API</strong> — to read campaign performance data, monitor ad spend, retrieve impression and click metrics, and surface advertising insights within the Synapse dashboard. Synapse does not create, modify, or delete Google Ads campaigns without explicit user instruction.</li>
+            <li><strong>Google OAuth 2.0</strong> — to authenticate your identity and authorise Synapse to access only the Google services you explicitly grant permission for.</li>
         </ul>
-        <p>Data obtained through these Google APIs is used exclusively to provide and improve the Synapse service to you. We do not use it for advertising, sell it to third parties, or use it for any purpose unrelated to the functionality described in this policy.</p>
+        <p>Data obtained through these Google APIs is used <strong>exclusively</strong> to provide and improve the Synapse service to you. Trendex Hub does not use this data to serve advertisements, sell it to third parties, or use it for any purpose unrelated to the functionality described in this policy. Google user data is never used for training machine learning models outside of the direct service.</p>
 
         <h2>3. Information We Collect</h2>
-        <p>We collect only the information necessary to operate the Synapse platform:</p>
+        <p>Trendex Hub collects only the information necessary to operate the Synapse platform:</p>
         <ul>
-            <li><strong>Google Account credentials</strong> — OAuth 2.0 tokens (access token and refresh token) that authorise Synapse to act on your behalf. Tokens are stored securely and never shared.</li>
-            <li><strong>Business Profile data</strong> — Your business name, address, phone number, category, hours, services, posts, photos, and reviews retrieved via the GBP API.</li>
-            <li><strong>Review and Q&amp;A data</strong> — Customer review text, ratings, and questions retrieved from your GBP listing in order to generate responses.</li>
-            <li><strong>Performance metrics</strong> — Impression counts, search query data, and engagement metrics from Google Business Profile Insights.</li>
-            <li><strong>Audit log data</strong> — A record of autonomous actions taken by the Synapse agent (posts published, replies sent, actions skipped), stored locally for your review.</li>
-            <li><strong>Google Ads campaign data</strong> (upcoming) — Campaign names, budget, bid data, and performance metrics necessary to provide advertising management features.</li>
+            <li><strong>Google OAuth credentials</strong> — Access tokens and refresh tokens that authorise Synapse to act on your behalf. Tokens are stored as encrypted environment variables and are never shared with third parties.</li>
+            <li><strong>Google Business Profile data</strong> — Your business name, address, phone number, category, hours of operation, service list, posts, photos, and customer reviews retrieved via the Google Business Profile API.</li>
+            <li><strong>Google Ads data</strong> — Campaign names, impression counts, click data, cost metrics, and performance summaries retrieved via the Google Ads API. This data is used solely to display advertising performance within your Synapse dashboard and is not retained beyond each session.</li>
+            <li><strong>Review and Q&amp;A content</strong> — Customer review text, star ratings, and questions retrieved from your Google Business Profile listing in order to generate AI-assisted responses on your behalf.</li>
+            <li><strong>Performance insights</strong> — Search impression counts, direction requests, phone call counts, and engagement metrics from Google Business Profile Insights.</li>
+            <li><strong>Audit log data</strong> — A record of autonomous actions taken by the Synapse agent (posts published, replies sent, actions skipped, policy rejections), retained in a server-side ring buffer of approximately 500 entries for your review and cleared on each deployment.</li>
         </ul>
 
         <h2>4. How We Use Your Information</h2>
-        <p>Information collected is used solely to provide the Synapse service:</p>
+        <p>Information collected via Google APIs is used solely to provide the Synapse service as described below. No Google user data is used for any secondary purpose.</p>
         <ul>
-            <li>Authenticating your account and maintaining your Google API session</li>
+            <li>Authenticating your account and maintaining a valid Google API session</li>
             <li>Autonomously publishing daily business posts to your Google Business Profile</li>
-            <li>Drafting and submitting replies to 4★ and 5★ customer reviews on your behalf</li>
-            <li>Retrieving and displaying your business performance data in the Synapse dashboard</li>
-            <li>Logging autonomous actions for your review and audit purposes</li>
-            <li>Improving the accuracy and quality of AI-generated content</li>
+            <li>Drafting and submitting replies to 4-star and 5-star customer reviews on your behalf</li>
+            <li>Retrieving and displaying Google Business Profile performance data in your Synapse dashboard</li>
+            <li>Retrieving and displaying Google Ads campaign performance data in your Synapse dashboard</li>
+            <li>Logging all autonomous actions to an audit trail accessible only to you</li>
+            <li>Improving the accuracy of AI-generated content through direct service feedback (no data is shared externally for this purpose)</li>
         </ul>
-        <p>We do <strong>not</strong> use your data to train machine learning models, serve advertisements, or share it with any third party other than the Google APIs required to operate the service.</p>
 
-        <h2>5. Data Storage and Security</h2>
-        <p>Synapse is deployed on Vercel's infrastructure. Your OAuth tokens and API keys are stored as encrypted environment variables. Business data retrieved from Google APIs is processed in-memory during each request and is not persisted to a third-party database.</p>
-        <p>The autonomous audit log is maintained as a ring buffer (approximately 500 entries) in server memory and is cleared on each deployment. No sensitive personal data of your customers is stored.</p>
-        <p>We implement industry-standard security practices including API key authentication for all platform endpoints, HTTPS encryption for all communications, and strict access controls.</p>
-
-        <h2>6. Data Retention and Deletion</h2>
-        <p>We retain your API credentials and configuration for as long as your account is active. To request deletion of your data:</p>
+        <h2>5. Data Sharing and Third Parties</h2>
+        <p>Trendex Hub does not sell, rent, or share your Google API data with any third party, except as required to operate the platform:</p>
         <ul>
-            <li><strong>Revoke access</strong> — Remove Synapse from your Google Account's authorised applications at <a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener">myaccount.google.com/permissions</a>. This immediately invalidates all tokens.</li>
-            <li><strong>Contact us</strong> — Email <a href="mailto:info@trendexhub.com">info@trendexhub.com</a> to request removal of any stored configuration data.</li>
+            <li><strong>Google LLC</strong> — API calls are made directly to Google's servers. Your data is subject to <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Google's Privacy Policy</a>.</li>
+            <li><strong>Google Gemini API</strong> — Used solely to generate AI-written post drafts and review reply drafts. Prompts include anonymised business context (clinic name, services, topic). No customer personal data, no review author names, and no Google Ads financial data are included in prompts sent to Gemini.</li>
+            <li><strong>Vercel Inc.</strong> — Cloud hosting and serverless infrastructure provider. No Google user data is stored in Vercel's persistent storage; data is processed in-memory per request.</li>
         </ul>
-        <p>Upon receiving a deletion request, we will remove all stored credentials and configuration within 30 days.</p>
+        <p>We do not share Google user data with any advertising networks, data brokers, analytics platforms, or other third parties beyond those listed above.</p>
 
-        <h2>7. Third-Party Services</h2>
-        <p>Synapse uses the following third-party services to operate:</p>
+        <h2>6. Data Storage and Security</h2>
+        <p>Synapse is deployed on Vercel's infrastructure with the following security measures in place:</p>
         <ul>
-            <li><strong>Google LLC</strong> — Google Business Profile API, Google Ads API, Google OAuth 2.0. Subject to <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Google's Privacy Policy</a>.</li>
-            <li><strong>Google Gemini API</strong> — Used to generate AI-written post content and review reply drafts. Prompts include anonymised business context only; no customer personal data is sent.</li>
-            <li><strong>Vercel Inc.</strong> — Hosting and serverless deployment infrastructure.</li>
+            <li>All API credentials and OAuth tokens are stored as encrypted environment variables — never in source code or logs.</li>
+            <li>All communications between Synapse and Google APIs use HTTPS/TLS encryption.</li>
+            <li>All Synapse API endpoints are protected by API key authentication; no endpoint is publicly accessible without a valid key.</li>
+            <li>Business profile data retrieved from Google APIs is processed in-memory during each request and is not written to any persistent third-party database.</li>
+            <li>Google Ads performance data is fetched on demand and displayed in-session; it is not stored beyond the duration of the API response.</li>
+            <li>The autonomous audit log is maintained as an in-memory ring buffer and is cleared on each redeployment.</li>
+        </ul>
+
+        <h2>7. Data Retention and Deletion</h2>
+        <p>Trendex Hub retains your API credentials and configuration for as long as your account is active. To request deletion of your data:</p>
+        <ul>
+            <li><strong>Revoke Google access</strong> — Remove Synapse from your Google Account's authorised applications at <a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener">myaccount.google.com/permissions</a>. This immediately invalidates all OAuth tokens and prevents any further API access.</li>
+            <li><strong>Contact us</strong> — Email <a href="mailto:info@trendexhub.com">info@trendexhub.com</a> to request removal of any stored configuration or credentials. We will process deletion requests within 30 days.</li>
         </ul>
 
         <h2>8. Your Rights</h2>
         <p>You have the right to:</p>
         <ul>
-            <li>Access the data Synapse holds about your business</li>
-            <li>Correct any inaccurate information</li>
-            <li>Request deletion of your data (see Section 6)</li>
-            <li>Withdraw consent by revoking Google API access at any time</li>
-            <li>Receive a copy of your data in a portable format</li>
+            <li>Access the configuration data Trendex Hub holds about your business</li>
+            <li>Correct any inaccurate configuration information</li>
+            <li>Request deletion of your data at any time (see Section 7)</li>
+            <li>Withdraw consent by revoking Google API access at any time — this will immediately stop all autonomous actions</li>
+            <li>Receive a copy of your audit log data</li>
         </ul>
 
         <h2>9. Children's Privacy</h2>
-        <p>Synapse is a business management tool and is not intended for use by individuals under the age of 18. We do not knowingly collect data from minors.</p>
+        <p>Synapse is a business management tool for use by business owners and their authorised staff. It is not intended for use by individuals under the age of 18. Trendex Hub does not knowingly collect personal data from minors.</p>
 
         <h2>10. Changes to This Policy</h2>
-        <p>We may update this Privacy Policy to reflect changes in our practices or applicable law. We will notify you of material changes by updating the "Last updated" date above. Continued use of Synapse following any changes constitutes your acceptance of the revised policy.</p>
+        <p>Trendex Hub may update this Privacy Policy to reflect changes in our practices or applicable law. Material changes will be communicated by updating the "Last updated" date at the top of this page. Continued use of Synapse following any change constitutes acceptance of the revised policy.</p>
 
-        <h2>11. Contact Us</h2>
+        <h2>11. Contact</h2>
         <p>For any questions or concerns regarding this Privacy Policy or our data practices, please contact:</p>
         <p>
             <strong>Trendex Hub</strong><br>
+            Entebbe, Uganda<br>
             Email: <a href="mailto:info@trendexhub.com">info@trendexhub.com</a><br>
             Website: <a href="https://www.trendexhub.com" target="_blank" rel="noopener">www.trendexhub.com</a>
         </p>
@@ -273,9 +281,9 @@
 
     <footer>
         <div class="footer-links">
-            <a href="/">Home</a>
-            <a href="/privacy.html">Privacy Policy</a>
-            <a href="/terms.html">Terms of Service</a>
+            <a href="/home">Home</a>
+            <a href="/privacy">Privacy Policy</a>
+            <a href="/terms">Terms of Service</a>
             <a href="mailto:info@trendexhub.com">Contact</a>
         </div>
         <p>&copy; 2026 Trendex Hub. Synapse — Autonomous GBP Management Platform.</p>
