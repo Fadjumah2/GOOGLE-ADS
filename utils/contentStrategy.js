@@ -1,20 +1,5 @@
-/**
- * Content strategy engine for Eritage ENT Care (Entebbe, Uganda).
- *
- * Produces daily post ideas for the autonomous GBP agent. Content is grouped
- * into rotating themes so the feed stays varied across a full week. Each
- * theme gives Gemini a constrained prompt so we never drift into
- * medical-advice or prohibited-claim territory.
- *
- * Every topic includes:
- *  - theme: short ID
- *  - prompt: what Gemini must write
- *  - callToAction: optional { actionType, url } attached to the GBP post
- *  - topicType: STANDARD | OFFER | EVENT (GBP enum)
- *
- * The weekly rotation is deterministic — index = dayOfWeek (Sun=0..Sat=6) —
- * so we always know today's topic and can avoid repeats.
- */
+import storage from './storage.js';
+import logger from './logger.js';
 
 // Official Google Business Profile format specifications.
 // Used by policyGuard, autonomousAgent, and geminiClient as a single source of truth.
@@ -46,12 +31,12 @@ export const CLINIC = {
     services: [],
 };
 
+const STRATEGY_FILE = 'synapse-strategy.json';
+
 /**
- * Rotating weekly themes. Index matches JavaScript getDay() (Sunday = 0).
- * Each slot must be safe for daily public posting: no medical advice,
- * no guarantees, no disease claims.
+ * Default weekly themes. Index matches JavaScript getDay() (Sunday = 0).
  */
-export const WEEKLY_THEMES = [
+const DEFAULT_WEEKLY_THEMES = [
     // Sunday — gentle awareness / community
     {
         theme: 'community_awareness',
@@ -154,9 +139,46 @@ export const WEEKLY_THEMES = [
     },
 ];
 
+const DEFAULT_KNOWLEDGE_BASE = [
+    'Eritage ENT Care is located in Entebbe, Uganda.',
+    'The clinic specializes in Ear, Nose, and Throat (ENT) conditions for both adults and children.',
+    'We offer hearing assessments, ear cleaning, and consultations for various ENT issues.',
+    'The clinic provides modern diagnostic equipment in a calm and patient-friendly environment.',
+];
+
+let activeStrategy = null;
+
+async function getStrategy() {
+    if (activeStrategy) return activeStrategy;
+
+    const loaded = await storage.load(STRATEGY_FILE);
+    if (loaded) {
+        activeStrategy = loaded;
+    } else {
+        activeStrategy = {
+            weeklyThemes: DEFAULT_WEEKLY_THEMES,
+            knowledgeBase: DEFAULT_KNOWLEDGE_BASE
+        };
+    }
+    return activeStrategy;
+}
+
+export async function updateStrategy(newStrategy) {
+    const success = await storage.save(STRATEGY_FILE, newStrategy);
+    if (success) {
+        activeStrategy = newStrategy;
+        return { success: true };
+    }
+    return { success: false, error: 'FAILED_TO_SAVE' };
+}
+
+export async function getKnowledgeBase() {
+    const strategy = await getStrategy();
+    return strategy.knowledgeBase || DEFAULT_KNOWLEDGE_BASE;
+}
+
 /**
  * Absolute content constraints enforced later by policyGuard.js.
- * Defined here so generation and validation stay in sync.
  */
 export const CONTENT_CONSTRAINTS = {
     maxLength: GBP_FORMAT.POST_SAFETY_MAX,
@@ -176,24 +198,25 @@ export const CONTENT_CONSTRAINTS = {
 
 /**
  * Returns today's scheduled topic (weekly rotation).
- * @param {Date} [now]
  */
-export function getTopicForToday(now = new Date()) {
+export async function getTopicForToday(now = new Date()) {
+    const strategy = await getStrategy();
+    const themes = strategy.weeklyThemes || DEFAULT_WEEKLY_THEMES;
     const idx = now.getDay();
-    const topic = WEEKLY_THEMES[idx];
+    const topic = themes[idx];
     return { ...topic, dayIndex: idx, dayName: dayName(idx) };
 }
 
 /**
- * Returns the next N scheduled topics starting today — handy for showing
- * a content calendar in the UI.
+ * Returns the next N scheduled topics starting today.
  */
-export function getUpcomingTopics(days = 7, now = new Date()) {
+export async function getUpcomingTopics(days = 7, now = new Date()) {
     const out = [];
     for (let i = 0; i < days; i++) {
         const d = new Date(now);
         d.setDate(d.getDate() + i);
-        out.push({ date: d.toISOString().slice(0, 10), ...getTopicForToday(d) });
+        const topic = await getTopicForToday(d);
+        out.push({ date: d.toISOString().slice(0, 10), ...topic });
     }
     return out;
 }
@@ -201,4 +224,6 @@ export function getUpcomingTopics(days = 7, now = new Date()) {
 function dayName(idx) {
     return ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][idx];
 }
+
+export { getStrategy };
 

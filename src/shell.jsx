@@ -3,10 +3,12 @@ import { T, Ico, Label, Mono } from './primitives.jsx';
 
 const NAV = [
   { group: "Overview", items: [
-    { id: "dashboard", label: "Dashboard", icon: "dashboard" }
+    { id: "dashboard", label: "Dashboard", icon: "dashboard" },
+    { id: "reports",   label: "Reports",   icon: "image" }
   ]},
   { group: "Agent", items: [
     { id: "autopilot", label: "Autopilot",  icon: "autopilot", live: true },
+    { id: "strategy",  label: "AI Strategy", icon: "bolt" },
     { id: "chat",      label: "Synapse AI", icon: "ai" },
     { id: "audit",     label: "Audit log",  icon: "inbox" }
   ]},

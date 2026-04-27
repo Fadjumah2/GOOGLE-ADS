@@ -7,27 +7,52 @@ import { NewMediaModal } from './NewMediaModal.jsx';
 export function AutopilotView({ lastRefreshed }) {
   const [loading, setLoading] = useState(true);
   const [apData, setApData] = useState(null);
+  const [drafts, setDrafts] = useState([]);
   const [actionLoading, setActionLoading] = useState(null); // 'post' | 'replies' | 'cycle'
   const [actionResult, setActionResult] = useState(null);   // { type, data }
+  const [actioningDraft, setActioningDraft] = useState(null);
 
-  const reload = async () => {
+  const load = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await API.apStatus();
-      setApData(data);
+      const [status, draftsData] = await Promise.all([
+        API.apStatus(),
+        API.getDrafts()
+      ]);
+      setApData(status);
+      setDrafts(draftsData.drafts || []);
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
+  }, []);
+
+  useEffect(() => {
+    load();
+  }, [lastRefreshed, load]);
+
+  const handleApprove = async (id) => {
+    setActioningDraft(id);
+    try {
+      const res = await API.approveDraft(id);
+      if (res.success) {
+        showToast("Post published successfully", "good");
+        load();
+      } else throw new Error(res.error);
+    } catch (e) { showToast("Failed to publish: " + e.message, "bad"); }
+    finally { setActioningDraft(null); }
   };
 
-  useEffect(() => { reload(); }, [lastRefreshed]);
-
-  const status = apData?.status || {};
-  const calendar = apData?.calendar || [];
-  const themeNames = { community_awareness: "Community", clinic_culture: "Clinic Culture", service_spotlight: "Services", wellness_tip: "Wellness Tip", did_you_know: "Did You Know", weekly_reminder: "Weekly Reminder", family_wellness: "Family" };
-
-  const lastCycleTs = status.lastCycle?.ts;
-  const postedToday = status.dailyPost?.postedToday;
-  const nextRunLabel = postedToday ? "Tomorrow 09:00 EAT" : "Today 09:00 EAT";
+  const handleDelete = async (id) => {
+    if (!confirm("Are you sure you want to delete this draft?")) return;
+    setActioningDraft(id);
+    try {
+      const res = await API.deleteDraft(id);
+      if (res.success) {
+        showToast("Draft deleted", "neutral");
+        load();
+      } else throw new Error(res.error);
+    } catch (e) { showToast("Failed to delete: " + e.message, "bad"); }
+    finally { setActioningDraft(null); }
+  };
 
   const runAction = async (type, apiFn, label) => {
     setActionLoading(type);
@@ -36,13 +61,21 @@ export function AutopilotView({ lastRefreshed }) {
       const data = await apiFn();
       setActionResult({ type, data });
       showToast(`${label} complete. See result below.`, "good");
-      reload();
+      load();
     } catch (e) {
       showToast(e.message || `${label} failed.`, "bad");
     } finally {
       setActionLoading(null);
     }
   };
+
+  const status = apData?.status || {};
+  const calendar = apData?.calendar || [];
+  const themeNames = { community_awareness: "Community", clinic_culture: "Clinic Culture", service_spotlight: "Services", wellness_tip: "Wellness Tip", did_you_know: "Did You Know", weekly_reminder: "Weekly Reminder", family_wellness: "Family" };
+
+  const lastCycleTs = status.lastCycle?.ts;
+  const postedToday = status.dailyPost?.postedToday;
+  const nextRunLabel = postedToday ? "Tomorrow 09:00 EAT" : "Today 09:00 EAT";
 
   return (
     <div style={{ padding: "28px 32px 60px", display: "flex", flexDirection: "column", gap: 20 }}>
@@ -187,6 +220,37 @@ export function AutopilotView({ lastRefreshed }) {
             </div>
           ))}
         </div>
+      </Card>
+
+      {/* Drafts Queue */}
+      <Card>
+        <CardHead eyebrow="Pending approval" title="Drafts Queue" sub="AI-generated posts awaiting your review." />
+        {loading ? (
+          <Skel h={100} />
+        ) : drafts.length > 0 ? (
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            {drafts.map(d => (
+              <div key={d.id} style={{ padding: 16, border: `1px solid ${T.line}`, borderRadius: 8, background: T.bgSoft }}>
+                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12 }}>
+                  <Pill tone="accent">{d.payload.topicType}</Pill>
+                  <Mono size={11}>{relTime(d.ts)}</Mono>
+                </div>
+                <div style={{ fontSize: 14, lineHeight: 1.6, color: T.ink80, marginBottom: 16 }}>{d.payload.summary}</div>
+                <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
+                  <Btn size="sm" onClick={() => handleDelete(d.id)} disabled={!!actioningDraft}><Ico name="trash" size={12} /> Delete</Btn>
+                  <Btn size="sm" tone="solid" onClick={() => handleApprove(d.id)} disabled={!!actioningDraft}>
+                    {actioningDraft === d.id ? "Publishing..." : <><Ico name="check" size={12} /> Approve & Publish</>}
+                  </Btn>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div style={{ textAlign: "center", padding: 40, border: `1px dashed ${T.line}`, borderRadius: 8 }}>
+            <Ico name="posts" size={24} color={T.ink40} style={{ marginBottom: 12 }} />
+            <div style={{ color: T.ink60, fontSize: 13 }}>No pending drafts. Synapse will generate one during the next daily cycle.</div>
+          </div>
+        )}
       </Card>
 
       {/* Content calendar */}
@@ -805,6 +869,78 @@ export function ServicesView({ lastRefreshed }) {
   );
 }
 
+export function ReportsView() {
+  const [loading, setLoading] = useState(true);
+  const [report, setReport] = useState(null);
+  const [period, setPeriod] = useState("last28");
+
+  useEffect(() => {
+    const load = async () => {
+      setLoading(true);
+      try {
+        const res = await API.getReport(period);
+        if (res.success) setReport(res.report);
+      } catch (e) { showToast("Failed to load report", "bad"); }
+      finally { setLoading(false); }
+    };
+    load();
+  }, [period]);
+
+  if (loading) return <div style={{ padding: 32 }}><Skel h={400} /></div>;
+
+  const stats = report?.stats || {};
+
+  return (
+    <div style={{ padding: "28px 32px 60px", display: "flex", flexDirection: "column", gap: 24, maxWidth: 800 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div>
+          <div style={{ fontFamily: T.fontDisp, fontSize: 32, letterSpacing: "-0.01em" }}>Performance Report</div>
+          <Mono size={12} color={T.ink60} style={{ marginTop: 4 }}>Last 28 Days · {new Date(report?.generatedAt).toLocaleDateString()}</Mono>
+        </div>
+        <Btn tone="solid" onClick={() => window.print()}><Ico name="download" size={12} /> Download PDF</Btn>
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 20 }}>
+        {[
+          { l: "Reach", v: fmtNum(stats.impressions), s: "Profile Views" },
+          { l: "Engagement", v: fmtNum(stats.calls + stats.website + stats.directions), s: "Total Actions" },
+          { l: "Reputation", v: stats.avgRating, s: `${stats.reviewsCount} New Reviews` }
+        ].map((k, i) => (
+          <Card key={i}>
+            <Label color={T.ink40}>{k.l}</Label>
+            <div style={{ fontFamily: T.fontDisp, fontSize: 36, marginTop: 8 }}>{k.v}</div>
+            <Mono size={10} color={T.ink60} style={{ marginTop: 4 }}>{k.s}</Mono>
+          </Card>
+        ))}
+      </div>
+
+      <Card>
+        <CardHead eyebrow="Executive Summary" title="AI Analysis" />
+        <div style={{ fontSize: 15, lineHeight: 1.7, color: T.ink80, whiteSpace: "pre-wrap" }}>
+          {report?.summary}
+        </div>
+      </Card>
+
+      <Card flush>
+        <div style={{ padding: 20, borderBottom: `1px solid ${T.line}` }}><Label>Detailed Breakdown</Label></div>
+        <div style={{ padding: "10px 0" }}>
+          {[
+            { l: "Website Clicks", v: stats.website },
+            { l: "Phone Calls", v: stats.calls },
+            { l: "Direction Requests", v: stats.directions },
+            { l: "Total Profile Impressions", v: stats.impressions }
+          ].map((row, i) => (
+            <div key={i} style={{ padding: "12px 20px", display: "flex", justifyContent: "space-between", borderBottom: i < 3 ? `1px solid ${T.line}` : "none" }}>
+              <span style={{ fontSize: 14 }}>{row.l}</span>
+              <Mono size={13} weight={600}>{fmtNum(row.v)}</Mono>
+            </div>
+          ))}
+        </div>
+      </Card>
+    </div>
+  );
+}
+
 export function SettingsView() {
   const [keyVisible, setKeyVisible] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -913,6 +1049,204 @@ export function SettingsView() {
         </div>
       </Card>
 
+    </div>
+  );
+}
+
+export function StrategyView() {
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [strategy, setStrategy] = useState({ weeklyThemes: [], knowledgeBase: [] });
+  const [sentiment, setSentiment] = useState(null);
+  const [activeDay, setActiveDay] = useState(new Date().getDay());
+
+  useEffect(() => {
+    const load = async () => {
+      setLoading(true);
+      try {
+        const [stratRes, sentRes] = await Promise.all([
+          API.getStrategy(),
+          API.getSentiment()
+        ]);
+        if (stratRes.success) setStrategy(stratRes.strategy);
+        if (sentRes.success) setSentiment(sentRes.sentiment);
+      } catch (e) { showToast("Failed to load strategy data", "bad"); }
+      finally { setLoading(false); }
+    };
+    load();
+  }, []);
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const res = await API.updateStrategy(strategy);
+      if (res.success) showToast("Strategy saved successfully", "good");
+      else throw new Error(res.error);
+    } catch (e) { showToast("Failed to save strategy: " + e.message, "bad"); }
+    finally { setSaving(false); }
+  };
+
+  const updateDayTheme = (idx, key, val) => {
+    const next = { ...strategy };
+    next.weeklyThemes[idx] = { ...next.weeklyThemes[idx], [key]: val };
+    setStrategy(next);
+  };
+
+  const updateKB = (idx, val) => {
+    const next = { ...strategy };
+    next.knowledgeBase[idx] = val;
+    setStrategy(next);
+  };
+
+  const addKB = () => {
+    const next = { ...strategy };
+    next.knowledgeBase.push("");
+    setStrategy(next);
+  };
+
+  const removeKB = (idx) => {
+    const next = { ...strategy };
+    next.knowledgeBase.splice(idx, 1);
+    setStrategy(next);
+  };
+
+  if (loading) return <div style={{ padding: 32 }}><Skel h={300} /></div>;
+
+  const currentDay = strategy.weeklyThemes[activeDay] || {};
+  const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+  return (
+    <div style={{ padding: "28px 32px 60px", display: "flex", flexDirection: "column", gap: 24, maxWidth: 900 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div>
+          <div style={{ fontFamily: T.fontDisp, fontSize: 32, letterSpacing: "-0.01em" }}>AI Strategy</div>
+          <div style={{ fontSize: 14, color: T.ink70, marginTop: 4 }}>Customize how Synapse AI writes posts and grounded replies.</div>
+        </div>
+        <Btn tone="solid" onClick={handleSave} disabled={saving}>
+          {saving ? "Saving…" : "Save all changes"}
+        </Btn>
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "240px 1fr", gap: 24, alignItems: "start" }}>
+        {/* Left: Navigation */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <Card flush>
+            <div style={{ padding: "12px 16px", borderBottom: `1px solid ${T.line}` }}><Label>Content Schedule</Label></div>
+            {days.map((d, i) => (
+              <div key={d} onClick={() => setActiveDay(i)} style={{
+                padding: "12px 16px", cursor: "pointer",
+                background: activeDay === i ? T.accentSoft : "transparent",
+                borderLeft: activeDay === i ? `3px solid ${T.accent}` : "3px solid transparent",
+                display: "flex", justifyContent: "space-between", alignItems: "center",
+                transition: "background 0.1s"
+              }}>
+                <span style={{ fontSize: 13, fontWeight: activeDay === i ? 600 : 400, color: activeDay === i ? T.ink : T.ink80 }}>{d}day Theme</span>
+                <Ico name="arrow" size={11} color={activeDay === i ? T.accent : T.ink40} />
+              </div>
+            ))}
+          </Card>
+
+          <Card flush>
+            <div style={{ padding: "12px 16px", borderBottom: `1px solid ${T.line}` }}><Label>Grounding</Label></div>
+            <div style={{ padding: "12px 16px", fontSize: 13, color: T.ink70 }}>
+              The Knowledge Base provides specific facts about Eritage ENT Care that the AI uses to ensure accuracy.
+            </div>
+          </Card>
+        </div>
+
+        {/* Right: Editor */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+          {/* Day Editor */}
+          <Card>
+            <CardHead eyebrow={`${days[activeDay]}day focus`} title="Post configuration" />
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              <div>
+                <Label color={T.ink40} style={{ marginBottom: 8, display: "block" }}>Theme ID</Label>
+                <input
+                  value={currentDay.theme || ""}
+                  onChange={e => updateDayTheme(activeDay, "theme", e.target.value)}
+                  style={{ width: "100%", padding: "10px 12px", background: T.bgSoft, border: `1px solid ${T.line}`, borderRadius: 6, color: T.ink, fontFamily: T.fontMono, fontSize: 13 }}
+                />
+              </div>
+              <div>
+                <Label color={T.ink40} style={{ marginBottom: 8, display: "block" }}>AI Prompt / Instruction</Label>
+                <textarea
+                  value={currentDay.prompt || ""}
+                  onChange={e => updateDayTheme(activeDay, "prompt", e.target.value)}
+                  rows={6}
+                  style={{ width: "100%", padding: "12px", background: T.bgSoft, border: `1px solid ${T.line}`, borderRadius: 6, color: T.ink, fontFamily: T.fontSans, fontSize: 13, lineHeight: 1.5, resize: "vertical" }}
+                />
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+                <div>
+                  <Label color={T.ink40} style={{ marginBottom: 8, display: "block" }}>Topic Type</Label>
+                  <select
+                    value={currentDay.topicType || "STANDARD"}
+                    onChange={e => updateDayTheme(activeDay, "topicType", e.target.value)}
+                    style={{ width: "100%", padding: "10px", background: T.bgSoft, border: `1px solid ${T.line}`, borderRadius: 6, color: T.ink }}>
+                    <option value="STANDARD">Standard Post</option>
+                    <option value="OFFER">Offer / Promotion</option>
+                    <option value="EVENT">Event</option>
+                  </select>
+                </div>
+                <div>
+                  <Label color={T.ink40} style={{ marginBottom: 8, display: "block" }}>CTA Action</Label>
+                  <select
+                    value={currentDay.callToAction?.actionType || "LEARN_MORE"}
+                    onChange={e => updateDayTheme(activeDay, "callToAction", { ...currentDay.callToAction, actionType: e.target.value })}
+                    style={{ width: "100%", padding: "10px", background: T.bgSoft, border: `1px solid ${T.line}`, borderRadius: 6, color: T.ink }}>
+                    <option value="LEARN_MORE">Learn More</option>
+                    <option value="BOOK">Book Appointment</option>
+                    <option value="CALL">Call Now</option>
+                    <option value="ORDER">Order Online</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </Card>
+
+          {/* Knowledge Base Editor */}
+          <Card>
+            <CardHead eyebrow="Clinic grounding" title="Knowledge Base" right={<Btn size="sm" onClick={addKB}><Ico name="plus" size={12} /> Add fact</Btn>} />
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {(strategy.knowledgeBase || []).map((fact, idx) => (
+                <div key={idx} style={{ display: "flex", gap: 8 }}>
+                  <input
+                    value={fact}
+                    onChange={e => updateKB(idx, e.target.value)}
+                    placeholder="Enter a clinic fact (e.g. 'We are open until 7pm on Tuesdays')"
+                    style={{ flex: 1, padding: "10px 12px", background: T.bgSoft, border: `1px solid ${T.line}`, borderRadius: 6, color: T.ink, fontSize: 13 }}
+                  />
+                  <button onClick={() => removeKB(idx)} style={{ background: "transparent", border: "none", color: T.bad, cursor: "pointer", padding: 8 }}><Ico name="trash" size={14} /></button>
+                </div>
+              ))}
+              {strategy.knowledgeBase?.length === 0 && <div style={{ textAlign: "center", padding: 20, color: T.ink40 }}><Mono size={12}>No facts added yet.</Mono></div>}
+            </div>
+          </Card>
+
+          {/* Suggested Facts */}
+          {sentiment?.facts?.length > 0 && (
+            <Card>
+              <CardHead eyebrow="AI Discovery" title="Suggested Facts" sub="Extracted from recent 4-5 star reviews." />
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                {sentiment.facts.map((fact, idx) => (
+                  <div key={idx} style={{ padding: "10px 12px", background: T.accentSoft, border: `1px solid ${T.accent}`, borderRadius: 8, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <span style={{ fontSize: 13, color: T.ink }}>{fact}</span>
+                    <Btn size="sm" onClick={() => {
+                      const next = { ...strategy };
+                      if (!next.knowledgeBase.includes(fact)) {
+                        next.knowledgeBase.push(fact);
+                        setStrategy(next);
+                        showToast("Fact added to Knowledge Base", "good");
+                      }
+                    }}>Add to KB</Btn>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

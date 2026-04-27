@@ -54,6 +54,13 @@ export const API = {
   getSignedUrl:  (filename, contentType) => API.call("/api/gbp/getSignedUrl",  { method: "POST", body: JSON.stringify({ filename, contentType }) }),
 
   // ── Agent ──
+  getStrategy: ()                 => API.call("/api/agent/getStrategy"),
+  updateStrategy: (strategy)      => API.call("/api/agent/updateStrategy",    { method: "POST", body: JSON.stringify({ strategy }) }),
+  getDrafts:   ()                 => API.call("/api/agent/getDrafts"),
+  getSentiment: ()                => API.call("/api/agent/getSentiment"),
+  getReport:    (period)          => API.call(`/api/agent/getReport?period=${period}`),
+  approveDraft: (draftId)         => API.call("/api/agent/approveDraft",      { method: "POST", body: JSON.stringify({ draftId }) }),
+  deleteDraft:  (draftId)         => API.call("/api/agent/deleteDraft",       { method: "POST", body: JSON.stringify({ draftId }) }),
   chat:        (message, history) => API.call("/api/agent/chat",             { method: "POST", body: JSON.stringify({ message, history }) }),
   apStatus:    ()                 => API.call("/api/agent/status"),
   auditLog:    (limit = 150)      => API.call(`/api/agent/auditLog?limit=${limit}`),

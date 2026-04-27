@@ -1,35 +1,32 @@
-import fs from 'fs';
-import path from 'path';
+import storage from './storage.js';
+import logger from './logger.js';
 
 const MAX_ENTRIES = 500;
-const LOG_PATH = process.env.SYNAPSE_AUDIT_PATH || path.join('/tmp', 'synapse-audit.jsonl');
+const LOG_FILE = 'synapse-audit.json';
 
-const ring = [];
-let fileWritable = true;
+let ring = [];
+let loaded = false;
 
-function loadFromDisk() {
+async function ensureLoaded() {
+    if (loaded) return;
     try {
-        if (!fs.existsSync(LOG_PATH)) return;
-        const raw = fs.readFileSync(LOG_PATH, 'utf8');
-        raw.split('\n').forEach(line => {
-            if (!line.trim()) return;
-            try {
-                const entry = JSON.parse(line);
-                ring.push(entry);
-            } catch { /* corrupt line, skip */ }
-        });
-        while (ring.length > MAX_ENTRIES) ring.shift();
+        const data = await storage.load(LOG_FILE);
+        if (data && Array.isArray(data)) {
+            ring = data;
+        }
+        loaded = true;
     } catch (e) {
-        fileWritable = false;
+        logger.error('Failed to load audit log from GCS: ' + e.message);
+        ring = [];
+        loaded = true;
     }
 }
-
-loadFromDisk();
 
 /**
  * Record an audit event. Non-blocking — failures don't throw.
  */
-export function record(type, payload = {}) {
+export async function record(type, payload = {}) {
+    await ensureLoaded();
     const entry = {
         ts: new Date().toISOString(),
         type,
@@ -38,20 +35,16 @@ export function record(type, payload = {}) {
     ring.push(entry);
     while (ring.length > MAX_ENTRIES) ring.shift();
 
-    if (fileWritable) {
-        try {
-            fs.appendFileSync(LOG_PATH, JSON.stringify(entry) + '\n');
-        } catch {
-            fileWritable = false;
-        }
-    }
+    // Background save to GCS
+    storage.save(LOG_FILE, ring).catch(e => {
+        logger.error('Background audit save failed: ' + e.message);
+    });
+
     return entry;
 }
 
 /**
  * Strip obviously-sensitive fields before persisting.
- * Customer review text is kept (it's already public on Google) but
- * anything that looks like a token or key is removed.
  */
 function sanitize(obj) {
     if (obj == null || typeof obj !== 'object') return obj;

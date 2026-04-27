@@ -495,7 +495,8 @@ export const updateProfile = async (updateData, updateMask) => {
 /**
  * Creates a local post.
  * Required fields: languageCode (e.g. "en"), summary (max 1500 chars)
- * Optional: callToAction { actionType, url }, media [{ sourceUrl, mediaFormat }]
+ * Optional: callToAction { actionType, url }, media [{ sourceUrl, mediaFormat }],
+ *   schedule { startTime }, recurrenceInfo { frequency, count }
  */
 export const createPost = async (postData) => {
     try {

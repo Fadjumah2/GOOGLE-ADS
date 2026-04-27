@@ -9,6 +9,7 @@ export function DashboardView({ onNavigate, reviews, lastRefreshed }) {
   const [profile, setProfile] = useState(null);
   const [insights, setInsights] = useState([]);
   const [apData, setApData] = useState(null);
+  const [sentiment, setSentiment] = useState(null);
   const [auditEntries, setAuditEntries] = useState([]);
   const [period, setPeriod] = useState("last28");
   const [running, setRunning] = useState(false);
@@ -17,17 +18,19 @@ export function DashboardView({ onNavigate, reviews, lastRefreshed }) {
     try {
       setLoading(true);
       console.log('[Dashboard] Loading data...');
-      const [pro, ins, ap, log] = await Promise.all([
+      const [pro, ins, ap, log, sent] = await Promise.all([
         API.profile().catch(e => { console.error('[Dashboard] profile error:', e); return null; }),
         API.insights(p).catch(e => { console.error('[Dashboard] insights error:', e); return null; }),
         API.apStatus().catch(e => { console.error('[Dashboard] apStatus error:', e); return null; }),
         API.auditLog(10).catch(e => { console.error('[Dashboard] auditLog error:', e); return null; }),
+        API.getSentiment().catch(e => { console.error('[Dashboard] sentiment error:', e); return null; }),
       ]);
-      console.log('[Dashboard] Data loaded:', { pro, ins, ap, log });
+      console.log('[Dashboard] Data loaded:', { pro, ins, ap, log, sent });
       setProfile(pro?.profile || null);
       setInsights(ins?.insights || []);
       setApData(ap || null);
       setAuditEntries(log?.entries || []);
+      setSentiment(sent?.sentiment || null);
       setLoading(false);
     } catch (e) {
       console.error('[Dashboard] Load failed:', e);
@@ -160,8 +163,40 @@ export function DashboardView({ onNavigate, reviews, lastRefreshed }) {
         </Card>
       </div>
 
-      {/* Review queue + Calendar */}
+      {/* Sentiment + Reviews */}
       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:20 }}>
+        <Card>
+          <CardHead eyebrow="AI Analysis" title="Patient Sentiment" right={sentiment && <Pill tone={sentiment.score >= 80 ? "good" : sentiment.score >= 60 ? "warn" : "bad"}>{sentiment.score}% Positive</Pill>} />
+          {loading ? (
+            <Skel h={160} />
+          ) : sentiment ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              <div style={{ fontSize: 13, color: T.ink70, lineHeight: 1.5, background: T.bgSoft, padding: 12, borderRadius: 8, borderLeft: `3px solid ${T.accent}` }}>
+                "{sentiment.summary}"
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                <div>
+                  <Label color={T.good} style={{ marginBottom: 8, display: "block" }}>Top Praises</Label>
+                  <ul style={{ margin: 0, padding: "0 0 0 16px", fontSize: 12, color: T.ink80, lineHeight: 1.6 }}>
+                    {sentiment.praises.map((p, i) => <li key={i}>{p}</li>)}
+                  </ul>
+                </div>
+                <div>
+                  <Label color={T.warn} style={{ marginBottom: 8, display: "block" }}>Actionable Needs</Label>
+                  <ul style={{ margin: 0, padding: "0 0 0 16px", fontSize: 12, color: T.ink80, lineHeight: 1.6 }}>
+                    {sentiment.complaints.map((c, i) => <li key={i}>{c}</li>)}
+                  </ul>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div style={{ textAlign: "center", padding: 32, color: T.ink40 }}>
+              <Ico name="ai" size={24} style={{ marginBottom: 12, opacity: 0.5 }} />
+              <div style={{ fontSize: 12 }}>Not enough reviews with text to analyze sentiment.</div>
+            </div>
+          )}
+        </Card>
+
         <Card flush>
           <div style={{ padding:20, display:"flex", justifyContent:"space-between", alignItems:"center", borderBottom:`1px solid ${T.line}` }}>
             <div>
@@ -199,7 +234,10 @@ export function DashboardView({ onNavigate, reviews, lastRefreshed }) {
             })
           )}
         </Card>
+      </div>
 
+      {/* Calendar + Audit log preview */}
+      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:20 }}>
         <Card>
           <CardHead eyebrow="Content calendar" title="Next 7 days" right={<Btn size="sm" tone="subtle" onClick={() => onNavigate("autopilot")}><Ico name="calendar" size={12} /> Full plan</Btn>} />
           {loading ? (
@@ -229,34 +267,32 @@ export function DashboardView({ onNavigate, reviews, lastRefreshed }) {
             <Mono size={12}>Calendar unavailable.</Mono>
           )}
         </Card>
-      </div>
 
-      {/* Audit log preview */}
-      <Card flush>
-        <div style={{ padding:20, display:"flex", justifyContent:"space-between", borderBottom:`1px solid ${T.line}` }}>
-          <div><Label>Audit log · live</Label><div style={{ fontSize:15, fontWeight:500, marginTop:4 }}>Recent autonomous actions</div></div>
-          <Btn size="sm" onClick={() => onNavigate("audit")}>Full log <Ico name="arrow" size={12} /></Btn>
-        </div>
-        <div style={{ padding:"4px 0" }}>
-          {loading ? (
-            [0,1,2,3].map(i => <div key={i} style={{ padding:"10px 20px", borderTop:`1px solid ${T.line}` }}><Skel h={12} /></div>)
-          ) : auditEntries.length === 0 ? (
-            <div style={{ padding:20 }}><Mono size={12}>No audit log entries yet. Run the daily cycle to generate activity.</Mono></div>
-          ) : (
-            [...auditEntries].reverse().slice(0, 6).map((l, i) => {
-              const tone = l.type?.includes("rejected") || l.type?.includes("unauthorized") ? "bad" : l.type?.includes("skip") ? "warn" : "good";
-              return (
-                <div key={i} style={{ padding:"10px 20px", display:"grid", gridTemplateColumns:"160px 180px 70px 1fr", gap:16, alignItems:"center", borderTop: i > 0 ? `1px solid ${T.line}` : "none" }}>
-                  <Mono size={11}>{new Date(l.ts).toLocaleTimeString("en-UG", { hour:"2-digit", minute:"2-digit", second:"2-digit" })}</Mono>
-                  <Mono size={11} color={T.ink80}>{auditTypeLabel(l.type)}</Mono>
-                  <Pill tone={tone}>{tone === "bad" ? "error" : tone}</Pill>
-                  <span style={{ fontSize:12, color:T.ink80, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{l.payload?.msg || l.payload?.reason || l.type}</span>
-                </div>
-              );
-            })
-          )}
-        </div>
-      </Card>
+        <Card flush>
+          <div style={{ padding:20, display:"flex", justifyContent:"space-between", borderBottom:`1px solid ${T.line}` }}>
+            <div><Label>Audit log · live</Label><div style={{ fontSize:15, fontWeight:500, marginTop:4 }}>Recent actions</div></div>
+            <Btn size="sm" onClick={() => onNavigate("audit")}>Full log <Ico name="arrow" size={12} /></Btn>
+          </div>
+          <div style={{ padding:"4px 0" }}>
+            {loading ? (
+              [0,1,2,3].map(i => <div key={i} style={{ padding:"10px 20px", borderTop:`1px solid ${T.line}` }}><Skel h={12} /></div>)
+            ) : auditEntries.length === 0 ? (
+              <div style={{ padding:20 }}><Mono size={12}>No audit log entries yet.</Mono></div>
+            ) : (
+              [...auditEntries].reverse().slice(0, 4).map((l, i) => {
+                const tone = l.type?.includes("rejected") || l.type?.includes("unauthorized") ? "bad" : l.type?.includes("skip") ? "warn" : "good";
+                return (
+                  <div key={i} style={{ padding:"10px 20px", display:"grid", gridTemplateColumns:"120px 140px 1fr", gap:16, alignItems:"center", borderTop: i > 0 ? `1px solid ${T.line}` : "none" }}>
+                    <Mono size={11}>{new Date(l.ts).toLocaleTimeString("en-UG", { hour:"2-digit", minute:"2-digit" })}</Mono>
+                    <Mono size={11} color={T.ink80}>{auditTypeLabel(l.type)}</Mono>
+                    <span style={{ fontSize:12, color:T.ink80, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{l.payload?.msg || l.payload?.reason || l.type}</span>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </Card>
+      </div>
     </div>
   );
 }

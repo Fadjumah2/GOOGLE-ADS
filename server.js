@@ -1,10 +1,10 @@
-
 import 'dotenv/config';
 import path from 'path';
 import express from 'express';
 import { google } from 'googleapis';
 import gbpClient from './utils/gbpClient.js';
 import requireApiKey from './middleware/requireApiKey.js';
+
 import handleReplyToReview from './handlers/gbp/replyToReview.js';
 import handleDeleteReviewReply from './handlers/gbp/deleteReviewReply.js';
 import handleGetReviews from './handlers/gbp/fetchReviews.js';
@@ -26,6 +26,14 @@ import handleDeletePost from './handlers/gbp/deletePost.js';
 import handleGetLocations from './handlers/gbp/getLocations.js';
 import handleGetVerificationStatus from './handlers/gbp/getVerificationStatus.js';
 import handleGetAttributes from './handlers/gbp/getAttributes.js';
+
+import handleGetStrategy from './handlers/agent/getStrategy.js';
+import handleUpdateStrategy from './handlers/agent/updateStrategy.js';
+import handleGetDrafts from './handlers/agent/getDrafts.js';
+import handleApproveDraft from './handlers/agent/approveDraft.js';
+import handleDeleteDraft from './handlers/agent/deleteDraft.js';
+import handleGetSentiment from './handlers/agent/getSentiment.js';
+import handleGetReport from './handlers/agent/getReport.js';
 import handleAgentChat from './handlers/agent/chat.js';
 import handleAutonomousPost from './handlers/agent/autonomousPost.js';
 import handleAutoReplyReviews from './handlers/agent/autoReplyReviews.js';
@@ -33,6 +41,7 @@ import handleRunDaily from './handlers/agent/runDaily.js';
 import handleAgentStatus from './handlers/agent/status.js';
 import handleAuditLog from './handlers/agent/auditLog.js';
 import handleCronDaily from './handlers/cron/daily.js';
+
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -139,6 +148,13 @@ app.get('/api/gbp/getAttributes', requireApiKey, handleGetAttributes);
 app.get('/api/gbp/debug/locations', requireApiKey, handleGetLocations);
 
 // AI Agent
+app.get('/api/agent/getStrategy', requireApiKey, handleGetStrategy);
+app.post('/api/agent/updateStrategy', requireApiKey, handleUpdateStrategy);
+app.get('/api/agent/getDrafts', requireApiKey, handleGetDrafts);
+app.get('/api/agent/getSentiment', requireApiKey, handleGetSentiment);
+app.get('/api/agent/getReport', requireApiKey, handleGetReport);
+app.post('/api/agent/approveDraft', requireApiKey, handleApproveDraft);
+app.post('/api/agent/deleteDraft', requireApiKey, handleDeleteDraft);
 app.post('/api/agent/chat', requireApiKey, handleAgentChat);
 
 // --- Autonomous agent (Autopilot) ---

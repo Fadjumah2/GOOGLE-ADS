@@ -267,6 +267,7 @@ always routed to a human — never auto-answered.
 
 ## Last Worked On
 - **Date:** 2026-04-27
+<<<<<<< HEAD
 - **Status:** Major feature implementation complete. App enhanced with AI Strategy, Drafts, Sentiment, and Reports. Full Audit upgrades (Job Locking, GCS Audit Log, Enhanced PolicyGuard) applied.
 - **Completed:**
     - **Fixed:** Critical bugs (test suite ESM, React imports, icon rendering).
@@ -278,3 +279,38 @@ always routed to a human — never auto-answered.
 - **Pending:**
     - Synchronize with remote repository (Conflict resolution in progress).
     - Final verification in production environment (Vercel).
+=======
+- **Status:** Major feature implementation complete. App enhanced with AI Strategy, Drafts, Sentiment, and Reports.
+- **Completed:**
+    - **Fixed:** Critical bugs (test suite ESM, React imports, icon rendering).
+    - **Feature 1: AI Content Strategy Editor**
+        - Created GCS Storage Utility for persistence.
+        - Implemented dynamic weekly themes and Knowledge Base.
+        - Added AI-suggested facts extraction from reviews.
+    - **Feature 2: Post Scheduling & Drafts**
+        - Updated `gbpClient.js` for 2026 recurring post standards.
+        - Added Drafts Queue and approval workflow.
+        - Updated Autopilot to generate drafts instead of posting directly.
+    - **Feature 3: Patient Sentiment Dashboard**
+        - Added AI sentiment analysis (praises/needs/summary) to Dashboard.
+    - **Feature 4: Monthly Pulse Report**
+        - Created multi-metric report generator with Gemini executive summary.
+        - Added Reports view with print-to-PDF support.
+- **Pending:**
+    - Final verification in production environment (Vercel).
+    - Push to GitHub once valid PAT is provided.
+
+## Project Identity & Rules
+- **Purpose:** GBP management for Eritage ENT Care (Entebbe, Uganda).
+- **Core Principle:** Single-business operational backend; NOT a SaaS.
+- **Primary Model:** gemini-2.5-pro (as per global preferences).
+- **Key Constraints:**
+    - Always commit/push directly to `main`.
+    - All Google API calls must use `utils/gbpClient.js`.
+    - Proxy required for outbound HTTP (handled in `gbpClient.js`).
+
+## Environment State
+- **Branch:** `main`
+- **APIs:** My Business Reviews, Business Information, Performance (multi-metric), and Account Management enabled.
+- **Auth:** Service Account preferred; OAuth2 fallback available.
+>>>>>>> 2d121fe (feat: implement advanced AI strategy, drafts queue, sentiment dashboard, and monthly reports; plus production upgrades for autonomous agent)

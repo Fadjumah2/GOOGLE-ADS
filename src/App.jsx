@@ -3,7 +3,7 @@ import { API } from './data.jsx';
 import { T, Btn, Ico, ModalHost, ToastHost, openModal, closeModal, showToast } from './primitives.jsx';
 import { GlobalSearch } from './GlobalSearch.jsx';
 import { Sidebar, Topbar } from './shell.jsx';
-import { AutopilotView, ChatView, AuditView, PostsView, ReviewsView, MediaView, ServicesView, AnalyticsView, SettingsView } from './views.jsx';
+import { AutopilotView, ChatView, AuditView, PostsView, ReviewsView, MediaView, ServicesView, AnalyticsView, SettingsView, StrategyView, ReportsView } from './views.jsx';
 import { DashboardView } from './dashboard.jsx';
 
 class ErrorBoundary extends React.Component {
@@ -183,6 +183,7 @@ export default function App() {
 
   const VIEWS = {
     dashboard: { title: "Today at a glance", sub: `${formattedDate} · ${businessName} · ${businessLocation}`, Comp: DashboardView },
+    reports:   { title: "Monthly Pulse", sub: "Performance summaries and strategic insights.", Comp: ReportsView },
     autopilot: { title: "Autopilot", sub: "Autonomous daily posting & safe review replies.", Comp: AutopilotView },
     chat: { title: "Synapse AI", sub: "Conversational agent with 14 GBP tools.", Comp: ChatView },
     audit: { title: "Audit log", sub: "Every autonomous action, timestamped.", Comp: AuditView },
@@ -191,6 +192,7 @@ export default function App() {
     media: { title: "Media", sub: "Photos and videos on your listing.", Comp: MediaView },
     services:  { title: "Services",  sub: "What patients see when they search.", Comp: ServicesView },
     analytics: { title: "Analytics", sub: "Trends, response times, rating distribution.", Comp: AnalyticsView },
+    strategy:  { title: "AI Strategy", sub: "Customize post themes and knowledge base.", Comp: StrategyView },
     settings:  { title: "Settings",  sub: "API key, business info, and feature flags.", Comp: SettingsView },
   };
 

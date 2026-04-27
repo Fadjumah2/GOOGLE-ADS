@@ -2,9 +2,9 @@ import { CONTENT_CONSTRAINTS, CLINIC, GBP_FORMAT } from './contentStrategy.js';
 
 // POST_MAX: Google hard limit is 1,500. We enforce 1,400 (100-char safety margin
 // for encoding edge cases and API strictness variations).
-const POST_MAX = GBP_FORMAT.POST_SAFETY_MAX;  // 1400
+const POST_MAX = GBP_FORMAT?.POST_SAFETY_MAX || 1400;
 const POST_MIN = 80;   // Matches CONTENT_CONSTRAINTS.minLength; posts under 80 chars lack substance
-const REPLY_MAX = GBP_FORMAT.REPLY_MAX;        // 4000 — Google's published limit
+const REPLY_MAX = GBP_FORMAT?.REPLY_MAX || 4000;        // 4000 — Google's published limit
 const REPLY_MIN = 12;
 
 const URL_RE = /\bhttps?:\/\/[^\s)]+/gi;
@@ -149,9 +149,23 @@ export function validateReviewReply(text, reviewMeta = {}) {
     // Privacy: the reply must not quote the reviewer's full text back or
     // reveal any personal info the reviewer shared.
     if (reviewMeta.comment) {
-        const revSnippet = reviewMeta.comment.trim().slice(0, 40).toLowerCase();
-        if (revSnippet.length > 5 && trimmed.toLowerCase().includes(revSnippet)) {
-            reasons.push('quotes_reviewer_text');
+        const rev = reviewMeta.comment.trim().toLowerCase();
+        const rep = trimmed.toLowerCase();
+        
+        // 1. Check for long-ish literal substrings (avoid simple common phrases)
+        const minQuoteLen = 25;
+        for (let i = 0; i <= rev.length - minQuoteLen; i++) {
+            const phrase = rev.slice(i, i + minQuoteLen);
+            if (phrase.split(' ').length > 3 && rep.includes(phrase)) {
+                reasons.push('quotes_reviewer_phrase');
+                break;
+            }
+        }
+
+        // 2. Fallback check for the very beginning (already robust)
+        const revSnippet = rev.slice(0, 40);
+        if (revSnippet.length > 20 && rep.includes(revSnippet)) {
+            reasons.push('quotes_reviewer_start');
         }
     }
 
@@ -191,4 +205,3 @@ function starToNumber(rating) {
 }
 
 export const _internal = { STRONG_CLAIMS, SUPERLATIVES, POST_MAX, REPLY_MAX };
-
