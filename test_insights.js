@@ -1,18 +1,20 @@
-require('dotenv').config({ path: __dirname + '/.env' });
-const gbpClient = require('./utils/gbpClient');
-const { normalizeInsights } = require('./utils/normalizeGBPResponse');
+import 'dotenv/config';
+import gbpClient from './utils/gbpClient.js';
+import { normalizeInsights } from './utils/normalizeGBPResponse.js';
 
 async function test() {
     try {
         console.log("Fetching raw insights data (Last 28 Days)...");
         const rawData = await gbpClient.getInsights();
         
-        if (rawData.error) {
+        if (rawData && rawData.error) {
             console.error("Error:", JSON.stringify(rawData, null, 2));
             return;
         }
         
-        console.log("Raw Insights Data (First Metric):", JSON.stringify(rawData.multiDailyMetricTimeSeries[0], null, 2));
+        if (rawData.multiDailyMetricTimeSeries && rawData.multiDailyMetricTimeSeries[0]) {
+            console.log("Raw Insights Data (First Metric):", JSON.stringify(rawData.multiDailyMetricTimeSeries[0], null, 2));
+        }
         
         console.log("\nNormalizing insights data...");
         const normalized = normalizeInsights(rawData);

@@ -1,5 +1,5 @@
-require('dotenv').config();
-const gbpClient = require('./utils/gbpClient');
+import 'dotenv/config';
+import gbpClient from './utils/gbpClient.js';
 
 async function testCreatePost() {
     try {
@@ -14,7 +14,7 @@ async function testCreatePost() {
             }
         };
         const result = await gbpClient.createPost(postData);
-        if (result.error) {
+        if (result && result.error) {
             console.error("Error creating post:", JSON.stringify(result, null, 2));
             return;
         }

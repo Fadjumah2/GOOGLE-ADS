@@ -1,12 +1,12 @@
-require('dotenv').config();
-const gbpClient = require('./utils/gbpClient');
-const { normalizeServices } = require('./utils/normalizeGBPResponse');
+import 'dotenv/config';
+import gbpClient from './utils/gbpClient.js';
+import { normalizeServices } from './utils/normalizeGBPResponse.js';
 
 async function testServices() {
     try {
         console.log("Testing getServiceList...");
         const rawData = await gbpClient.getServiceList();
-        if (rawData.error) {
+        if (rawData && rawData.error) {
             console.error("Error fetching service list:", JSON.stringify(rawData, null, 2));
             return;
         }

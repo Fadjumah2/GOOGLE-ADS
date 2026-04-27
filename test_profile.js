@@ -1,12 +1,12 @@
-require('dotenv').config({ path: __dirname + '/.env' });
-const gbpClient = require('./utils/gbpClient');
-const { normalizeProfile } = require('./utils/normalizeGBPResponse');
+import 'dotenv/config';
+import gbpClient from './utils/gbpClient.js';
+import { normalizeProfile } from './utils/normalizeGBPResponse.js';
 
 async function test() {
     try {
         console.log("Fetching raw profile data...");
         const rawData = await gbpClient.getProfile();
-        if (rawData.error) {
+        if (rawData && rawData.error) {
             console.error("Error:", rawData);
             return;
         }

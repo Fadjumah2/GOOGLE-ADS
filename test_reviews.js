@@ -1,12 +1,12 @@
-require('dotenv').config();
-const gbpClient = require('./utils/gbpClient');
-const { normalizeReviews } = require('./utils/normalizeGBPResponse');
+import 'dotenv/config';
+import gbpClient from './utils/gbpClient.js';
+import { normalizeReviews } from './utils/normalizeGBPResponse.js';
 
 async function test() {
     try {
         console.log("Testing fetchReviews...");
         const rawData = await gbpClient.fetchReviews();
-        if (rawData.error) {
+        if (rawData && rawData.error) {
             console.error("Error:", rawData);
             return;
         }

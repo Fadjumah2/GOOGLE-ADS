@@ -1,11 +1,11 @@
-require('dotenv').config();
-const gbpClient = require('./utils/gbpClient');
+import 'dotenv/config';
+import gbpClient from './utils/gbpClient.js';
 
 async function test() {
     try {
         console.log("Testing getLocations...");
         const data = await gbpClient.getLocations();
-        if (data.error) {
+        if (data && data.error) {
             console.error("Error:", data);
             return;
         }

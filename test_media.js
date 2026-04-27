@@ -1,12 +1,12 @@
-require('dotenv').config();
-const gbpClient = require('./utils/gbpClient');
-const { normalizeMedia } = require('./utils/normalizeGBPResponse');
+import 'dotenv/config';
+import gbpClient from './utils/gbpClient.js';
+import { normalizeMedia } from './utils/normalizeGBPResponse.js';
 
 async function testMedia() {
     try {
         console.log("Testing listMedia...");
         const rawData = await gbpClient.listMedia();
-        if (rawData.error) {
+        if (rawData && rawData.error) {
             console.error("Error listing media:", JSON.stringify(rawData, null, 2));
             return;
         }

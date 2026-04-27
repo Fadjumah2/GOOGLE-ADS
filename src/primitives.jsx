@@ -145,8 +145,9 @@ export const Ico = ({ name, size = 14, color = "currentColor", stroke = 1.5, sty
     copy:      "M20 9h-9a2 2 0 00-2 2v9a2 2 0 002 2h9a2 2 0 002-2v-9a2 2 0 00-2-2zM5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1",
     external:  "M14 3h7v7M21 3l-9 9M19 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h6",
   };
+  const filled = ["dashboard", "reviews", "posts", "calendar", "star", "play", "pause"].includes(name);
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={stroke} strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink:0, ...style }}>
+    <svg width={size} height={size} viewBox="0 0 24 24" fill={filled ? color : "none"} stroke={color} strokeWidth={stroke} strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink:0, ...style }}>
       <path d={paths[name] || ""} />
     </svg>
   );
