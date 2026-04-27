@@ -3,3 +3,5 @@ dist
 .env
 *.log
 server.log
+.vercel
+.env*.local

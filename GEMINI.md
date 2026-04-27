@@ -107,6 +107,12 @@ shut down by Google on November 3, 2025.
 post. This function queries the live GBP API. Do not add a local file/DB
 cache as a replacement — the GBP query is the source of truth.
 
+### 11. Never commit, expose, or push sensitive files
+Files like `.env.local` or any other file containing sensitive credentials (API keys, client secrets, etc.) must never be committed to version control, exposed in logs, or pushed to any remote repository. Ensure that `.gitignore` is properly configured to exclude these files.
+
+### 12. Always test before committing
+Before committing any changes, run the full suite of local tests to ensure that the application is not broken. All scripts in the `test_*.js` pattern should be executed. If any test fails, the commit should be aborted and the errors reported.
+
 ---
 
 ## File Structure — Do Not Reorganize
