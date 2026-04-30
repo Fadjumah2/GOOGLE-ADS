@@ -214,16 +214,16 @@ export default function App() {
   useEffect(() => {
     const checkAuth = () => {
       if (!API.getKey()) {
-        console.log('[Auth] No API key found, opening auth modal');
+        if (import.meta.env.DEV) console.log('[Auth] No API key found, opening auth modal');
         openModal(<ApiKeyModal />);
       } else {
-        console.log('[Auth] API key found, proceeding');
+        if (import.meta.env.DEV) console.log('[Auth] API key found, proceeding');
       }
     };
     checkAuth();
 
     const handleUnauthorized = (e) => {
-      console.log('[Auth] Unauthorized event received, prompting for new key');
+      if (import.meta.env.DEV) console.log('[Auth] Unauthorized event received, prompting for new key');
       openModal(<ApiKeyModal />);
     };
 
