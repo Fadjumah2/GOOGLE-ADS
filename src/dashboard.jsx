@@ -7,6 +7,7 @@ import { Sparkline } from './Sparkline.jsx';
 export function DashboardView({ onNavigate, reviews, lastRefreshed }) {
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState(null);
+  const [profileError, setProfileError] = useState(null);
   const [insights, setInsights] = useState([]);
   const [apData, setApData] = useState(null);
   const [sentiment, setSentiment] = useState(null);
@@ -17,9 +18,14 @@ export function DashboardView({ onNavigate, reviews, lastRefreshed }) {
   const load = useCallback(async (p = period) => {
     try {
       setLoading(true);
+      setProfileError(null);
       console.log('[Dashboard] Loading data...');
       const [pro, ins, ap, log, sent] = await Promise.all([
-        API.profile().catch(e => { console.error('[Dashboard] profile error:', e); return null; }),
+        API.profile().catch(e => {
+          console.error('[Dashboard] profile error:', e);
+          setProfileError(e);
+          return null;
+        }),
         API.insights(p).catch(e => { console.error('[Dashboard] insights error:', e); return null; }),
         API.apStatus().catch(e => { console.error('[Dashboard] apStatus error:', e); return null; }),
         API.auditLog(10).catch(e => { console.error('[Dashboard] auditLog error:', e); return null; }),
@@ -34,6 +40,7 @@ export function DashboardView({ onNavigate, reviews, lastRefreshed }) {
       setLoading(false);
     } catch (e) {
       console.error('[Dashboard] Load failed:', e);
+      setProfileError(e);
       setLoading(false);
     }
   }, [period]);
@@ -85,6 +92,17 @@ export function DashboardView({ onNavigate, reviews, lastRefreshed }) {
 
   return (
     <div style={{ padding:"28px 32px 60px", display:"flex", flexDirection:"column", gap:24 }}>
+      {profileError && (
+        <Card>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+              <div style={{ color: T.bad, fontWeight: 'bold' }}>Failed to load profile data</div>
+              <div style={{ color: T.ink60, fontSize: '12px' }}>{profileError.message}</div>
+            </div>
+            <Btn onClick={() => load(period)}>Try again</Btn>
+          </div>
+        </Card>
+      )}
       {/* KPI row */}
       {loading ? (
         <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:0, border:`1px solid ${T.line}`, borderRadius:10, background:T.bgElev, overflow:"hidden" }}>
