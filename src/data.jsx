@@ -9,7 +9,7 @@ export const API = {
   clearKey: () => sessionStorage.removeItem(STORAGE_KEY),
 
   call: async (path, opts = {}) => {
-    console.log(`[API] ${opts.method || 'GET'} ${path}`);
+    if (import.meta.env.DEV) console.log(`[API] ${opts.method || 'GET'} ${path}`);
     try {
       const res = await fetch(path, {
         ...opts,
@@ -19,23 +19,26 @@ export const API = {
           ...(opts.headers || {})
         }
       });
-      console.log(`[API] Response: ${res.status} ${res.statusText}`);
+      if (import.meta.env.DEV) console.log(`[API] Response: ${res.status} ${res.statusText}`);
 
       if (res.status === 401) {
-        console.error('[API] Unauthorized - clearing key and re-prompting');
+        if (import.meta.env.DEV) console.error('[API] Unauthorized - clearing key and re-prompting');
         API.clearKey();
         window.dispatchEvent(new CustomEvent("synapse-unauthorized"));
         throw Object.assign(new Error("Unauthorized - please re-enter your API key"), { status: 401 });
       }
-      const json = await res.json().catch(() => ({}));
+      const raw = await res.text();
+      let json = {};
+      try { json = raw ? JSON.parse(raw) : {}; } catch {}
       if (!res.ok) {
-        const errMsg = json.error || json.message || `HTTP ${res.status}`;
-        console.error(`[API] Error: ${errMsg}`);
+        const textMsg = typeof raw === "string" ? raw.trim() : "";
+        const errMsg = json.error || json.message || (textMsg && !textMsg.startsWith("<") ? textMsg.slice(0, 200) : "") || `HTTP ${res.status}`;
+        if (import.meta.env.DEV) console.error(`[API] Error: ${errMsg}`);
         throw new Error(errMsg);
       }
       return json;
     } catch (e) {
-      console.error(`[API] Exception on ${path}:`, e);
+      if (import.meta.env.DEV) console.error(`[API] Exception on ${path}:`, e);
       throw e;
     }
   },
@@ -133,4 +136,3 @@ export function fmtNum(n) {
   if (n >= 1000) return (n / 1000).toFixed(1).replace(/\.0$/, "") + "k";
   return String(n);
 }
-
