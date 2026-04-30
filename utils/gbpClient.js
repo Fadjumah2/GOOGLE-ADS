@@ -185,7 +185,7 @@ export const getProfile = async () => {
             'categories',
             'metadata',
             'latlng',
-            'profile'
+            'description'
         ].join(',');
 
         const url = `https://mybusinessbusinessinformation.googleapis.com/v1/locations/${locationId}?readMask=${encodeURIComponent(readMask)}`;
