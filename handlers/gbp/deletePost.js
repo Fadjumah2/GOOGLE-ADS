@@ -1,4 +1,3 @@
-import gbpClient from '../../utils/gbpClient.js';
 import logger from '../../utils/logger.js';
 
 const handleDeletePost = async (req, res) => {
@@ -23,6 +22,11 @@ const handleDeletePost = async (req, res) => {
   } catch (error) {
     logger.error(`Unexpected error deleting post: ${error.message}`);
     res.status(500).json({ success: false, error: 'DELETE_POST_FAILED', message: error.message });
+  }
+};
+
+export default handleDeletePost;
+ge });
   }
 };
 

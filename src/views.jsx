@@ -16,8 +16,8 @@ export function AutopilotView({ lastRefreshed }) {
     setLoading(true);
     try {
       const [status, draftsData] = await Promise.all([
-        API.apStatus(),
-        API.getDrafts()
+        API.apStatus(apiKey),
+        API.getDrafts(apiKey)
       ]);
       setApData(status);
       setDrafts(draftsData.drafts || []);
@@ -45,7 +45,7 @@ export function AutopilotView({ lastRefreshed }) {
     if (!confirm("Are you sure you want to delete this draft?")) return;
     setActioningDraft(id);
     try {
-      const res = await API.deleteDraft(id);
+      const res = await API.deleteDraft(apiKey, id);
       if (res.success) {
         showToast("Draft deleted", "neutral");
         load();
@@ -120,7 +120,7 @@ export function AutopilotView({ lastRefreshed }) {
           <Btn
             size="sm"
             disabled={!!actionLoading}
-            onClick={() => runAction("replies", () => API.autoReply({ dryRun: true }), "Reply drafts")}
+            onClick={() => runAction("replies", () => API.autoReply(apiKey, { dryRun: true }), "Reply drafts")}
           >
             {actionLoading === "replies" ? <Mono size={11}>Drafting…</Mono> : <><Ico name="sparkle" size={12} /> Draft reply queue (dry-run)</>}
           </Btn>
@@ -128,7 +128,7 @@ export function AutopilotView({ lastRefreshed }) {
             size="sm"
             tone="solid"
             disabled={!!actionLoading}
-            onClick={() => runAction("cycle", () => API.runDaily({ force: false }), "Daily cycle")}
+            onClick={() => runAction("cycle", () => API.runDaily(apiKey, { force: false }), "Daily cycle")}
           >
             {actionLoading === "cycle" ? <Mono size={11}>Running…</Mono> : <><Ico name="play" size={12} /> Run full daily cycle</>}
           </Btn>
@@ -310,11 +310,7 @@ export function ChatView() {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 55000);
     try {
-      const res = await API.call("/api/agent/chat", {
-        method: "POST",
-        body: JSON.stringify({ message: msg, history: apiHistory }),
-        signal: controller.signal,
-      });
+      const res = await API.chat(apiKey, msg, apiHistory);
       setDisplayHistory([...updatedDisplay, { role: "assistant", msg: res.reply || "No response" }]);
       setApiHistory(res.history || []);
     } catch (e) {
@@ -428,7 +424,7 @@ export function ReviewsView({ reviews, searchTerm }) {
         <div style={{ display: "flex", gap: 8 }}>
           <Btn size="sm" onClick={async () => {
             try {
-              const res = await API.autoReply({ dryRun: true });
+              const res = await API.autoReply(apiKey, { dryRun: true });
               const n = res?.drafts?.length ?? res?.count ?? 0;
               showToast(`Drafted ${n} reply${n === 1 ? "" : "s"} (dry-run). Open Audit log for details.`, "good");
             } catch (e) { showToast(e.message, "bad"); }
@@ -484,7 +480,7 @@ export function PostsView({ searchTerm, lastRefreshed }) {
     const load = async () => {
       setLoading(true);
       try {
-        const data = await API.posts();
+        const data = await API.posts(apiKey);
         setPosts(data.posts || []);
       } catch (e) { console.error(e); }
       finally { setLoading(false); }
@@ -587,7 +583,7 @@ export function MediaView({ searchTerm, lastRefreshed }) {
     const load = async () => {
       setLoading(true);
       try {
-        const data = await API.media();
+        const data = await API.media(apiKey);
         setMedia(data.media || []);
       } catch (e) { console.error(e); }
       finally { setLoading(false); }
@@ -634,7 +630,7 @@ export function AuditView({ searchTerm, lastRefreshed }) {
     const load = async () => {
       setLoading(true);
       try {
-        const data = await API.auditLog(500);
+        const data = await API.auditLog(apiKey, 500);
         setEntries(data.entries || []);
       } catch (e) { console.error(e); }
       finally { setLoading(false); }
@@ -687,7 +683,7 @@ export function AuditView({ searchTerm, lastRefreshed }) {
   );
 }
 
-export function AnalyticsView({ reviews, searchTerm, lastRefreshed }) {
+export function AnalyticsView({ reviews, searchTerm, lastRefreshed, apiKey }) {
   const [loading, setLoading] = useState(true);
   const [insights, setInsights] = useState([]);
   const [period, setPeriod] = useState("last28");
@@ -831,7 +827,7 @@ export function ServicesView({ lastRefreshed }) {
     const load = async () => {
       setLoading(true);
       try {
-        const data = await API.services();
+        const data = await API.services(apiKey);
         setServices(data.services || []);
       } catch (e) { console.error(e); }
       finally { setLoading(false); }
@@ -878,7 +874,7 @@ export function ReportsView() {
     const load = async () => {
       setLoading(true);
       try {
-        const res = await API.getReport(period);
+        const res = await API.getReport(apiKey, period);
         if (res.success) setReport(res.report);
       } catch (e) { showToast("Failed to load report", "bad"); }
       finally { setLoading(false); }
@@ -941,28 +937,26 @@ export function ReportsView() {
   );
 }
 
-export function SettingsView() {
+export function SettingsView({ apiKey, setApiKey }) {
   const [keyVisible, setKeyVisible] = useState(false);
   const [editing, setEditing] = useState(false);
   const [newKey, setNewKey] = useState("");
-  const currentKey = API.getKey();
+  const currentKey = apiKey;
   const masked = currentKey
     ? currentKey.slice(0, 6) + "••••••••••••••••••••" + currentKey.slice(-4)
     : "(none set)";
 
   const handleSave = () => {
     if (!newKey.trim()) return;
-    API.setKey(newKey.trim());
+    setApiKey(newKey.trim());
     setEditing(false);
     setNewKey("");
-    showToast("API key updated — reloading…", "good");
-    setTimeout(() => window.location.reload(), 900);
+    showToast("API key updated", "good");
   };
 
   const handleClear = () => {
-    API.clearKey();
+    setApiKey(null);
     showToast("API key cleared", "warn");
-    setTimeout(() => window.location.reload(), 900);
   };
 
   return (
@@ -1065,8 +1059,8 @@ export function StrategyView() {
       setLoading(true);
       try {
         const [stratRes, sentRes] = await Promise.all([
-          API.getStrategy(),
-          API.getSentiment()
+          API.getStrategy(apiKey),
+          API.getSentiment(apiKey)
         ]);
         if (stratRes.success) setStrategy(stratRes.strategy);
         if (sentRes.success) setSentiment(sentRes.sentiment);
@@ -1249,4 +1243,24 @@ export function StrategyView() {
       </div>
     </div>
   );
+}
+
+  );
+}
+        </div>
+                ))}
+              </div>
+            </Card>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+  );
+}
+}
+}
+}
 }

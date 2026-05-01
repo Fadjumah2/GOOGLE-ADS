@@ -1,4 +1,3 @@
-import gbpClient from '../../utils/gbpClient.js';
 import logger from '../../utils/logger.js';
 
 const handleGetSignedUrl = async (req, res) => {
@@ -19,6 +18,11 @@ const handleGetSignedUrl = async (req, res) => {
   } catch (error) {
     logger.error(`Unexpected error getting signed URL: ${error.message}`);
     res.status(500).json({ success: false, error: 'GET_SIGNED_URL_FAILED', message: error.message });
+  }
+};
+
+export default handleGetSignedUrl;
+ });
   }
 };
 

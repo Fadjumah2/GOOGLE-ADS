@@ -1,4 +1,3 @@
-import gbpClient from '../../utils/gbpClient.js';
 import { normalizeMedia } from '../../utils/normalizeGBPResponse.js';
 import logger from '../../utils/logger.js';
 
@@ -19,6 +18,11 @@ const handleListMedia = async (req, res) => {
     res.status(500).json({
       success: false,
       error: "GBP_MEDIA_LIST_FAILED"
+    });
+  }
+};
+
+export default handleListMedia;
     });
   }
 };

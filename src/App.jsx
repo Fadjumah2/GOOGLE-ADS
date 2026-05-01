@@ -70,13 +70,13 @@ function useIsMobile() {
   return m;
 }
 
-function ApiKeyModal() {
-  const [key, setKey] = useState("");
+function ApiKeyModal({ setApiKey }) {
+  const [key, setKeyState] = useState("");
 
   const handleSubmit = () => {
     if (key.trim()) {
-      API.setKey(key);
-      window.location.reload();
+      setApiKey(key);
+      closeModal();
     } else {
       showToast("Please enter an API key", "bad");
     }
@@ -94,7 +94,7 @@ function ApiKeyModal() {
         <input
           type="password"
           value={key}
-          onChange={e => setKey(e.target.value)}
+          onChange={e => setKeyState(e.target.value)}
           onKeyDown={e => e.key === "Enter" && handleSubmit()}
           placeholder="Paste your API key here"
           style={{
@@ -117,6 +117,7 @@ function ApiKeyModal() {
 }
 
 export default function App() {
+  const [apiKey, setApiKey] = useState(null);
   const [view, setView] = useState(() => localStorage.getItem("synapse-view") || "dashboard");
   const [viewHistory, setViewHistory] = useState([]);
   useEffect(() => localStorage.setItem("synapse-view", view), [view]);
@@ -127,20 +128,22 @@ export default function App() {
 
   const [reviews, setReviews] = useState([]);
   useEffect(() => {
-    API.reviews()
+    if (!apiKey) return;
+    API.reviews(apiKey)
       .then(data => setReviews(data.reviews || []))
       .catch(e => {
         console.error('Failed to fetch reviews:', e);
         setReviews([]);
       });
-  }, [lastRefreshed]);
+  }, [lastRefreshed, apiKey]);
 
   const [autopilotEnabled, setAutopilotEnabled] = useState(null);
   useEffect(() => {
-    API.apStatus()
+    if (!apiKey) return;
+    API.apStatus(apiKey)
       .then(data => setAutopilotEnabled(data?.status?.enabled ?? null))
       .catch(() => setAutopilotEnabled(null));
-  }, [lastRefreshed]);
+  }, [lastRefreshed, apiKey]);
 
   const handleSync = () => {
     setSyncing(true);
@@ -149,28 +152,38 @@ export default function App() {
     setTimeout(() => setSyncing(false), 1500);
   };
 
-  // 5-minute inactivity auto sign-out — clears the API key and reopens
-  // the auth modal via the existing 'synapse-unauthorized' channel.
+  // Check for API key on mount and listen for unauthorized
   useEffect(() => {
-    const IDLE_MS = 5 * 60 * 1000;
-    let timer = null;
-    const reset = () => {
-      if (timer) clearTimeout(timer);
-      timer = setTimeout(() => {
-        if (!API.getKey()) return;
-        API.clearKey();
-        showToast("Signed out — 5 min of inactivity", "warn");
-        window.dispatchEvent(new CustomEvent("synapse-unauthorized"));
-      }, IDLE_MS);
+    const checkAuth = () => {
+      if (!apiKey) {
+        if (import.meta.env.DEV) console.log('[Auth] No API key found, opening auth modal');
+        openModal(<ApiKeyModal setApiKey={setApiKey} />);
+      } else {
+        if (import.meta.env.DEV) console.log('[Auth] API key found, proceeding');
+      }
     };
-    const events = ["mousemove", "mousedown", "keydown", "touchstart", "scroll", "focus"];
-    events.forEach(e => window.addEventListener(e, reset, { passive: true }));
-    reset();
+    checkAuth();
+
+    const handleUnauthorized = (e) => {
+      if (import.meta.env.DEV) console.log('[Auth] Unauthorized event received, prompting for new key');
+      setApiKey(null);
+      openModal(<ApiKeyModal setApiKey={setApiKey} />);
+    };
+
+    window.addEventListener("synapse-unauthorized", handleUnauthorized);
+
+    // Global error handler for uncaught promise rejections
+    const handleUnhandledRejection = (e) => {
+      console.error('[Global] Unhandled promise rejection:', e.reason);
+      showToast(`Error: ${e.reason?.message || e.reason}`, "bad");
+    };
+    window.addEventListener("unhandledrejection", handleUnhandledRejection);
+
     return () => {
-      events.forEach(e => window.removeEventListener(e, reset));
-      if (timer) clearTimeout(timer);
+      window.removeEventListener("synapse-unauthorized", handleUnauthorized);
+      window.removeEventListener("unhandledrejection", handleUnhandledRejection);
     };
-  }, []);
+  }, [apiKey]);
 
   const totalReviews = reviews.length;
   const unansweredReviews = reviews.filter(r => !r.hasReply).length;
@@ -183,17 +196,17 @@ export default function App() {
 
   const VIEWS = {
     dashboard: { title: "Today at a glance", sub: `${formattedDate} · ${businessName} · ${businessLocation}`, Comp: DashboardView },
-    reports:   { title: "Monthly Pulse", sub: "Performance summaries and strategic insights.", Comp: ReportsView },
-    autopilot: { title: "Autopilot", sub: "Autonomous daily posting & safe review replies.", Comp: AutopilotView },
-    chat: { title: "Synapse AI", sub: "Conversational agent with 14 GBP tools.", Comp: ChatView },
-    audit: { title: "Audit log", sub: "Every autonomous action, timestamped.", Comp: AuditView },
-    posts: { title: "Posts", sub: "Your published Google posts.", Comp: PostsView },
-    reviews: { title: "Reviews", sub: `${totalReviews} total · ${unansweredReviews} awaiting action.`, Comp: ReviewsView },
-    media: { title: "Media", sub: "Photos and videos on your listing.", Comp: MediaView },
-    services:  { title: "Services",  sub: "What patients see when they search.", Comp: ServicesView },
-    analytics: { title: "Analytics", sub: "Trends, response times, rating distribution.", Comp: AnalyticsView },
-    strategy:  { title: "AI Strategy", sub: "Customize post themes and knowledge base.", Comp: StrategyView },
-    settings:  { title: "Settings",  sub: "API key, business info, and feature flags.", Comp: SettingsView },
+    reports:   { title: "Monthly Pulse", sub: "Performance summaries and strategic insights.", Comp: (props) => <ReportsView {...props} apiKey={apiKey} /> },
+    autopilot: { title: "Autopilot", sub: "Autonomous daily posting & safe review replies.", Comp: (props) => <AutopilotView {...props} apiKey={apiKey} /> },
+    chat: { title: "Synapse AI", sub: "Conversational agent with 14 GBP tools.", Comp: (props) => <ChatView {...props} apiKey={apiKey} /> },
+    audit: { title: "Audit log", sub: "Every autonomous action, timestamped.", Comp: (props) => <AuditView {...props} apiKey={apiKey} /> },
+    posts: { title: "Posts", sub: "Your published Google posts.", Comp: (props) => <PostsView {...props} apiKey={apiKey} /> },
+    reviews: { title: "Reviews", sub: `${totalReviews} total · ${unansweredReviews} awaiting action.`, Comp: (props) => <ReviewsView {...props} apiKey={apiKey} /> },
+    media: { title: "Media", sub: "Photos and videos on your listing.", Comp: (props) => <MediaView {...props} apiKey={apiKey} /> },
+    services:  { title: "Services",  sub: "What patients see when they search.", Comp: (props) => <ServicesView {...props} apiKey={apiKey} /> },
+    analytics: { title: "Analytics", sub: "Trends, response times, rating distribution.", Comp: (props) => <AnalyticsView {...props} apiKey={apiKey} /> },
+    strategy:  { title: "AI Strategy", sub: "Customize post themes and knowledge base.", Comp: (props) => <StrategyView {...props} apiKey={apiKey} /> },
+    settings:  { title: "Settings",  sub: "API key, business info, and feature flags.", Comp: (props) => <SettingsView {...props} apiKey={apiKey} setApiKey={setApiKey} /> },
   };
 
   const isMobile = useIsMobile();
@@ -265,7 +278,7 @@ export default function App() {
 
   const handleRunNow = async () => {
     try {
-      await API.runDaily();
+      await API.runDaily(apiKey);
       showToast("Daily cycle started — refresh in a minute to see results.", "good");
     } catch(e) { showToast(e.message, "bad"); }
   };

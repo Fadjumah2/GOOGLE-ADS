@@ -1,21 +1,13 @@
 // Synapse — API client (replaces MOCK data)
-// Auth key is held in sessionStorage so closing the tab/window forces
-// re-sign-in next time the app is opened (per security requirement).
-const STORAGE_KEY = "synapse-api-key";
-
 export const API = {
-  getKey: () => sessionStorage.getItem(STORAGE_KEY) || "",
-  setKey: (k) => sessionStorage.setItem(STORAGE_KEY, k.trim()),
-  clearKey: () => sessionStorage.removeItem(STORAGE_KEY),
-
-  call: async (path, opts = {}) => {
+  call: async (apiKey, path, opts = {}) => {
     if (import.meta.env.DEV) console.log(`[API] ${opts.method || 'GET'} ${path}`);
     try {
       const res = await fetch(path, {
         ...opts,
         headers: {
           "Content-Type": "application/json",
-          "x-api-key": API.getKey(),
+          "x-api-key": apiKey,
           ...(opts.headers || {})
         }
       });
@@ -23,7 +15,6 @@ export const API = {
 
       if (res.status === 401) {
         if (import.meta.env.DEV) console.error('[API] Unauthorized - clearing key and re-prompting');
-        API.clearKey();
         window.dispatchEvent(new CustomEvent("synapse-unauthorized"));
         throw Object.assign(new Error("Unauthorized - please re-enter your API key"), { status: 401 });
       }
@@ -44,32 +35,32 @@ export const API = {
   },
 
   // ── GBP ──
-  profile:       ()             => API.call("/api/gbp/getProfile"),
-  reviews:       ()             => API.call("/api/gbp/fetchReviews"),
-  posts:         ()             => API.call("/api/gbp/getPosts"),
-  insights:      (p = "last28") => API.call(`/api/gbp/getInsights?period=${p}`),
-  services:      ()             => API.call("/api/gbp/getServiceList"),
-  media:         ()             => API.call("/api/gbp/listMedia"),
-  replyToReview: (name, txt)    => API.call("/api/gbp/replyToReview",  { method: "POST", body: JSON.stringify({ reviewName: name, comment: txt }) }),
-  createPost:    (body)         => API.call("/api/gbp/createPost",      { method: "POST", body: JSON.stringify(body) }),
-  addService:    (body)         => API.call("/api/gbp/addService",       { method: "POST", body: JSON.stringify(body) }),
-  uploadMedia:   (body)         => API.call("/api/gbp/uploadMedia",     { method: "POST", body: JSON.stringify(body) }),
-  getSignedUrl:  (filename, contentType) => API.call("/api/gbp/getSignedUrl",  { method: "POST", body: JSON.stringify({ filename, contentType }) }),
+  profile:       (apiKey)             => API.call(apiKey, "/api/gbp/getProfile"),
+  reviews:       (apiKey)             => API.call(apiKey, "/api/gbp/fetchReviews"),
+  posts:         (apiKey)             => API.call(apiKey, "/api/gbp/getPosts"),
+  insights:      (apiKey, p = "last28") => API.call(apiKey, `/api/gbp/getInsights?period=${p}`),
+  services:      (apiKey)             => API.call(apiKey, "/api/gbp/getServiceList"),
+  media:         (apiKey)             => API.call(apiKey, "/api/gbp/listMedia"),
+  replyToReview: (apiKey, name, txt)    => API.call(apiKey, "/api/gbp/replyToReview",  { method: "POST", body: JSON.stringify({ reviewName: name, comment: txt }) }),
+  createPost:    (apiKey, body)         => API.call(apiKey, "/api/gbp/createPost",      { method: "POST", body: JSON.stringify(body) }),
+  addService:    (apiKey, body)         => API.call(apiKey, "/api/gbp/addService",       { method: "POST", body: JSON.stringify(body) }),
+  uploadMedia:   (apiKey, body)         => API.call(apiKey, "/api/gbp/uploadMedia",     { method: "POST", body: JSON.stringify(body) }),
+  getSignedUrl:  (apiKey, filename, contentType) => API.call(apiKey, "/api/gbp/getSignedUrl",  { method: "POST", body: JSON.stringify({ filename, contentType }) }),
 
   // ── Agent ──
-  getStrategy: ()                 => API.call("/api/agent/getStrategy"),
-  updateStrategy: (strategy)      => API.call("/api/agent/updateStrategy",    { method: "POST", body: JSON.stringify({ strategy }) }),
-  getDrafts:   ()                 => API.call("/api/agent/getDrafts"),
-  getSentiment: ()                => API.call("/api/agent/getSentiment"),
-  getReport:    (period)          => API.call(`/api/agent/getReport?period=${period}`),
-  approveDraft: (draftId)         => API.call("/api/agent/approveDraft",      { method: "POST", body: JSON.stringify({ draftId }) }),
-  deleteDraft:  (draftId)         => API.call("/api/agent/deleteDraft",       { method: "POST", body: JSON.stringify({ draftId }) }),
-  chat:        (message, history) => API.call("/api/agent/chat",             { method: "POST", body: JSON.stringify({ message, history }) }),
-  apStatus:    ()                 => API.call("/api/agent/status"),
-  auditLog:    (limit = 150)      => API.call(`/api/agent/auditLog?limit=${limit}`),
-  runDaily:    (opts = {})        => API.call("/api/agent/runDaily",          { method: "POST", body: JSON.stringify(opts) }),
-  previewPost: ()                 => API.call("/api/agent/autonomousPost",    { method: "POST", body: JSON.stringify({ dryRun: true }) }),
-  autoReply:   (opts = {})        => API.call("/api/agent/autoReplyReviews", { method: "POST", body: JSON.stringify(opts) }),
+  getStrategy: (apiKey)                 => API.call(apiKey, "/api/agent/getStrategy"),
+  updateStrategy: (apiKey, strategy)      => API.call(apiKey, "/api/agent/updateStrategy",    { method: "POST", body: JSON.stringify({ strategy }) }),
+  getDrafts:   (apiKey)                 => API.call(apiKey, "/api/agent/getDrafts"),
+  getSentiment: (apiKey)                => API.call(apiKey, "/api/agent/getSentiment"),
+  getReport:    (apiKey, period)          => API.call(apiKey, `/api/agent/getReport?period=${period}`),
+  approveDraft: (apiKey, draftId)         => API.call(apiKey, "/api/agent/approveDraft",      { method: "POST", body: JSON.stringify({ draftId }) }),
+  deleteDraft:  (apiKey, draftId)         => API.call(apiKey, "/api/agent/deleteDraft",       { method: "POST", body: JSON.stringify({ draftId }) }),
+  chat:        (apiKey, message, history) => API.call(apiKey, "/api/agent/chat",             { method: "POST", body: JSON.stringify({ message, history }) }),
+  apStatus:    (apiKey)                 => API.call(apiKey, "/api/agent/status"),
+  auditLog:    (apiKey, limit = 150)      => API.call(apiKey, `/api/agent/auditLog?limit=${limit}`),
+  runDaily:    (apiKey, opts = {})        => API.call(apiKey, "/api/agent/runDaily",          { method: "POST", body: JSON.stringify(opts) }),
+  previewPost: (apiKey)                 => API.call(apiKey, "/api/agent/autonomousPost",    { method: "POST", body: JSON.stringify({ dryRun: true }) }),
+  autoReply:   (apiKey, opts = {})        => API.call(apiKey, "/api/agent/autoReplyReviews", { method: "POST", body: JSON.stringify(opts) }),
 };
 
 // ── Helpers ──

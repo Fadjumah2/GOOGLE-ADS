@@ -1,4 +1,3 @@
-import gbpClient from '../../utils/gbpClient.js';
 import { normalizePosts } from '../../utils/normalizeGBPResponse.js';
 import logger from '../../utils/logger.js';
 
@@ -19,6 +18,11 @@ const handleGetPosts = async (req, res) => {
   } catch (error) {
     logger.error('Failed to fetch posts.');
     res.status(500).json({ success: false, error: 'GET_POSTS_FAILED', message: error.message });
+  }
+};
+
+export default handleGetPosts;
+sage });
   }
 };
 

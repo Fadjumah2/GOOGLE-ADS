@@ -1,4 +1,5 @@
 import { runAgentChat } from '../../utils/geminiClient.js';
+import sendError from '../../utils/error.js';
 
 const SERVER_TIMEOUT_MS = 50000; // 50s — ensures clean JSON response before Vercel's 60s kill
 
@@ -30,11 +31,11 @@ export default async (req, res) => {
   const { message, history = [] } = req.body;
 
   if (!message || typeof message !== 'string' || !message.trim()) {
-    return res.status(400).json({ error: 'message is required' });
+    return sendError(res, 400, 'BAD_REQUEST', 'message is required');
   }
 
   if (!process.env.GEMINI_API_KEY) {
-    return res.status(503).json({ error: 'GEMINI_API_KEY is not configured on the server.' });
+    return sendError(res, 503, 'SERVICE_UNAVAILABLE', 'GEMINI_API_KEY is not configured on the server.');
   }
 
   try {
@@ -46,6 +47,6 @@ export default async (req, res) => {
   } catch (err) {
     console.error('[Agent] Error:', err.message);
     const status = err.message === 'RESPONSE_TIMEOUT' ? 504 : 500;
-    res.status(status).json({ error: friendlyError(err) });
+    sendError(res, status, 'AGENT_ERROR', friendlyError(err));
   }
 };

@@ -1,4 +1,3 @@
-import gbpClient from '../../utils/gbpClient.js';
 import logger from '../../utils/logger.js';
 
 const handleAddService = async (req, res) => {
@@ -34,6 +33,11 @@ const handleAddService = async (req, res) => {
   } catch (error) {
     logger.error(`Unexpected error adding service: ${error.message}`);
     res.status(500).json({ success: false, error: 'ADD_SERVICE_FAILED', message: error.message });
+  }
+};
+
+export default handleAddService;
+ge });
   }
 };
 

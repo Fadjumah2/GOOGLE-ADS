@@ -1,4 +1,3 @@
-import gbpClient from '../../utils/gbpClient.js';
 import logger from '../../utils/logger.js';
 
 const handleDeleteMedia = async (req, res) => {
@@ -23,6 +22,11 @@ const handleDeleteMedia = async (req, res) => {
   } catch (error) {
     logger.error(`Unexpected error deleting media ${mediaId}: ${error.message}`);
     res.status(500).json({ success: false, error: 'DELETE_MEDIA_FAILED', message: error.message });
+  }
+};
+
+export default handleDeleteMedia;
+e });
   }
 };
 

@@ -1,11 +1,10 @@
-import gbpClient from '../../utils/gbpClient.js';
 import { normalizeReviews } from '../../utils/normalizeGBPResponse.js';
 import logger from '../../utils/logger.js';
 
 const handleGetReviews = async (req, res) => {
   try {
     logger.info('Fetching reviews...');
-    const rawData = await gbpClient.fetchReviews(req.query.pageToken || null);
+    const rawData = await req.gbp.fetchReviews(req.query.pageToken || null);
     if (rawData && rawData.error) {
       logger.error(`GBP error fetching reviews: ${rawData.error}`);
       return res.status(500).json(rawData);

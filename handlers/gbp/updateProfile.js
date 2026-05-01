@@ -1,4 +1,3 @@
-import gbpClient from '../../utils/gbpClient.js';
 import logger from '../../utils/logger.js';
 
 const handleUpdateProfile = async (req, res) => {
@@ -23,6 +22,11 @@ const handleUpdateProfile = async (req, res) => {
   } catch (error) {
     logger.error(`Unexpected error updating profile: ${error.message}`);
     res.status(500).json({ success: false, error: 'UPDATE_PROFILE_FAILED', message: error.message });
+  }
+};
+
+export default handleUpdateProfile;
+});
   }
 };
 

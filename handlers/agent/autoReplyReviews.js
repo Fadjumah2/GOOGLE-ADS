@@ -1,5 +1,6 @@
 import * as autonomous from '../../utils/autonomousAgent.js';
 import logger from '../../utils/logger.js';
+import sendError from '../../utils/error.js';
 
 /**
  * POST /api/agent/autoReplyReviews
@@ -17,6 +18,6 @@ export default async (req, res) => {
         res.json({ success: true, report });
     } catch (err) {
         logger.error('autoReplyReviews failed: ' + err.message);
-        res.status(500).json({ success: false, error: 'AUTO_REPLY_FAILED', message: err.message });
+        sendError(res, 500, 'AUTO_REPLY_FAILED', err.message);
     }
 };

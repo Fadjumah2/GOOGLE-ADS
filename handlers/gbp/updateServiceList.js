@@ -1,4 +1,3 @@
-import gbpClient from '../../utils/gbpClient.js';
 import logger from '../../utils/logger.js';
 
 const handleUpdateServiceList = async (req, res) => {
@@ -25,6 +24,10 @@ const handleUpdateServiceList = async (req, res) => {
   } catch (error) {
     logger.error(`Unexpected error updating service list: ${error.message}`);
     res.status(500).json({ success: false, error: 'UPDATE_SERVICE_LIST_FAILED', message: error.message });
+  }
+};
+
+export default handleUpdateServiceList;
   }
 };
 

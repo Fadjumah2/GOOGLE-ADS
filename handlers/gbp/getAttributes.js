@@ -1,4 +1,3 @@
-import gbpClient from '../../utils/gbpClient.js';
 import logger from '../../utils/logger.js';
 
 const handleGetAttributes = async (req, res) => {
@@ -14,6 +13,11 @@ const handleGetAttributes = async (req, res) => {
   } catch (error) {
     logger.error('Failed to fetch attributes.');
     res.status(500).json({ success: false, error: 'GET_ATTRIBUTES_FAILED', message: error.message });
+  }
+};
+
+export default handleGetAttributes;
+});
   }
 };
 

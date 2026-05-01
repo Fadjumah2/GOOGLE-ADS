@@ -1,6 +1,7 @@
 import * as autonomous from '../../utils/autonomousAgent.js';
 import { getUpcomingTopics } from '../../utils/contentStrategy.js';
 import logger from '../../utils/logger.js';
+import sendError from '../../utils/error.js';
 
 /**
  * GET /api/agent/status
@@ -16,6 +17,6 @@ export default async (req, res) => {
         });
     } catch (err) {
         logger.error('agent status failed: ' + err.message);
-        res.status(500).json({ success: false, error: 'STATUS_FAILED', message: err.message });
+        sendError(res, 500, 'STATUS_FAILED', err.message);
     }
 };

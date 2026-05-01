@@ -1,4 +1,3 @@
-import gbpClient from '../../utils/gbpClient.js';
 import logger from '../../utils/logger.js';
 
 const handleUploadMedia = async (req, res) => {
@@ -33,6 +32,11 @@ const handleUploadMedia = async (req, res) => {
   } catch (error) {
     logger.error(`Unexpected error uploading media: ${error.message}`);
     res.status(500).json({ success: false, error: 'UPLOAD_MEDIA_FAILED', message: error.message });
+  }
+};
+
+export default handleUploadMedia;
+e });
   }
 };
 

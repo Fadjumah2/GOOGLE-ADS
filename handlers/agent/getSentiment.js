@@ -1,11 +1,11 @@
-import { fetchReviews } from '../../utils/gbpClient.js';
 import { normalizeReviews } from '../../utils/normalizeGBPResponse.js';
 import { generateText } from '../../utils/geminiClient.js';
 import logger from '../../utils/logger.js';
+import sendError from '../../utils/error.js';
 
 export default async (req, res) => {
     try {
-        const rawReviews = await fetchReviews();
+        const rawReviews = await req.gbp.fetchReviews();
         const { reviews = [] } = normalizeReviews(rawReviews);
 
         if (reviews.length === 0) {
@@ -60,6 +60,6 @@ FORMAT: Output ONLY a JSON object with this structure:
         res.json({ success: true, sentiment });
     } catch (error) {
         logger.error(`Failed to get sentiment: ${error.message}`);
-        res.status(500).json({ success: false, error: 'GET_SENTIMENT_FAILED' });
+        sendError(res, 500, 'GET_SENTIMENT_FAILED', error.message);
     }
 };

@@ -1,4 +1,3 @@
-import gbpClient from '../../utils/gbpClient.js';
 import { normalizeServices } from '../../utils/normalizeGBPResponse.js';
 import logger from '../../utils/logger.js';
 
@@ -19,6 +18,11 @@ const handleGetServiceList = async (req, res) => {
       success: false,
       error: "GBP_SERVICE_LIST_FETCH_FAILED"
     });
+  }
+};
+
+export default handleGetServiceList;
+);
   }
 };
 

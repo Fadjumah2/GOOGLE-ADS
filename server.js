@@ -1,9 +1,10 @@
 import 'dotenv/config';
 import path from 'path';
 import express from 'express';
+import session from 'express-session';
 import { google } from 'googleapis';
-import gbpClient from './utils/gbpClient.js';
 import requireApiKey from './middleware/requireApiKey.js';
+import gbpClientMiddleware from './middleware/gbpClientMiddleware.js';
 
 import handleReplyToReview from './handlers/gbp/replyToReview.js';
 import handleDeleteReviewReply from './handlers/gbp/deleteReviewReply.js';
@@ -51,6 +52,15 @@ const app = express();
 const port = process.env.PORT || 3000;
 
 app.use(express.json());
+
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'supersecret',
+  resave: false,
+  saveUninitialized: true,
+  cookie: { httpOnly: true, secure: process.env.NODE_ENV === 'production' }
+}));
+
+app.use(gbpClientMiddleware);
 
 // Serve static assets from Vite's build output in production
 if (process.env.NODE_ENV === 'production') {
@@ -111,12 +121,10 @@ app.get('/api/auth/callback', requireApiKey, async (req, res) => {
       process.env.GOOGLE_REDIRECT_URI
     );
     const { tokens } = await oauth2Client.getToken(code);
+    req.session.tokens = tokens;
     res.json({
       success: true,
-      message: 'Copy the refresh_token below into your .env as GOOGLE_REFRESH_TOKEN',
-      refresh_token: tokens.refresh_token,
-      access_token: tokens.access_token,
-      expiry_date: tokens.expiry_date
+      message: 'Authentication successful! You can now close this window.'
     });
   } catch (error) {
     const detail = error.response ? error.response.data : error.message;

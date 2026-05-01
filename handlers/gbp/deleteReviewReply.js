@@ -1,4 +1,3 @@
-import gbpClient from '../../utils/gbpClient.js';
 import logger from '../../utils/logger.js';
 
 const handleDeleteReviewReply = async (req, res) => {
@@ -23,6 +22,10 @@ const handleDeleteReviewReply = async (req, res) => {
   } catch (error) {
     logger.error(`Unexpected error deleting reply for review ${reviewName}: ${error.message}`);
     res.status(500).json({ success: false, error: 'DELETE_REPLY_FAILED', message: error.message });
+  }
+};
+
+export default handleDeleteReviewReply;
   }
 };
 

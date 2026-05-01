@@ -38,7 +38,7 @@ let cachedToken = null;
 let expiryTime = null;
 let refreshPromise = null;
 
-async function refreshOAuthToken() {
+async function refreshOAuthToken(req) {
     if (cachedToken && expiryTime && Date.now() < (expiryTime - 60000)) {
         console.log("[GBP AUTH] using cached OAuth token");
         return {
@@ -65,16 +65,18 @@ async function refreshOAuthToken() {
 
         const clientId = GOOGLE_CLIENT_ID || GBP_CLIENT_ID;
         const clientSecret = GOOGLE_CLIENT_SECRET || GBP_CLIENT_SECRET;
+        const refreshToken = (req.session && req.session.tokens && req.session.tokens.refresh_token) || GOOGLE_REFRESH_TOKEN;
 
-        if (!clientId || !clientSecret || !GOOGLE_REFRESH_TOKEN) {
-            throw new Error("Missing GOOGLE_CLIENT_ID (or GBP_CLIENT_ID), GOOGLE_CLIENT_SECRET (or GBP_CLIENT_SECRET), or GOOGLE_REFRESH_TOKEN in environment.");
+
+        if (!clientId || !clientSecret || !refreshToken) {
+            throw new Error("Missing GOOGLE_CLIENT_ID (or GBP_CLIENT_ID), GOOGLE_CLIENT_SECRET (or GBP_CLIENT_SECRET), or refresh token in session or environment.");
         }
 
         try {
             const response = await axios.post('https://oauth2.googleapis.com/token', {
                 client_id: clientId,
                 client_secret: clientSecret,
-                refresh_token: GOOGLE_REFRESH_TOKEN,
+                refresh_token: refreshToken,
                 grant_type: 'refresh_token'
             }, { ...(httpsAgent && { httpsAgent, proxy: false }) });
 
@@ -110,7 +112,7 @@ async function refreshOAuthToken() {
  *
  * @returns {Promise<{access_token: string, expires_in: number}>}
  */
-export async function refreshAccessToken() {
+export async function refreshAccessToken(req) {
     const saAuth = getServiceAccountAuth();
 
     if (saAuth) {
@@ -127,6 +129,6 @@ export async function refreshAccessToken() {
         }
     }
 
-    return refreshOAuthToken();
+    return refreshOAuthToken(req);
 }
 

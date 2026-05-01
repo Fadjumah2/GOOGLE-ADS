@@ -2,6 +2,7 @@ import { timingSafeEqual } from 'crypto';
 import * as autonomous from '../../utils/autonomousAgent.js';
 import * as auditLog from '../../utils/auditLog.js';
 import logger from '../../utils/logger.js';
+import sendError from '../../utils/error.js';
 
 /**
  * GET /api/cron/daily
@@ -23,11 +24,7 @@ export default async (req, res) => {
 
     if (!expected) {
         auditLog.record('autopilot.cron.refused', { reason: 'cron_secret_missing' });
-        return res.status(503).json({
-            success: false,
-            error: 'CRON_SECRET_NOT_CONFIGURED',
-            message: 'Set CRON_SECRET in the deployment env before enabling cron.',
-        });
+        return sendError(res, 503, 'CRON_SECRET_NOT_CONFIGURED', 'Set CRON_SECRET in the deployment env before enabling cron.');
     }
     const valid = provided &&
         provided.length === expected.length &&
@@ -37,7 +34,7 @@ export default async (req, res) => {
             reason: provided ? 'bad_token' : 'missing_token',
             ua: req.headers['user-agent'] || null,
         });
-        return res.status(401).json({ success: false, error: 'UNAUTHORIZED' });
+        return sendError(res, 401, 'UNAUTHORIZED', 'Unauthorized');
     }
 
     try {
@@ -46,6 +43,6 @@ export default async (req, res) => {
     } catch (err) {
         logger.error('cron daily failed: ' + err.message);
         auditLog.record('autopilot.cron.error', { message: err.message });
-        res.status(500).json({ success: false, error: 'CRON_RUN_FAILED', message: err.message });
+        sendError(res, 500, 'CRON_RUN_FAILED', err.message);
     }
 };

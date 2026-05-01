@@ -1,5 +1,6 @@
 import * as autonomous from '../../utils/autonomousAgent.js';
 import logger from '../../utils/logger.js';
+import sendError from '../../utils/error.js';
 
 /**
  * POST /api/agent/runDaily
@@ -14,6 +15,6 @@ export default async (req, res) => {
         res.json({ success: true, summary });
     } catch (err) {
         logger.error('runDaily failed: ' + err.message);
-        res.status(500).json({ success: false, error: 'DAILY_CYCLE_FAILED', message: err.message });
+        sendError(res, 500, 'DAILY_CYCLE_FAILED', err.message);
     }
 };

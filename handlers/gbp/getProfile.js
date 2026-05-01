@@ -1,4 +1,3 @@
-import gbpClient from '../../utils/gbpClient.js';
 import { normalizeProfile } from '../../utils/normalizeGBPResponse.js';
 import logger from '../../utils/logger.js';
 

@@ -1,4 +1,3 @@
-import gbpClient from '../../utils/gbpClient.js';
 import logger from '../../utils/logger.js';
 
 const handleCreatePost = async (req, res) => {
@@ -40,6 +39,11 @@ const handleCreatePost = async (req, res) => {
   } catch (error) {
     logger.error(`Unexpected error creating post: ${error.message}`);
     res.status(500).json({ success: false, error: 'CREATE_POST_FAILED', message: error.message });
+  }
+};
+
+export default handleCreatePost;
+ge });
   }
 };
 

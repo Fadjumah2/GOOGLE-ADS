@@ -1,16 +1,16 @@
-import { getInsights, fetchReviews } from '../../utils/gbpClient.js';
 import { normalizeReviews } from '../../utils/normalizeGBPResponse.js';
 import { generateText } from '../../utils/geminiClient.js';
 import logger from '../../utils/logger.js';
+import sendError from '../../utils/error.js';
 
 export default async (req, res) => {
     try {
         const { period = 'last28' } = req.query;
 
         const [rawInsights, rawReviews] = await Promise.all([
-            getInsights({ period }),
-            fetchReviews()
-        ]);
+                    req.gbp.getInsights({ period }),
+                    req.gbp.fetchReviews()
+                ]);
 
         const { reviews = [] } = normalizeReviews(rawReviews);
         
@@ -71,6 +71,6 @@ Keep the tone encouraging but professional.
         });
     } catch (error) {
         logger.error(`Failed to generate report: ${error.message}`);
-        res.status(500).json({ success: false, error: 'GET_REPORT_FAILED' });
+        sendError(res, 500, 'GET_REPORT_FAILED', error.message);
     }
 };

@@ -1,5 +1,6 @@
 import { getDrafts } from '../../utils/autonomousAgent.js';
 import logger from '../../utils/logger.js';
+import sendError from '../../utils/error.js';
 
 export default async (req, res) => {
     try {
@@ -7,6 +8,6 @@ export default async (req, res) => {
         res.json({ success: true, drafts });
     } catch (error) {
         logger.error(`Failed to get drafts: ${error.message}`);
-        res.status(500).json({ success: false, error: 'GET_DRAFTS_FAILED' });
+        sendError(res, 500, 'GET_DRAFTS_FAILED', error.message);
     }
 };
