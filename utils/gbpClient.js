@@ -185,19 +185,42 @@ export const getProfile = async () => {
             'categories',
             'metadata',
             'latlng',
-            'description'
+            'profile'
         ].join(',');
 
         const url = `https://mybusinessbusinessinformation.googleapis.com/v1/locations/${locationId}?readMask=${encodeURIComponent(readMask)}`;
 
-        const response = await axios.get(url, {
-            ...axiosConfig,
-            headers: { Authorization: `Bearer ${accessToken}` },
-            timeout: 10000
-        });
-
-        return response.data;
+        try {
+            const response = await axios.get(url, {
+                ...axiosConfig,
+                headers: { Authorization: `Bearer ${accessToken}` },
+                timeout: 10000
+            });
+            return response.data;
+        } catch (v1Error) {
+            if (v1Error.response?.status === 403 || v1Error.response?.status === 404) {
+                console.warn(`[GBP] Business Information API v1 failed (${v1Error.response.status}), attempting fallback to v4...`);
+                
+                // Fallback to v4 (older endpoint, but often more reliably enabled)
+                // Note: v4 uses a different structure and doesn't support readMask, but it returns the core location data.
+                const accountId = (process.env.GBP_ACCOUNT_ID || '').replace('accounts/', '');
+                if (accountId) {
+                    const v4Url = `https://mybusiness.googleapis.com/v4/accounts/${accountId}/locations/${locationId}`;
+                    const v4Response = await axios.get(v4Url, {
+                        ...axiosConfig,
+                        headers: { Authorization: `Bearer ${accessToken}` },
+                        timeout: 10000
+                    });
+                    console.log('[GBP] Fallback to v4 successful.');
+                    return v4Response.data;
+                }
+            }
+            throw v1Error;
+        }
     } catch (error) {
+        if (error.response?.status === 403) {
+            console.error('FAILED_GET_PROFILE_403: Permission denied. Ensure "Business Profile Business Information API" is enabled in GCP and the account has access.');
+        }
         console.error('Failed to fetch profile:', error.message);
         return extractGBPError(error, 'GET_PROFILE');
     }
