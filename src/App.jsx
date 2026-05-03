@@ -223,37 +223,7 @@ export default function App() {
     if (isMobile) setSidebarOpen(false);
   }, [isMobile]);
 
-  // Check for API key on mount and listen for unauthorized
-  useEffect(() => {
-    const checkAuth = () => {
-      if (!API.getKey()) {
-        if (import.meta.env.DEV) console.log('[Auth] No API key found, opening auth modal');
-        openModal(<ApiKeyModal />);
-      } else {
-        if (import.meta.env.DEV) console.log('[Auth] API key found, proceeding');
-      }
-    };
-    checkAuth();
 
-    const handleUnauthorized = (e) => {
-      if (import.meta.env.DEV) console.log('[Auth] Unauthorized event received, prompting for new key');
-      openModal(<ApiKeyModal />);
-    };
-
-    window.addEventListener("synapse-unauthorized", handleUnauthorized);
-
-    // Global error handler for uncaught promise rejections
-    const handleUnhandledRejection = (e) => {
-      console.error('[Global] Unhandled promise rejection:', e.reason);
-      showToast(`Error: ${e.reason?.message || e.reason}`, "bad");
-    };
-    window.addEventListener("unhandledrejection", handleUnhandledRejection);
-
-    return () => {
-      window.removeEventListener("synapse-unauthorized", handleUnauthorized);
-      window.removeEventListener("unhandledrejection", handleUnhandledRejection);
-    };
-  }, []);
 
   const cfg = VIEWS[view];
   const Comp = cfg.Comp;
