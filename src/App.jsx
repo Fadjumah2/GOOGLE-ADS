@@ -117,7 +117,11 @@ function ApiKeyModal({ setApiKey }) {
 }
 
 export default function App() {
-  const [apiKey, setApiKey] = useState(null);
+  const [apiKey, setApiKey] = useState(() => localStorage.getItem("synapse-api-key"));
+  useEffect(() => {
+    if (apiKey) localStorage.setItem("synapse-api-key", apiKey);
+    else localStorage.removeItem("synapse-api-key");
+  }, [apiKey]);
   const [view, setView] = useState(() => localStorage.getItem("synapse-view") || "dashboard");
   const [viewHistory, setViewHistory] = useState([]);
   useEffect(() => localStorage.setItem("synapse-view", view), [view]);
