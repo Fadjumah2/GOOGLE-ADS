@@ -1245,22 +1245,5 @@ export function StrategyView() {
   );
 }
 
-  );
-}
-        </div>
-                ))}
-              </div>
-            </Card>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
 
-  );
-}
-}
-}
-}
-}
+
