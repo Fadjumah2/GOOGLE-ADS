@@ -1,13 +1,21 @@
 const axios = require('axios');
+const logger = require('../../common/logger');
+const { GoogleAdsApiError } = require('../../common/errors');
 
 class PersuasionArchitect {
-  constructor() {
+  constructor(googleAdsApiManager) {
     // Gemini API configuration (replace with actual endpoint and API key)
     this.geminiApiEndpoint = process.env.GEMINI_API_ENDPOINT || 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=YOUR_GEMINI_API_KEY';
     this.apiKey = process.env.GEMINI_API_KEY || 'YOUR_GEMINI_API_KEY';
     if (this.geminiApiEndpoint.includes('YOUR_GEMINI_API_KEY')) {
-        console.warn('PersuasionArchitect: GEMINI_API_KEY not set in environment variables. Using placeholder.');
+      logger.warn('PersuasionArchitect: GEMINI_API_KEY not set in environment variables. Using placeholder.');
     }
+
+    if (!googleAdsApiManager) {
+      logger.error('PersuasionArchitect: GoogleAdsApiManager not provided.');
+      throw new Error('GoogleAdsApiManager is required.');
+    }
+    this.googleAdsApiManager = googleAdsApiManager;
   }
 
   // Placeholder for interaction with Google Ads API Manager Service

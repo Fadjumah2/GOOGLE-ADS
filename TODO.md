@@ -11,14 +11,14 @@ This document outlines the tasks for transforming the Google Ads MVP into a prod
 - [x] **Set up Project Structure**: Create a new directory structure for "Synapse" (e.g., `src/supervisor`, `src/agents/intent_surgeon`, etc.).
 - [x] **Integrate SQLite for Learned Negatives**: Set up SQLite database and initial schema for caching negative keywords.
 
-## Phase 2: Sub-Agent Development - COMPLETED
+## Phase 2: Sub-Agent Development - IN PROGRESS
 
-- [x] **Implement Intent Surgeon**:
-    - [x] Develop logic for search term analysis.
-    - [x] Implement automated negative keyword injection (Exact Match prioritization).
-- [x] **Implement Persuasion Architect**:
-    - [x] Integrate Gemini 3.1 Pro API.
-    - [x] Develop logic for dynamic ad copy rewriting based on conversion data.
+- [x] **Implement Intent Surgeon (fleshed out with API integration and robust error handling)**:
+    - [x] Develop logic for search term analysis (integrated with GoogleAdsApiManager).
+    - [x] Implement automated negative keyword injection (integrated with GoogleAdsApiManager).
+- [ ] **Implement Persuasion Architect (integration in progress)**:
+    - [ ] Integrate Gemini 3.1 Pro API (initial setup, needs GoogleAdsApiManager integration).
+    - [ ] Develop logic for dynamic ad copy rewriting based on conversion data (needs GoogleAdsApiManager integration).
 - [x] **Implement ROI Sentry**:
     - [x] Develop real-time budget monitoring.
     - [x] Implement safety-pausing mechanisms.
