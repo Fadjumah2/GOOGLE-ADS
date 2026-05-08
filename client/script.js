@@ -69,6 +69,10 @@ document.addEventListener('DOMContentLoaded', () => {
         table.appendChild(thead);
         table.appendChild(tbody);
         campaignsContainer.innerHTML = '';
+        const reportButton = document.createElement('button');
+        reportButton.textContent = 'View Reports';
+        reportButton.addEventListener('click', fetchReports);
+        campaignsContainer.appendChild(reportButton);
         campaignsContainer.appendChild(table);
 
         // Add event listeners to the buttons
@@ -81,6 +85,70 @@ document.addEventListener('DOMContentLoaded', () => {
         viewAdGroupsButtons.forEach(button => {
             button.addEventListener('click', handleViewAdGroupsClick);
         });
+    }
+
+    function fetchReports() {
+        fetch('/dashboard/reports/campaigns')
+            .then(response => response.json())
+            .then(reports => {
+                renderReports(reports);
+            })
+            .catch(error => {
+                console.error('Error fetching reports:', error);
+                campaignsContainer.textContent = 'Error fetching reports. See console for details.';
+            });
+    }
+
+    function renderReports(reports) {
+        const table = document.createElement('table');
+        const thead = document.createElement('thead');
+        const tbody = document.createElement('tbody');
+
+        // Create table headers
+        const headers = ['Date', 'Campaign ID', 'Campaign Name', 'Clicks', 'Impressions', 'Cost'];
+        const headerRow = document.createElement('tr');
+        headers.forEach(headerText => {
+            const th = document.createElement('th');
+            th.textContent = headerText;
+            headerRow.appendChild(th);
+        });
+        thead.appendChild(headerRow);
+
+        // Create table rows
+        reports.forEach(reportData => {
+            const row = document.createElement('tr');
+            const campaign = reportData.campaign;
+            const metrics = reportData.metrics;
+            const segments = reportData.segments;
+
+            const date = segments.date;
+            const campaignId = campaign.id;
+            const campaignName = campaign.name;
+            const clicks = metrics.clicks;
+            const impressions = metrics.impressions;
+            const cost = (metrics.cost_micros / 1000000).toFixed(2);
+
+            row.innerHTML = `
+                <td>${date}</td>
+                <td>${campaignId}</td>
+                <td>${campaignName}</td>
+                <td>${clicks}</td>
+                <td>${impressions}</td>
+                <td>${cost}</td>
+            `;
+            tbody.appendChild(row);
+        });
+
+        table.appendChild(thead);
+        table.appendChild(tbody);
+
+        const backButton = document.createElement('button');
+        backButton.textContent = 'Back to Campaigns';
+        backButton.addEventListener('click', fetchCampaigns);
+
+        campaignsContainer.innerHTML = `<h2>Campaign Performance Report</h2>`;
+        campaignsContainer.appendChild(backButton);
+        campaignsContainer.appendChild(table);
     }
 
     function handleViewAdGroupsClick(event) {

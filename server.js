@@ -223,6 +223,43 @@ app.get('/dashboard/ad-groups/:id/ads', async (req, res) => {
     }
 });
 
+app.get('/dashboard/reports/campaigns', async (req, res) => {
+    const customerId = process.env.CUSTOMER_ID;
+
+    if (!customerId || customerId === 'YOUR_CUSTOMER_ID') {
+      return res.status(400).send('Customer ID is required.');
+    }
+
+    // For a simple report, let's fetch daily campaign performance for the last 7 days
+    const query = `
+        SELECT
+            segments.date,
+            campaign.id,
+            campaign.name,
+            metrics.clicks,
+            metrics.impressions,
+            metrics.cost_micros
+        FROM
+            campaign
+        WHERE
+            segments.date DURING LAST_7_DAYS
+        ORDER BY
+            segments.date, campaign.id`;
+
+    const customer = googleAdsClient.Customer({
+      customer_id: customerId,
+      refresh_token: REFRESH_TOKEN,
+    });
+
+    try {
+        const report = await customer.query(query);
+        res.json(report);
+    } catch (error) {
+        console.error('Error fetching campaign report:', error);
+        res.status(500).send('Error fetching campaign report.');
+    }
+});
+
 
 app.listen(port, () => {
   console.log(`Server listening on port ${port}`);
