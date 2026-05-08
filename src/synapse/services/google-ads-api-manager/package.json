@@ -1,0 +1,16 @@
+{
+  "name": "google-ads-api-manager",
+  "version": "1.0.0",
+  "description": "Synapse Google Ads API Manager Service for managing all Google Ads API interactions with strict customer ID separation.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo 'Error: no test specified' && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "google-ads-api": "^11.0.0",
+    "google-auth-library": "^9.0.0"
+  }
+}

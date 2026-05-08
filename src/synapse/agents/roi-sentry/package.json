@@ -1,0 +1,12 @@
+{
+  "name": "roi-sentry",
+  "version": "1.0.0",
+  "description": "Synapse ROI Sentry Agent for real-time budget monitoring and safety-pausing.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo 'Error: no test specified' && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}

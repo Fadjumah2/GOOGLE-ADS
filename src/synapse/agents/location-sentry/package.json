@@ -1,0 +1,12 @@
+{
+  "name": "location-sentry",
+  "version": "1.0.0",
+  "description": "Synapse Location Sentry Agent for automated bid adjustments based on location and Call-Only Ad extension prioritization.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo 'Error: no test specified' && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
