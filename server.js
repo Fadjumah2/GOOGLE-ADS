@@ -39,6 +39,8 @@ const googleAdsClient = new GoogleAdsApi({
   login_customer_id: LOGIN_CUSTOMER_ID,
 });
 
+app.use(express.static(path.join(__dirname, 'client')));
+
 app.get('/', (req, res) => {
   res.send('Google Ads App Backend is running!');
 });
@@ -84,11 +86,12 @@ app.get('/revoke', async (req, res) => {
   }
 });
 
+app.use(express.json());
 app.get('/dashboard/campaigns', async (req, res) => {
   try {
     // Replace with the actual customer ID you want to query
     // This is typically the account ID of the Google Ads account you want to manage
-    const customerId = 'YOUR_CUSTOMER_ID'; // <--- IMPORTANT: User needs to provide this
+    const customerId = process.env.CUSTOMER_ID;
 
     if (!customerId || customerId === 'YOUR_CUSTOMER_ID') {
       return res.status(400).send('Customer ID is required. Please update server.js with your Google Ads Customer ID.');
@@ -98,16 +101,21 @@ app.get('/dashboard/campaigns', async (req, res) => {
       SELECT
         campaign.id,
         campaign.name,
-        campaign.status
+        campaign.status,
+        metrics.clicks,
+        metrics.impressions,
+        metrics.cost_micros
       FROM
         campaign
       ORDER BY
         campaign.id`;
 
-    const campaigns = await googleAdsClient.query({
+    const customer = googleAdsClient.Customer({
       customer_id: customerId,
-      query: query,
+      refresh_token: REFRESH_TOKEN,
     });
+
+    const campaigns = await customer.query(query);
 
     res.json(campaigns);
 
@@ -115,6 +123,104 @@ app.get('/dashboard/campaigns', async (req, res) => {
     console.error('Error fetching campaigns:', error);
     res.status(500).send('Error fetching campaigns.');
   }
+});
+
+app.post('/dashboard/campaigns/:id/:action', async (req, res) => {
+    const { id, action } = req.params;
+    const customerId = process.env.CUSTOMER_ID;
+
+    if (!customerId || customerId === 'YOUR_CUSTOMER_ID') {
+      return res.status(400).json({ success: false, message: 'Customer ID is required.' });
+    }
+
+    const customer = googleAdsClient.Customer({
+        customer_id: customerId,
+        refresh_token: REFRESH_TOKEN,
+    });
+
+    const newStatus = action === 'pause' ? 'PAUSED' : 'ENABLED';
+
+    try {
+        await customer.campaigns.update({
+            resource_name: `customers/${customerId}/campaigns/${id}`,
+            status: newStatus,
+        });
+        res.json({ success: true });
+    } catch (error) {
+        console.error(`Error updating campaign ${id}:`, error);
+        res.status(500).json({ success: false, message: 'Error updating campaign.' });
+    }
+});
+
+app.get('/dashboard/campaigns/:id/ad-groups', async (req, res) => {
+    const { id } = req.params;
+    const customerId = process.env.CUSTOMER_ID;
+
+    if (!customerId || customerId === 'YOUR_CUSTOMER_ID') {
+      return res.status(400).send('Customer ID is required.');
+    }
+
+    const query = `
+        SELECT
+            ad_group.id,
+            ad_group.name,
+            ad_group.status,
+            metrics.clicks,
+            metrics.impressions,
+            metrics.cost_micros
+        FROM
+            ad_group
+        WHERE
+            campaign.id = ${id}`;
+
+    const customer = googleAdsClient.Customer({
+      customer_id: customerId,
+      refresh_token: REFRESH_TOKEN,
+    });
+
+    try {
+        const adGroups = await customer.query(query);
+        res.json(adGroups);
+    } catch (error) {
+        console.error(`Error fetching ad groups for campaign ${id}:`, error);
+        res.status(500).send('Error fetching ad groups.');
+    }
+});
+
+app.get('/dashboard/ad-groups/:id/ads', async (req, res) => {
+    const { id } = req.params; // id is ad_group_id
+    const customerId = process.env.CUSTOMER_ID;
+
+    if (!customerId || customerId === 'YOUR_CUSTOMER_ID') {
+      return res.status(400).send('Customer ID is required.');
+    }
+
+    const query = `
+        SELECT
+            ad_group_ad.ad.id,
+            ad_group_ad.ad.name,
+            ad_group_ad.status,
+            ad_group_ad.ad.type,
+            metrics.clicks,
+            metrics.impressions,
+            metrics.cost_micros
+        FROM
+            ad_group_ad
+        WHERE
+            ad_group.id = ${id}`;
+
+    const customer = googleAdsClient.Customer({
+      customer_id: customerId,
+      refresh_token: REFRESH_TOKEN,
+    });
+
+    try {
+        const ads = await customer.query(query);
+        res.json(ads);
+    } catch (error) {
+        console.error(`Error fetching ads for ad group ${id}:`, error);
+        res.status(500).send('Error fetching ads.');
+    }
 });
 
 
