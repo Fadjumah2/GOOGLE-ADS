@@ -1,8 +1,38 @@
-# MVP Feature Roadmap
+# Synapse Project TODO List
 
-- [x] **User Authentication:** Securely log in with your Google account using OAuth 2.0. (Credentials updated in .env)
-- [x] **Dashboard:** View key performance metrics for your campaigns at a glance.
-- [x] **Campaign Management:** View, pause, and enable your Google Ads campaigns.
-- [x] **Ad Group Management:** View ad groups within your campaigns.
-- [x] **Ad Management:** View ads within your ad groups.
-- [x] **Reporting:** Generate simple performance reports for your campaigns.
+This document outlines the tasks for transforming the Google Ads MVP into a production-grade autonomous agent named "Synapse".
+
+## Phase 1: Architecture & Foundation
+
+- [ ] **Review Existing Codebase**: Understand `server.js` and `client/script.js` structure, Google Ads API integration, and authentication flow.
+- [ ] **Design Microservices Blueprint**: Outline the high-level architecture for the supervisor and sub-agents, including communication patterns.
+- [ ] **Set up Project Structure**: Create a new directory structure for "Synapse" (e.g., `src/supervisor`, `src/agents/intent_surgeon`, etc.).
+- [ ] **Integrate SQLite for Learned Negatives**: Set up SQLite database and initial schema for caching negative keywords.
+
+## Phase 2: Sub-Agent Development
+
+- [ ] **Implement Intent Surgeon**:
+    - [ ] Develop logic for search term analysis.
+    - [ ] Implement automated negative keyword injection (Exact Match prioritization).
+- [ ] **Implement Persuasion Architect**:
+    - [ ] Integrate Gemini 3.1 Pro API.
+    - [ ] Develop logic for dynamic ad copy rewriting based on conversion data.
+- [ ] **Implement ROI Sentry**:
+    - [ ] Develop real-time budget monitoring.
+    - [ ] Implement safety-pausing mechanisms.
+
+## Phase 3: Google Ads API Integration & Specific Features
+
+- [ ] **Enforce Customer ID Separation**: Ensure strict separation of Login Customer ID (901-866-0123) and Operating Customer ID (602-231-7886) in all API calls.
+- [ ] **Implement Call-Only Ad Extension Prioritization**: Develop logic to prioritize Call-Only Ad extensions for medical intent campaigns.
+- [ ] **Implement Location Sentry**: Develop automated bid adjustment based on a 20km radius of Entebbe, Uganda.
+
+## Phase 4: Robustness & User Interface
+
+- [ ] **Develop Robust Error Handling**: Implement a comprehensive error-handling layer with sub-second cold starts.
+- [ ] **Design CLI/Dashboard Structure**: Create a clean interface for Eritage ENT Care's management.
+
+## Phase 5: Testing & Deployment
+
+- [ ] **Write Unit and Integration Tests**: Cover all new components and functionalities.
+- [ ] **Define Deployment Strategy**: Outline steps for deploying the production-grade application.
