@@ -1,0 +1,16 @@
+{
+  "name": "supervisor",
+  "version": "1.0.0",
+  "description": "Synapse Supervisor Service for orchestrating sub-agents and managing workflows.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo 'Error: no test specified' && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.0.0",
+    "pino": "^9.0.0"
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "name": "synapse-cli",
+  "version": "1.0.0",
+  "description": "CLI for interacting with the Synapse Supervisor service.",
+  "main": "index.js",
+  "bin": {
+    "synapse": "./index.js"
+  },
+  "scripts": {
+    "test": "echo 'Error: no test specified' && exit 1"
+  },
+  "keywords": [
+    "cli",
+    "synapse",
+    "google-ads"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^1.0.0",
+    "yargs": "^17.0.0"
+  }
+}

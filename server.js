@@ -141,10 +141,12 @@ app.post('/dashboard/campaigns/:id/:action', async (req, res) => {
     const newStatus = action === 'pause' ? 'PAUSED' : 'ENABLED';
 
     try {
-        await customer.campaigns.update({
-            resource_name: `customers/${customerId}/campaigns/${id}`,
-            status: newStatus,
-        });
+        await customer.campaigns.update([ // Wrap in array
+            {
+                resource_name: `customers/${customerId}/campaigns/${id}`,
+                status: newStatus,
+            }
+        ]);
         res.json({ success: true });
     } catch (error) {
         console.error(`Error updating campaign ${id}:`, error);
