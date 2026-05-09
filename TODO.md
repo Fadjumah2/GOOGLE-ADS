@@ -38,3 +38,15 @@ This document outlines the tasks for transforming the Google Ads MVP into a prod
 
 - [x] **Write Unit and Integration Tests**: Cover all new components and functionalities.
 - [x] **Define Deployment Strategy**: Outline steps for deploying the production-grade application.
+
+## Post-MVP Tasks
+
+- [x] **Resolved Repository Access**: GitHub PAT permissions confirmed, `.env` purged from Git history.
+- [x] **Code Push**: `mvp-development` branch pushed to remote repository.
+- [x] **Vercel Deployment Strategy Outlined**:
+    - [x] Adapted `server.js` for Vercel serverless functions.
+    - [x] Frontend (`client/`) reviewed for relative API calls.
+    - [x] `vercel.json` created for routing.
+- [ ] **Next: Vercel Project Creation (User Action Required)**
+- [ ] **Next: Vercel Environment Variables Configuration (User Action Required)**
+- [ ] **Further Enhancements:** Plan and implement features beyond the initial MVP.
