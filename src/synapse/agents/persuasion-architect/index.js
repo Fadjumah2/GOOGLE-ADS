@@ -20,31 +20,79 @@ class PersuasionArchitect {
 
   // Placeholder for interaction with Google Ads API Manager Service
   async fetchAdCopyAndConversionData(adGroupId, operatingCustomerId) {
-    console.log(`PersuasionArchitect: Simulating fetching ad copy and conversion data for ad group ${adGroupId} (Customer: ${operatingCustomerId})`);
-    // Mock data for demonstration
-    return {
-      adCopy: {
-        headline: 'Original Headline for Great Product',
-        description: 'Buy our amazing product now and get a discount!',
-        adId: '12345'
-      },
-      conversionData: {
-        totalConversions: 50,
-        conversionRate: 0.05,
-        costPerConversion: 10.50,
-        impressions: 1000,
-        clicks: 500
+    logger.info(`PersuasionArchitect: Fetching ad copy and conversion data for ad group ${adGroupId} (Customer: ${operatingCustomerId})`);
+
+    const adQuery = `
+      SELECT
+        ad_group_ad.ad.id,
+        ad_group_ad.ad.expanded_text_ad.headline_part1,
+        ad_group_ad.ad.expanded_text_ad.description,
+        ad_group_ad.status
+      FROM
+        ad_group_ad
+      WHERE
+        ad_group.id = ${adGroupId}
+        AND ad_group_ad.ad.type = 'EXPANDED_TEXT_AD'
+        AND ad_group_ad.status = 'ENABLED'
+      LIMIT 1`; // Fetch one active Expanded Text Ad for simplicity
+
+    const metricsQuery = `
+      SELECT
+        metrics.all_conversions,
+        metrics.conversions,
+        metrics.clicks,
+        metrics.impressions,
+        metrics.cost_micros
+      FROM
+        ad_group_ad
+      WHERE
+        ad_group.id = ${adGroupId}
+        AND segments.date DURING LAST_30_DAYS
+      LIMIT 1`; // Aggregate metrics for the ad group
+
+    try {
+      const adResponse = await this.googleAdsApiManager.query(operatingCustomerId, adQuery);
+      if (!adResponse || adResponse.length === 0) {
+        throw new Error(`No active Expanded Text Ads found for ad group ${adGroupId}.`);
       }
-    };
+      const adData = adResponse[0].ad_group_ad;
+
+      const metricsResponse = await this.googleAdsApiManager.query(operatingCustomerId, metricsQuery);
+      const metricsData = metricsResponse && metricsResponse.length > 0 ? metricsResponse[0].metrics : {};
+
+      return {
+        adCopy: {
+          headline: adData.ad.expanded_text_ad.headline_part1,
+          description: adData.ad.expanded_text_ad.description,
+          adId: adData.ad.id,
+        },
+        conversionData: {
+          totalConversions: metricsData.conversions || 0,
+          allConversions: metricsData.all_conversions || 0,
+          clicks: metricsData.clicks || 0,
+          impressions: metricsData.impressions || 0,
+          cost: (metricsData.cost_micros / 1000000) || 0,
+          conversionRate: (metricsData.clicks > 0 ? (metricsData.conversions / metricsData.clicks) : 0),
+        }
+      };
+    } catch (error) {
+      throw new GoogleAdsApiError(`Failed to fetch ad copy or conversion data for ad group ${adGroupId}`, error);
+    }
   }
 
-  async rewriteAdCopy(adGroupId, operatingCustomerId) { // Modified signature
-    console.log('PersuasionArchitect: Analyzing ad copy for rewriting...');
+  async rewriteAdCopy(adGroupId, operatingCustomerId) {
+    logger.info('PersuasionArchitect: Analyzing ad copy for rewriting...');
 
-    const { adCopy, conversionData } = await this.fetchAdCopyAndConversionData(adGroupId, operatingCustomerId);
+    let adCopy, conversionData;
+    try {
+      ({ adCopy, conversionData } = await this.fetchAdCopyAndConversionData(adGroupId, operatingCustomerId));
+    } catch (error) {
+      logger.error(`PersuasionArchitect: Could not fetch ad copy or conversion data for ad group ${adGroupId}: ${error.message}`);
+      return { adId: null, original: null, rewritten: null, error: error.message };
+    }
 
-    console.log('Original Ad Copy:', adCopy);
-    console.log('Conversion Data:', conversionData);
+    logger.info('Original Ad Copy:', adCopy);
+    logger.info('Conversion Data:', conversionData);
 
     const prompt = `Rewrite the following ad copy to improve its conversion rate, given the following conversion data. Focus on aspects that seem to resonate well with users and address any weaknesses. Make it concise and impactful. The new headline should be max 30 chars, and description max 90 chars.
 
@@ -54,7 +102,6 @@ Conversion Data: ${JSON.stringify(conversionData)}
 New Ad Copy (Headline and Description, separated by a pipe '|', e.g., "New Headline | New Description"):`;
 
     try {
-      // Simulate API call to Gemini 3.1 Pro
       const response = await axios.post(this.geminiApiEndpoint, {
         contents: [
           {
@@ -65,42 +112,43 @@ New Ad Copy (Headline and Description, separated by a pipe '|', e.g., "New Headl
             ],
           },
         ],
+        generationConfig: {
+          temperature: 0.7,
+          topP: 0.95,
+          topK: 40,
+        },
       }, {
         headers: {
           'Content-Type': 'application/json',
         },
-        // For actual Gemini API, you might need to handle authentication differently
-        // e.g., via Google Cloud credentials or a specific API key header.
-        // The endpoint URL already includes the API key in this example, but
-        // a more robust solution would use a secure method to pass the API key.
       });
 
       const generatedContent = response.data.candidates[0].content.parts[0].text;
-      console.log('PersuasionArchitect: Rewritten Ad Copy (raw):', generatedContent);
+      logger.info('PersuasionArchitect: Rewritten Ad Copy (raw):', generatedContent);
 
-      // Attempt to parse the generated content into headline and description
-      // This is a simplified parsing and might need refinement based on Gemini's output format
-      const lines = generatedContent.split('
-').filter(line => line.trim() !== '');
-      let newHeadline = '';
-      let newDescription = '';
+      const parts = generatedContent.split('|').map(part => part.trim());
+      let newHeadline = parts[0] || '';
+      let newDescription = parts[1] || '';
 
-      if (lines.length >= 2) {
-        newHeadline = lines[0].replace(/^(Headline:|Title:)\s*/i, '').trim();
-        newDescription = lines[1].replace(/^(Description:|Body:)\s*/i, '').trim();
-      } else if (lines.length === 1) {
-        // If only one line, assume it's a combined or primary part
-        const parts = lines[0].split(' - ');
-        newHeadline = parts[0] ? parts[0].trim() : '';
-        newDescription = parts[1] ? parts[1].trim() : '';
+      newHeadline = newHeadline.substring(0, 30);
+      newDescription = newDescription.substring(0, 90);
+
+      logger.info('PersuasionArchitect: Rewritten Ad Copy (parsed):');
+      logger.info('  Headline:', newHeadline);
+      logger.info('  Description:', newDescription);
+
+      // Update the ad in Google Ads
+      if (adCopy.adId) {
+        logger.info(`PersuasionArchitect: Updating ad ${adCopy.adId} with new copy.`);
+        await this.googleAdsApiManager.updateAdCopy(operatingCustomerId, adGroupId, adCopy.adId, newHeadline, newDescription);
+        logger.info(`PersuasionArchitect: Ad ${adCopy.adId} updated successfully.`);
+      } else {
+        logger.warn('PersuasionArchitect: Cannot update ad copy, adId is missing.');
       }
 
-      console.log('PersuasionArchitect: Rewritten Ad Copy (parsed):');
-      console.log('  Headline:', newHeadline);
-      console.log('  Description:', newDescription);
-
       return {
-        original: adCopy,
+        adId: adCopy.adId,
+        original: { headline: adCopy.headline, description: adCopy.description },
         rewritten: {
           headline: newHeadline,
           description: newDescription,
@@ -109,12 +157,13 @@ New Ad Copy (Headline and Description, separated by a pipe '|', e.g., "New Headl
       };
 
     } catch (error) {
-      console.error('PersuasionArchitect: Error rewriting ad copy with Gemini API:', error.response ? error.response.data : error.message);
+      logger.error(new GoogleAdsApiError('PersuasionArchitect: Error rewriting ad copy or updating Google Ads API', error));
       return {
-        original: adCopy,
+        adId: adCopy.adId,
+        original: { headline: adCopy.headline, description: adCopy.description },
         rewritten: {
-          headline: adCopy.headline,
-          description: adCopy.description,
+          headline: adCopy.headline, // Revert to original on error
+          description: adCopy.description, // Revert to original on error
         },
         error: error.message,
       };
@@ -122,7 +171,7 @@ New Ad Copy (Headline and Description, separated by a pipe '|', e.g., "New Headl
   }
 
   async shutdown() {
-    console.log('PersuasionArchitect: Shut down.');
+    logger.info('PersuasionArchitect: Shut down.');
   }
 }
 

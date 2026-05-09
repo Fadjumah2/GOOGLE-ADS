@@ -1,37 +1,76 @@
+const logger = require('../../common/logger');
+const { GoogleAdsApiError } = require('../../common/errors');
+
 class RoiSentry {
-  constructor() {
-    console.log('ROI Sentry: Initializing...');
+  constructor(googleAdsApiManager) {
+    logger.info('ROI Sentry: Initializing...');
+    if (!googleAdsApiManager) {
+      logger.error('RoiSentry: GoogleAdsApiManager not provided.');
+      throw new Error('GoogleAdsApiManager is required.');
+    }
+    this.googleAdsApiManager = googleAdsApiManager;
   }
 
-  // Placeholder for interaction with Google Ads API Manager Service
   async fetchCampaignBudgetAndPerformance(campaignId, operatingCustomerId) {
-    console.log(`ROI Sentry: Simulating fetching budget and performance for campaign ${campaignId} (Customer: ${operatingCustomerId})`);
-    // Mock data for demonstration
-    return {
-      campaignId: campaignId,
-      budget: {
-        amount: 1000.0, // Total budget for the campaign
-        period: 'DAILY',
-      },
-      performance: {
-        cost: 750.0, // Current spend
-        clicks: 500,
-        conversions: 50,
-      },
-      status: 'ENABLED',
-    };
+    logger.info(`ROI Sentry: Fetching budget and performance for campaign ${campaignId} (Customer: ${operatingCustomerId})`);
+
+    const query = `
+      SELECT
+        campaign.id,
+        campaign.name,
+        campaign.status,
+        campaign_budget.amount_micros,
+        metrics.cost_micros,
+        metrics.clicks,
+        metrics.conversions
+      FROM
+        campaign
+      WHERE
+        campaign.id = ${campaignId}
+      LIMIT 1`;
+
+    try {
+      const response = await this.googleAdsApiManager.query(operatingCustomerId, query);
+      if (!response || response.length === 0) {
+        throw new Error(`Campaign ${campaignId} not found or no data available.`);
+      }
+      const data = response[0];
+
+      return {
+        campaignId: data.campaign.id,
+        budget: {
+          amount: data.campaign_budget.amount_micros / 1000000, // Convert micros to actual currency
+          period: 'DAILY', // Assuming daily budget for simplicity, actual data might vary
+        },
+        performance: {
+          cost: data.metrics.cost_micros / 1000000, // Convert micros to actual currency
+          clicks: data.metrics.clicks,
+          conversions: data.metrics.conversions,
+        },
+        status: data.campaign.status,
+      };
+    } catch (error) {
+      throw new GoogleAdsApiError(`Failed to fetch campaign budget and performance for campaign ${campaignId}`, error);
+    }
   }
 
   async monitorBudget(campaignId, operatingCustomerId) {
-    console.log(`ROI Sentry: Monitoring budget for campaign ${campaignId}`);
-    const { budget, performance } = await this.fetchCampaignBudgetAndPerformance(campaignId, operatingCustomerId);
+    logger.info(`ROI Sentry: Monitoring budget for campaign ${campaignId}`);
+    let budget, performance;
+    try {
+      ({ budget, performance } = await this.fetchCampaignBudgetAndPerformance(campaignId, operatingCustomerId));
+    } catch (error) {
+      logger.error(`ROI Sentry: Could not fetch budget/performance for campaign ${campaignId}: ${error.message}`);
+      return { campaignId: campaignId, status: 'ERROR', message: error.message };
+    }
+
 
     const spendPercentage = (performance.cost / budget.amount) * 100;
-    console.log(`ROI Sentry: Campaign ${campaignId} - Current Spend: $${performance.cost}, Budget: $${budget.amount}, Spend Percentage: ${spendPercentage.toFixed(2)}%`);
+    logger.info(`ROI Sentry: Campaign ${campaignId} - Current Spend: $${performance.cost}, Budget: $${budget.amount}, Spend Percentage: ${spendPercentage.toFixed(2)}%`);
 
     // Simple budget monitoring logic: if spend exceeds 80% of budget, flag for attention
     if (spendPercentage >= 80) {
-      console.warn(`ROI Sentry: WARNING! Campaign ${campaignId} has exceeded 80% of its budget.`);
+      logger.warn(`ROI Sentry: WARNING! Campaign ${campaignId} has exceeded 80% of its budget.`);
       return {
         campaignId: campaignId,
         status: 'ALERT',
@@ -39,7 +78,7 @@ class RoiSentry {
         actionRecommended: 'REVIEW_BUDGET_OR_PAUSE',
       };
     } else {
-      console.log(`ROI Sentry: Campaign ${campaignId} budget is within limits.`);
+      logger.info(`ROI Sentry: Campaign ${campaignId} budget is within limits.`);
       return {
         campaignId: campaignId,
         status: 'OK',
@@ -48,28 +87,51 @@ class RoiSentry {
     }
   }
 
-  // Placeholder for sending a pause command via Google Ads API Manager Service
   async pauseCampaign(campaignId, operatingCustomerId) {
-    console.log(`ROI Sentry: Simulating pausing campaign ${campaignId} for Customer: ${operatingCustomerId}`);
-    // Here, in a real implementation, an RPC/HTTP call to the Google Ads API Manager service would be made
-    // to update the campaign status to PAUSED.
-    return { success: true, message: `Campaign ${campaignId} paused successfully (simulated).` };
+    logger.info(`ROI Sentry: Pausing campaign ${campaignId} for Customer: ${operatingCustomerId}`);
+
+    const operations = [
+      {
+        update: {
+          resource_name: `customers/${operatingCustomerId}/campaigns/${campaignId}`,
+          status: 'PAUSED',
+        },
+      },
+    ];
+
+    try {
+      const result = await this.googleAdsApiManager.mutate(operatingCustomerId, operations);
+      logger.info(`ROI Sentry: Successfully paused campaign ${campaignId}. Result:`, result);
+      return { success: true, message: `Campaign ${campaignId} paused successfully.`, result: result };
+    } catch (error) {
+      throw new GoogleAdsApiError(`Failed to pause campaign ${campaignId}: ${error.message}`, error);
+    }
   }
 
   async implementSafetyPausing(campaignId, operatingCustomerId) {
-    console.log(`ROI Sentry: Checking safety pause for campaign ${campaignId}`);
+    logger.info(`ROI Sentry: Checking safety pause for campaign ${campaignId}`);
     const budgetStatus = await this.monitorBudget(campaignId, operatingCustomerId);
 
     if (budgetStatus.status === 'ALERT' && budgetStatus.actionRecommended === 'REVIEW_BUDGET_OR_PAUSE') {
-      console.warn(`ROI Sentry: Triggering safety pause for campaign ${campaignId} due to budget alert.`);
-      const pauseResult = await this.pauseCampaign(campaignId, operatingCustomerId);
+      logger.warn(`ROI Sentry: Triggering safety pause for campaign ${campaignId} due to budget alert.`);
+      let pauseResult;
+      try {
+        pauseResult = await this.pauseCampaign(campaignId, operatingCustomerId);
+      } catch (error) {
+        logger.error(`ROI Sentry: Failed to implement safety pause for campaign ${campaignId}: ${error.message}`);
+        return {
+          campaignId: campaignId,
+          action: 'FAILED_TO_PAUSE',
+          details: error.message,
+        };
+      }
       return {
         campaignId: campaignId,
         action: 'PAUSED',
         details: pauseResult,
       };
     } else {
-      console.log(`ROI Sentry: No safety pause needed for campaign ${campaignId}.`);
+      logger.info(`ROI Sentry: No safety pause needed for campaign ${campaignId}.`);
       return {
         campaignId: campaignId,
         action: 'NONE',
@@ -79,7 +141,7 @@ class RoiSentry {
   }
 
   async shutdown() {
-    console.log('ROI Sentry: Shut down.');
+    logger.info('ROI Sentry: Shut down.');
   }
 }
 

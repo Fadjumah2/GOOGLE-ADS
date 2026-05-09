@@ -11,23 +11,23 @@ This document outlines the tasks for transforming the Google Ads MVP into a prod
 - [x] **Set up Project Structure**: Create a new directory structure for "Synapse" (e.g., `src/supervisor`, `src/agents/intent_surgeon`, etc.).
 - [x] **Integrate SQLite for Learned Negatives**: Set up SQLite database and initial schema for caching negative keywords.
 
-## Phase 2: Sub-Agent Development - IN PROGRESS
+## Phase 2: Sub-Agent Development - COMPLETED
 
 - [x] **Implement Intent Surgeon (fleshed out with API integration and robust error handling)**:
     - [x] Develop logic for search term analysis (integrated with GoogleAdsApiManager).
     - [x] Implement automated negative keyword injection (integrated with GoogleAdsApiManager).
-- [ ] **Implement Persuasion Architect (integration in progress)**:
-    - [ ] Integrate Gemini 3.1 Pro API (initial setup, needs GoogleAdsApiManager integration).
-    - [ ] Develop logic for dynamic ad copy rewriting based on conversion data (needs GoogleAdsApiManager integration).
-- [x] **Implement ROI Sentry**:
-    - [x] Develop real-time budget monitoring.
-    - [x] Implement safety-pausing mechanisms.
+- [x] **Implement Persuasion Architect (fleshed out with API integration and robust error handling)**:
+    - [x] Integrate Gemini 3.1 Pro API (integrated with GoogleAdsApiManager).
+    - [x] Develop logic for dynamic ad copy rewriting based on conversion data (integrated with GoogleAdsApiManager).
+- [x] **Implement ROI Sentry (fleshed out with API integration and robust error handling)**:
+    - [x] Develop real-time budget monitoring (integrated with GoogleAdsApiManager).
+    - [x] Implement safety-pausing mechanisms (integrated with GoogleAdsApiManager).
 
 ## Phase 3: Google Ads API Integration & Specific Features - COMPLETED
 
 - [x] **Enforce Customer ID Separation**: Ensure strict separation of Login Customer ID (901-866-0123) and Operating Customer ID (602-231-7886) in all API calls.
-- [x] **Implement Call-Only Ad Extension Prioritization**: Develop logic to prioritize Call-Only Ad extensions for medical intent campaigns.
-- [x] **Implement Location Sentry**: Develop automated bid adjustment based on a 20km radius of Entebbe, Uganda.
+- [x] **Implement Call-Only Ad Extension Prioritization (fleshed out with API integration and robust error handling)**: Develop logic to prioritize Call-Only Ad extensions for medical intent campaigns (integrated with GoogleAdsApiManager).
+- [x] **Implement Location Sentry (fleshed out with API integration and robust error handling)**: Develop automated bid adjustment based on a 20km radius of Entebbe, Uganda (integrated with GoogleAdsApiManager).
 
 ## Phase 4: Robustness & User Interface - COMPLETED
 
