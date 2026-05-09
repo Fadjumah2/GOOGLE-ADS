@@ -4,11 +4,11 @@ const { GoogleAdsApiError } = require('../../common/errors');
 
 class PersuasionArchitect {
   constructor(googleAdsApiManager) {
-    // Gemini API configuration (replace with actual endpoint and API key)
-    this.geminiApiEndpoint = process.env.GEMINI_API_ENDPOINT || 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=YOUR_GEMINI_API_KEY';
-    this.apiKey = process.env.GEMINI_API_KEY || 'YOUR_GEMINI_API_KEY';
-    if (this.geminiApiEndpoint.includes('YOUR_GEMINI_API_KEY')) {
-      logger.warn('PersuasionArchitect: GEMINI_API_KEY not set in environment variables. Using placeholder.');
+    this.apiKey = process.env.GEMINI_API_KEY;
+    this.geminiApiEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${this.apiKey}`;
+
+    if (!this.apiKey) {
+      logger.warn('PersuasionArchitect: GEMINI_API_KEY not set in environment variables. The agent will not be able to rewrite ad copy.');
     }
 
     if (!googleAdsApiManager) {
