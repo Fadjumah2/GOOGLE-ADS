@@ -1,6 +1,6 @@
 # Autonomous Google Ads Agent System
 
-This project implements an autonomous multi-agent system designed to optimize Google Ads campaigns for businesses like Eritage ENT Care. The primary goal is to maximize Return on Investment (ROI) and minimize ad spend waste by continuously monitoring, analyzing, and adjusting campaign parameters without manual intervention.
+This project implements an autonomous multi-agent system designed to optimize Google Ads campaigns for businesses like Eritage ENT Care. The primary goal is to maximize Return on Investment (ROI) and minimize ad spend waste by continuously monitoring, analyzing, and adjusting campaign parameters without manual intervention. This system ensures continuous optimization for improved ad campaign performance and reduced waste.
 
 ## Architecture
 
