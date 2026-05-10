@@ -1,41 +1,62 @@
 # Autonomous Google Ads Agent System
 
-This project implements an autonomous multi-agent system designed to optimize Google Ads campaigns for businesses like Eritage ENT Care. The primary goal is to maximize Return on Investment (ROI) and minimize ad spend waste by continuously monitoring, analyzing, and adjusting campaign parameters without manual intervention. This system ensures continuous optimization for improved ad campaign performance and reduced waste.
+This project implements an autonomous multi-agent system designed to optimize Google Ads campaigns, aiming to maximize Return on Investment (ROI) and minimize ad spend waste. It continuously monitors, analyzes, and *adjusts* campaign parameters, ensuring ongoing optimization for improved ad campaign performance and reduced waste.
+
+## Application Overview
+
+The application serves as a dual-purpose tool for managing Google Ads campaigns:
+
+1.  **Web Dashboard:** Offers a user-friendly interface for manual oversight. It allows users to view and interact with campaign data for a specific Google Ads account, providing insights into campaigns, ad groups, and individual ads.
+2.  **Agent System (Synapse):** This is the core automation and optimization engine. It's designed to intelligently analyze Google Ads data and execute strategic adjustments to campaigns, aiming to improve performance, efficiency, and return on investment (ROI) without continuous manual intervention.
+
+For a more detailed explanation of the application's core functionality, architecture, and agent roles, please refer to the `GEMINI.md` file in the project root.
 
 ## Architecture
 
 The system is built around a central `Agent Orchestrator` that coordinates three specialized agents, each responsible for a distinct aspect of campaign management:
 
 1.  **Agent Orchestrator (`src/synapse/agent-orchestrator.js`)**
-    *   The central brain of the system. It initializes and manages the workflow of the specialized agents.
-    *   Defines the operational cycle, ensuring agents perform their tasks in a logical sequence.
+    *   The central brain of the Synapse system. It initializes and manages the workflow of the specialized agents.
+    *   Reads campaign configurations from the database and defines the operational cycle, ensuring agents perform their tasks in a logical sequence.
 
 2.  **ROI Sentry (`src/synapse/agents/roi-sentry/index.js`)**
     *   Monitors campaign budgets and performance metrics (e.g., cost, clicks, conversions).
-    *   Identifies campaigns that are nearing budget limits or underperforming.
-    *   Can trigger safety pauses to prevent overspending.
+    *   Identifies campaigns that are nearing budget limits or underperforming, and can trigger alerts or corrective actions.
 
 3.  **Intent Surgeon (`src/synapse/agents/intent-surgeon/index.js`)**
     *   Analyzes search term reports to identify irrelevant or underperforming search queries.
-    *   Suggests and injects negative keywords into campaigns to eliminate wasted ad spend on unqualified clicks.
+    *   Identifies and *injects* negative keywords into campaigns via the Google Ads API to eliminate wasted ad spend on unqualified clicks.
 
 4.  **Persuasion Architect (`src/synapse/agents/persuasion-architect/index.js`)**
     *   Leverages AI (specifically the Gemini API) to analyze existing ad copy and its performance.
-    *   Generates optimized ad headlines and descriptions to improve ad relevance and conversion rates.
+    *   Generates optimized ad headlines and descriptions, which are then *updated* in Google Ads to improve ad relevance and conversion rates.
 
 5.  **Google Ads API Manager (`src/synapse/services/google-ads-api-manager/index.js`)**
     *   A foundational service that handles all interactions with the Google Ads API.
-    *   Manages authentication and provides standardized methods for querying data and performing mutations (e.g., adding keywords, updating ads).
+    *   Manages authentication, provides standardized methods for querying data, and *performs real mutations* (e.g., adding keywords, updating ads, creating campaigns) directly on the Google Ads platform.
 
 ## How It Works (Operational Workflow)
 
-The `Agent Orchestrator` drives the continuous optimization cycle:
+The Synapse system operates through a continuous optimization cycle driven by the `Agent Orchestrator` and its specialized agents:
 
-1.  **Budget Monitoring**: The `ROI Sentry` first checks the budget status and performance of a target Google Ads campaign. If potential overspending or performance issues are detected, it will log alerts and can be configured to take corrective actions like pausing the campaign.
-2.  **Search Term Analysis**: The `Intent Surgeon` then fetches search term reports for the campaign. It analyzes these terms to identify those with high cost or clicks but zero conversions, marking them as potential negative keywords. If identified, these are injected into the campaign via the Google Ads API to prevent future wasted spend.
-3.  **Ad Copy Optimization**: Finally, for each active ad group within the campaign, the `Persuasion Architect` fetches the current ad copy and conversion data. It then uses the Gemini API to generate new, more compelling ad copy (headlines and descriptions), which is subsequently updated in Google Ads.
+1.  **Data Acquisition:** The `AgentOrchestrator` initiates agents. These agents then utilize the `GoogleAdsApiManager` to query the Google Ads API, retrieving specific data relevant to their optimization goals (e.g., `IntentSurgeon` fetches search query reports).
+2.  **Intelligent Analysis:** Each agent analyzes the acquired data using its specialized logic to identify opportunities for improvement or potential issues.
+    *   **ROISentry:** Monitors financial metrics (budget, cost, conversions) to ensure campaigns are on track and identify areas for cost efficiency or increased ROI.
+    *   **IntentSurgeon:** Analyzes search terms to pinpoint irrelevant or underperforming queries, identifying candidates for negative keywords to prevent wasteful spending.
+    *   **PersuasionArchitect:** Focuses on creative optimization, potentially using generative AI techniques to re-write or suggest improvements to ad headlines, descriptions, and other ad copy elements.
+3.  **Action Execution (Real-Time):** Based on its analysis, an agent formulates concrete actions. These actions are passed to the `GoogleAdsApiManager`'s `mutate` method, which now directly sends these actions to the Google Ads API. This allows agents to *actually implement* changes (e.g., adding negative keywords, updating ad copy) within the Google Ads account.
+4.  **Logging and Auditing:** Every step of this process—from data analysis to executed mutations—is meticulously logged in the PostgreSQL database, providing a comprehensive audit trail and historical context for agent performance and campaign changes.
 
-This orchestrated approach ensures that campaigns are not only monitored for financial health but are also continuously refined for targeting accuracy and messaging effectiveness. All agent actions and their outcomes are logged to a PostgreSQL database for persistence, auditing, and future analysis.
+## What is an "Agent" in this Context?
+
+In this application, an "agent" refers to a specialized, autonomous software module designed to perform a specific optimization task within the Google Ads ecosystem. These agents are not general-purpose AI; rather, they are focused, rule-based or AI-enhanced components that:
+
+*   Operate with a defined objective (e.g., improve ROI, enhance ad relevance).
+*   Interact with the Google Ads API to gather data and execute changes.
+*   Log their activities and decisions in the application's database.
+*   Are orchestrated by the `AgentOrchestrator` to work synergistically towards overall campaign optimization.
+
+By automating these processes, the application aims to continuously enhance Google Ads campaign effectiveness and free up human marketers to focus on higher-level strategy.
 
 ## Setup & Installation
 
@@ -122,5 +143,3 @@ Upon execution, the `AgentOrchestrator` will initiate its `run` cycle for the sp
 *   **User Interface**: Develop a web-based UI to configure agents, view performance dashboards, and receive real-time alerts.
 *   **Error Handling & Reporting**: Enhance error handling, logging, and automated reporting mechanisms for job status and identified optimizations.
 *   **Testing Framework**: Implement a comprehensive testing suite to ensure the reliability and effectiveness of agent operations.
-
-
