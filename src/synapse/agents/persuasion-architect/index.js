@@ -1,5 +1,6 @@
 const axios = require('axios');
 const logger = require('../../common/logger');
+const db = require('../../common/db'); // Import common db
 const { GoogleAdsApiError } = require('../../common/errors');
 
 class PersuasionArchitect {
@@ -80,15 +81,32 @@ class PersuasionArchitect {
     }
   }
 
-  async rewriteAdCopy(adGroupId, operatingCustomerId) {
+  async rewriteAdCopy(adGroupId, operatingCustomerId, agentRunId) { // Add agentRunId here
     logger.info('PersuasionArchitect: Analyzing ad copy for rewriting...');
 
     let adCopy, conversionData;
+    let newHeadline = null;
+    let newDescription = null;
+    let geminiResponse = null;
+    let changeStatus = 'error';
+    let errorMessage = null;
+
     try {
       ({ adCopy, conversionData } = await this.fetchAdCopyAndConversionData(adGroupId, operatingCustomerId));
     } catch (error) {
-      logger.error(`PersuasionArchitect: Could not fetch ad copy or conversion data for ad group ${adGroupId}: ${error.message}`);
-      return { adId: null, original: null, rewritten: null, error: error.message };
+      errorMessage = `Could not fetch ad copy or conversion data for ad group ${adGroupId}: ${error.message}`;
+      logger.error(`PersuasionArchitect: ${errorMessage}`);
+      // Log error to database
+      try {
+        await db.query(
+          `INSERT INTO persuasion_architect_logs (agent_run_id, ad_group_id, original_headline, original_description, change_status, applied_at)
+           VALUES ($1, $2, $3, $4, $5, NOW())`,
+          [agentRunId, adGroupId, adCopy?.headline, adCopy?.description, 'error', { error: errorMessage }]
+        );
+      } catch (logError) {
+        logger.error(`PersuasionArchitect: Failed to log error for ad group ${adGroupId}: ${logError.message}`);
+      }
+      return { adId: null, original: null, rewritten: null, error: errorMessage };
     }
 
     logger.info('Original Ad Copy:', adCopy);
@@ -123,12 +141,12 @@ New Ad Copy (Headline and Description, separated by a pipe '|', e.g., "New Headl
         },
       });
 
-      const generatedContent = response.data.candidates[0].content.parts[0].text;
-      logger.info('PersuasionArchitect: Rewritten Ad Copy (raw):', generatedContent);
+      geminiResponse = response.data.candidates[0].content.parts[0].text;
+      logger.info('PersuasionArchitect: Rewritten Ad Copy (raw):', geminiResponse);
 
-      const parts = generatedContent.split('|').map(part => part.trim());
-      let newHeadline = parts[0] || '';
-      let newDescription = parts[1] || '';
+      const parts = geminiResponse.split('|').map(part => part.trim());
+      newHeadline = parts[0] || '';
+      newDescription = parts[1] || '';
 
       newHeadline = newHeadline.substring(0, 30);
       newDescription = newDescription.substring(0, 90);
@@ -142,8 +160,22 @@ New Ad Copy (Headline and Description, separated by a pipe '|', e.g., "New Headl
         logger.info(`PersuasionArchitect: Updating ad ${adCopy.adId} with new copy.`);
         await this.googleAdsApiManager.updateAdCopy(operatingCustomerId, adGroupId, adCopy.adId, newHeadline, newDescription);
         logger.info(`PersuasionArchitect: Ad ${adCopy.adId} updated successfully.`);
+        changeStatus = 'applied';
       } else {
         logger.warn('PersuasionArchitect: Cannot update ad copy, adId is missing.');
+        changeStatus = 'suggested'; // No adId means it was only suggested, not applied
+      }
+
+      // Log success to database
+      try {
+        await db.query(
+          `INSERT INTO persuasion_architect_logs (agent_run_id, ad_group_id, original_headline, new_headline, original_description, new_description, change_status, applied_at, gemini_response)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), $8)`,
+          [agentRunId, adGroupId, adCopy.headline, newHeadline, adCopy.description, newDescription, changeStatus, geminiResponse]
+        );
+        logger.info(`PersuasionArchitect: Logged ad copy rewrite for ad group ${adGroupId} (Run: ${agentRunId}). Status: ${changeStatus}`);
+      } catch (logError) {
+        logger.error(`PersuasionArchitect: Failed to log ad copy rewrite for ad group ${adGroupId}: ${logError.message}`);
       }
 
       return {
@@ -153,11 +185,25 @@ New Ad Copy (Headline and Description, separated by a pipe '|', e.g., "New Headl
           headline: newHeadline,
           description: newDescription,
         },
-        geminiResponse: generatedContent,
+        geminiResponse: geminiResponse,
       };
 
     } catch (error) {
-      logger.error(new GoogleAdsApiError('PersuasionArchitect: Error rewriting ad copy or updating Google Ads API', error));
+      errorMessage = `PersuasionArchitect: Error rewriting ad copy or updating Google Ads API: ${error.message}`;
+      logger.error(new GoogleAdsApiError(errorMessage, error));
+      changeStatus = 'error';
+
+      // Log error to database
+      try {
+        await db.query(
+          `INSERT INTO persuasion_architect_logs (agent_run_id, ad_group_id, original_headline, new_headline, original_description, new_description, change_status, applied_at, gemini_response)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), $8)`,
+          [agentRunId, adGroupId, adCopy.headline, newHeadline, adCopy.description, newDescription, changeStatus, { error: errorMessage, stack: error.stack }]
+        );
+      } catch (logError) {
+        logger.error(`PersuasionArchitect: Failed to log error for ad group ${adGroupId}: ${logError.message}`);
+      }
+
       return {
         adId: adCopy.adId,
         original: { headline: adCopy.headline, description: adCopy.description },

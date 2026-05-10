@@ -1,4 +1,5 @@
 const logger = require('../../common/logger');
+const db = require('../../common/db'); // Import db
 const { GoogleAdsApiError } = require('../../common/errors');
 
 class RoiSentry {
@@ -54,14 +55,21 @@ class RoiSentry {
     }
   }
 
-  async monitorBudget(campaignId, operatingCustomerId) {
+  async monitorBudget(campaignId, operatingCustomerId, agentRunId) { // Add agentRunId here
     logger.info(`ROI Sentry: Monitoring budget for campaign ${campaignId}`);
     let budget, performance;
+    let result = {};
     try {
       ({ budget, performance } = await this.fetchCampaignBudgetAndPerformance(campaignId, operatingCustomerId));
     } catch (error) {
       logger.error(`ROI Sentry: Could not fetch budget/performance for campaign ${campaignId}: ${error.message}`);
-      return { campaignId: campaignId, status: 'ERROR', message: error.message };
+      result = { campaignId: campaignId, status: 'ERROR', message: error.message };
+      // Log the error
+      await db.query(
+        'INSERT INTO roi_sentry_logs (agent_run_id, campaign_id, budget_status, action_taken, logged_at) VALUES ($1, $2, $3, $4, NOW())',
+        [agentRunId, campaignId, 'ERROR', `Failed to fetch budget/performance: ${error.message}`]
+      );
+      return result;
     }
 
 
@@ -71,7 +79,7 @@ class RoiSentry {
     // Simple budget monitoring logic: if spend exceeds 80% of budget, flag for attention
     if (spendPercentage >= 80) {
       logger.warn(`ROI Sentry: WARNING! Campaign ${campaignId} has exceeded 80% of its budget.`);
-      return {
+      result = {
         campaignId: campaignId,
         status: 'ALERT',
         message: `Budget nearing limit: ${spendPercentage.toFixed(2)}% spent.`,
@@ -79,12 +87,25 @@ class RoiSentry {
       };
     } else {
       logger.info(`ROI Sentry: Campaign ${campaignId} budget is within limits.`);
-      return {
+      result = {
         campaignId: campaignId,
         status: 'OK',
         message: 'Budget within limits.',
       };
     }
+
+    // Log to roi_sentry_logs table
+    try {
+      await db.query(
+        'INSERT INTO roi_sentry_logs (agent_run_id, campaign_id, budget_status, performance_metrics, action_taken, logged_at) VALUES ($1, $2, $3, $4, $5, NOW())',
+        [agentRunId, campaignId, result.status, { budget, performance, spendPercentage }, result.actionRecommended || 'NONE']
+      );
+      logger.info(`ROI Sentry: Logged budget monitoring for campaign ${campaignId} (Run: ${agentRunId}).`);
+    } catch (logError) {
+      logger.error(`ROI Sentry: Failed to log budget monitoring for campaign ${campaignId}: ${logError.message}`);
+    }
+
+    return result;
   }
 
   async pauseCampaign(campaignId, operatingCustomerId) {

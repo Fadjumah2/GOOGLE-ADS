@@ -14,7 +14,7 @@ This document outlines a high-level deployment strategy for the "Synapse" autono
 
 *   **Environment Variables:** All sensitive information (Google Ads API credentials, Gemini API key, database connection strings, etc.) will be supplied via environment variables at runtime, not hardcoded into images.
 *   **`.env` files:** Used for local development (e.g., with Docker Compose).
-*   **Secret Management:** For production, utilize cloud-native secret management services (e.g., Google Secret Manager, Kubernetes Secrets) to inject credentials securely into containers.
+*   **Secret Management:** For production, utilize cloud-native secret management services (e.g., Google Secret Manager, Kubernetes Secrets, or Vercel Environment Variables for DATABASE_URL) to inject credentials securely into containers/serverless functions.
 
 ## 3. Local Development & Testing
 
@@ -24,13 +24,15 @@ This document outlines a high-level deployment strategy for the "Synapse" autono
 ## 4. Production Deployment
 
 *   **Orchestration Platform:**
-    *   **Google Kubernetes Engine (GKE):** Recommended for robust, scalable, and highly available production deployments. GKE provides powerful orchestration, auto-scaling, and self-healing capabilities.
-    *   **Google Cloud Run:** A viable option for individual services that are stateless and event-driven, offering serverless container deployment with auto-scaling and pay-per-use billing. Can be combined with GKE for different service types.
+    *   **Vercel:** Recommended for deploying the frontend (client) and the Express.js API backend (server.js) as serverless functions. Vercel provides seamless deployments, automatic scaling, and integration with various services.
+    *   **Google Kubernetes Engine (GKE):** Recommended for robust, scalable, and highly available production deployments, especially for the Agent Orchestrator and other long-running microservices if not deployed on a serverless platform. GKE provides powerful orchestration, auto-scaling, and self-healing capabilities.
+    *   **Google Cloud Run:** A viable option for individual services that are stateless and event-driven, offering serverless container deployment with auto-scaling and pay-per-use billing. Can be combined with GKE or Vercel for different service types.
 *   **Networking:**
     *   **Internal Communication:** Services will communicate via internal DNS names provided by the orchestration platform (e.g., Kubernetes Services).
     *   **External Access:** Limited external access, primarily for the CLI/Dashboard (if web-based). API Gateways can be used to manage external traffic.
 *   **Storage:**
-    *   **SQLite for Learned Negatives:** For the Intent Surgeon's local state, consider using persistent volumes in Kubernetes or ensuring the database file is part of a volume mount that survives container restarts. For larger scale, consider migrating to a centralized database (e.g., Cloud SQL).
+    *   **Vercel Postgres (PostgreSQL):** Used for all persistent data, including campaign configurations, agent run logs (`agent_runs`), and agent-specific logs like ROI Sentry (`roi_sentry_logs`), Intent Surgeon (`intent_surgeon_logs`), and Persuasion Architect (`persuasion_architect_logs`). This replaces the previous local SQLite database for Intent Surgeon, providing a robust and scalable solution.
+    *   **Ephemeral Storage (for serverless functions):** Serverless functions (deployed on Vercel or Cloud Run) will utilize ephemeral storage for temporary files if needed, but critical data will always be persisted to Vercel Postgres.
 
 ## 5. Monitoring & Logging
 
