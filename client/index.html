@@ -3,12 +3,63 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Google Ads Campaigns</title>
+    <title>AI Ops Console</title>
     <link rel="stylesheet" href="style.css">
+    <!-- Optionally include Google Fonts for 'Inter' and 'Roboto Mono' -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <h1>Google Ads Campaigns</h1>
-    <div id="campaigns-container"></div>
+    <div id="app-container">
+        <!-- Persistent Side Navigation -->
+        <aside id="sidebar">
+            <div class="logo-area">
+                <h1>AI OPS</h1>
+            </div>
+            <nav class="main-nav">
+                <a href="#" class="nav-item active" data-panel="overview">Overview</a>
+                <a href="#" class="nav-item" data-panel="orchestration">Orchestration</a>
+                <a href="#" class="nav-item" data-panel="workflows">Workflows</a>
+                <a href="#" class="nav-item" data-panel="timeline">Timeline</a>
+                <a href="#" class="nav-item" data-panel="logs">Logs</a>
+                <a href="#" class="nav-item" data-panel="files">Files</a>
+                <a href="#" class="nav-item" data-panel="integrations">Integrations</a>
+                <a href="#" class="nav-item" data-panel="settings">Settings</a>
+            </nav>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main id="main-content">
+            <!-- Top Bar for Context/Actions -->
+            <header id="top-bar">
+                <h2>Workspace: Agent Status</h2>
+            </header>
+
+            <!-- Workspace Area for Modular Panels -->
+            <section id="workspace-area">
+                <!-- Example Panels - these will be dynamically loaded/managed by JS -->
+                <div class="panel" data-panel-id="agent-status">
+                    <div class="panel-header">Agent Status</div>
+                    <div class="panel-content">
+                        <!-- Content for Agent Status -->
+                        <p>Loading agent status...</p>
+                    </div>
+                </div>
+                <div class="panel" data-panel-id="recent-activities">
+                    <div class="panel-header">Recent Activities</div>
+                    <div class="panel-content">
+                        <!-- Content for Recent Activities -->
+                        <p>No recent activities.</p>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
     <script src="script.js"></script>
+
+    <!-- Floating Command Palette -->
+    <div id="command-palette" class="command-palette">
+        <input type="text" id="command-input" class="terminal-input" placeholder="Enter command..." />
+    </div>
 </body>
 </html>

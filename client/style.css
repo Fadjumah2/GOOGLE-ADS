@@ -1,24 +1,468 @@
+/* Root Variables for Design System */
+:root {
+    /* Colors */
+    --color-black: #000000;
+    --color-charcoal: #1a1a1a;
+    --color-dark-gray: #333333;
+    --color-muted-gray: #444444;
+    --color-light-gray: #888888;
+    --color-soft-white: #e0e0e0;
+    --color-accent-blue: #007bff; /* A subtle accent for interactive elements */
+
+    /* Typography */
+    --font-family-mono: 'SF Mono', 'Roboto Mono', monospace;
+    --font-family-sans: 'Inter', 'Roboto', sans-serif;
+    --font-size-base: 14px;
+    --font-size-sm: 12px;
+    --font-size-md: 16px;
+    --font-size-lg: 24px;
+    --font-size-xl: 36px; /* Hero headings */
+
+    /* Spacing */
+    --spacing-xs: 4px;
+    --spacing-sm: 8px;
+    --spacing-md: 16px;
+    --spacing-lg: 24px;
+    --spacing-xl: 48px; /* Large whitespace */
+
+    /* Borders & Shadows */
+    --border-thin: 1px solid var(--color-muted-gray);
+    --shadow-subtle: 0px 2px 4px rgba(0, 0, 0, 0.2); /* Minimal shadow */
+    --glow-subtle: 0 0 5px rgba(0, 123, 255, 0.5); /* Subtle hover illumination */
+
+    /* Layout */
+    --sidebar-width: 250px;
+}
+
+/* Global Styles */
 body {
-    font-family: sans-serif;
-    margin: 20px;
+    margin: 0;
+    font-family: var(--font-family-sans);
+    font-size: var(--font-size-base);
+    color: var(--color-soft-white);
+    background-color: var(--color-black);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow: hidden; /* Prevent body scroll, layout will manage scrolling */
+}
+
+/* Layout containers */
+#app-container {
+    display: flex;
+    height: 100vh;
+    width: 100vw;
+}
+
+#sidebar {
+    width: var(--sidebar-width);
+    background-color: var(--color-charcoal);
+    border-right: var(--border-thin);
+    display: flex;
+    flex-direction: column;
+    padding: var(--spacing-md) 0;
+    box-sizing: border-box;
+}
+
+#main-content {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--color-charcoal); /* Match sidebar for edge-to-edge */
+    position: relative;
+    overflow: hidden; /* Managed by inner components */
+}
+
+#top-bar {
+    height: 50px; /* Example height */
+    background-color: var(--color-black);
+    border-bottom: var(--border-thin);
+    display: flex;
+    align-items: center;
+    padding: 0 var(--spacing-md);
+    box-sizing: border-box;
+}
+
+#workspace-area {
+    flex-grow: 1;
+    padding: var(--spacing-md);
+    overflow: auto; /* Enable scrolling for workspace content */
+    display: grid; /* For modular panels */
+    gap: var(--spacing-md);
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); /* Example for modular panels */
+}
+
+/* Typography specifics */
+h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-family-sans);
+    color: var(--color-soft-white);
+    margin-top: 0;
+    margin-bottom: var(--spacing-md);
+    font-weight: bold;
 }
 
 h1 {
-    text-align: center;
+    font-size: var(--font-size-xl);
+    text-transform: uppercase;
+    letter-spacing: 2px;
 }
 
-table {
+/* Monospaced uppercase navigation labels */
+.nav-item {
+    font-family: var(--font-family-mono);
+    font-size: var(--font-size-base);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--color-light-gray);
+    padding: var(--spacing-sm) var(--spacing-md);
+    cursor: pointer;
+    transition: background-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.nav-item:hover {
+    background-color: var(--color-dark-gray);
+    color: var(--color-soft-white);
+    box-shadow: var(--glow-subtle);
+}
+
+.nav-item.active {
+    background-color: var(--color-muted-gray);
+    color: var(--color-soft-white);
+    border-left: 2px solid var(--color-accent-blue);
+}
+
+/* Buttons */
+.btn {
+    background-color: var(--color-muted-gray);
+    color: var(--color-soft-white);
+    border: var(--border-thin);
+    padding: var(--spacing-sm) var(--spacing-md);
+    cursor: pointer;
+    font-family: var(--font-family-mono);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    transition: background-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.btn:hover {
+    background-color: var(--color-dark-gray);
+    box-shadow: var(--glow-subtle);
+}
+
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Panel styles */
+.panel {
+    background-color: var(--color-charcoal);
+    border: var(--border-thin);
+    padding: var(--spacing-md);
+    box-shadow: var(--shadow-subtle);
+    display: flex;
+    flex-direction: column;
+}
+
+.panel-header {
+    font-family: var(--font-family-mono);
+    font-size: var(--font-size-md);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: var(--spacing-md);
+    color: var(--color-light-gray);
+}
+
+/* Terminal-like input */
+.terminal-input {
+    background-color: var(--color-black);
+    color: var(--color-soft-white);
+    border: var(--border-thin);
+    padding: var(--spacing-sm);
+    font-family: var(--font-family-mono);
+    font-size: var(--font-size-base);
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* Scrollbar styling (for workspace-area and future terminal-like panels) */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--color-charcoal);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--color-muted-gray);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--color-light-gray);
+}
+
+/* Command Palette */
+.command-palette {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 600px;
+    max-width: 90vw;
+    background-color: var(--color-charcoal);
+    border: var(--border-thin);
+    box-shadow: 0 5px 15px rgba(0, 123, 255, 0.2); /* More prominent glow for command palette */
+    z-index: 1000;
+    padding: var(--spacing-sm);
+    box-sizing: border-box;
+    display: none; /* Hidden by default */
+    transition: opacity 0.2s ease-in-out, transform 0.2s ease-in-out;
+    opacity: 0;
+}
+
+.command-palette.is-visible {
+    display: block;
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+}
+
+/* New: Fade transition for workspace content */
+.workspace-area.fade-out {
+    opacity: 0;
+    transition: opacity 0.2s ease-out;
+}
+
+.workspace-area.fade-in {
+    opacity: 1;
+    transition: opacity 0.2s ease-in;
+}
+
+/* New: Styling for data tables */
+.data-table {
     width: 100%;
     border-collapse: collapse;
-    margin-top: 20px;
+    margin-top: var(--spacing-md);
+    font-family: var(--font-family-mono);
+    font-size: var(--font-size-sm);
+    color: var(--color-soft-white);
 }
 
-th, td {
-    border: 1px solid #ddd;
-    padding: 8px;
+.data-table th,
+.data-table td {
+    border: 1px solid var(--color-dark-gray);
+    padding: var(--spacing-sm);
     text-align: left;
 }
 
-th {
-    background-color: #f2f2f2;
+.data-table th {
+    background-color: var(--color-dark-gray);
+    color: var(--color-light-gray);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: normal;
 }
+
+.data-table tr:nth-child(even) {
+    background-color: var(--color-charcoal);
+}
+
+.data-table tr:hover {
+    background-color: var(--color-dark-gray);
+}
+
+/* New: Agent card styling for orchestration panel */
+.agent-card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: var(--spacing-md);
+    padding: var(--spacing-md) 0;
+}
+
+.agent-card {
+    background-color: var(--color-dark-gray);
+    border: var(--border-thin);
+    box-shadow: var(--shadow-subtle);
+    padding: var(--spacing-md);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.agent-card:hover {
+    box-shadow: var(--glow-subtle);
+    transform: translateY(-2px);
+}
+
+.agent-card-header {
+    font-family: var(--font-family-mono);
+    font-size: var(--font-size-md);
+    color: var(--color-soft-white);
+    text-transform: uppercase;
+    margin-bottom: var(--spacing-sm);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.agent-card-status {
+    font-family: var(--font-family-mono);
+    font-size: var(--font-size-sm);
+    padding: 2px 6px;
+    border-radius: 3px;
+    background-color: var(--color-muted-gray);
+    color: var(--color-soft-white);
+}
+
+.agent-card-status.enabled { background-color: #28a745; } /* Green */
+.agent-card-status.paused { background-color: #ffc107; }  /* Yellow */
+.agent-card-status.removed { background-color: #dc3545; } /* Red */
+.agent-card-status.unknown { background-color: var(--color-muted-gray); }
+
+.agent-card-body {
+    font-size: var(--font-size-base);
+    color: var(--color-light-gray);
+    flex-grow: 1;
+    margin-bottom: var(--spacing-md);
+}
+
+.agent-card-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--spacing-sm);
+}
+
+/* New: Dashboard/Overview specific layouts */
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: var(--spacing-md);
+}
+
+.dashboard-metric-card {
+    background-color: var(--color-dark-gray);
+    border: var(--border-thin);
+    padding: var(--spacing-md);
+    box-shadow: var(--shadow-subtle);
+}
+
+.dashboard-metric-card .label {
+    font-family: var(--font-family-mono);
+    text-transform: uppercase;
+    color: var(--color-light-gray);
+    font-size: var(--font-size-sm);
+    margin-bottom: var(--spacing-sm);
+}
+
+.dashboard-metric-card .value {
+    font-family: var(--font-family-sans);
+    font-size: var(--font-size-lg);
+    font-weight: bold;
+    color: var(--color-soft-white);
+}
+
+/* New: Mobile Responsiveness */
+@media (max-width: 768px) {
+    :root {
+        --spacing-md: 12px;
+        --spacing-lg: 20px;
+        --font-size-base: 16px; /* Larger base font for readability */
+        --font-size-sm: 14px;
+        --font-size-lg: 28px;
+        --font-size-xl: 40px;
+    }
+
+    #app-container {
+        flex-direction: column; /* Stack main content below sidebar */
+    }
+
+    #sidebar {
+        width: 100%;
+        height: auto; /* Allow sidebar to take natural height */
+        border-right: none;
+        border-bottom: var(--border-thin); /* Add bottom border */
+        flex-direction: row; /* Horizontal layout for nav items */
+        justify-content: space-around;
+        padding: var(--spacing-sm);
+    }
+
+    #sidebar .logo-area {
+        display: none; /* Hide logo on mobile for simplicity */
+    }
+
+    #sidebar .main-nav {
+        flex-direction: row; /* Horizontal navigation */
+        width: 100%;
+        justify-content: space-around;
+        padding: 0;
+    }
+
+    .nav-item {
+        padding: var(--spacing-md) var(--spacing-sm); /* Larger tap targets */
+        flex-grow: 1; /* Distribute space evenly */
+        text-align: center;
+        border-left: none; /* Remove left border */
+        border-bottom: 2px solid transparent; /* Use bottom border for active state */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .nav-item.active {
+        border-bottom: 2px solid var(--color-accent-blue);
+        border-left: none;
+    }
+
+    #main-content {
+        height: auto;
+        flex-grow: 1;
+    }
+
+    #top-bar {
+        padding: 0 var(--spacing-md);
+        height: 60px; /* Taller top bar for better tap target */
+        font-size: var(--font-size-lg); /* Larger title */
+    }
+
+    #workspace-area {
+        grid-template-columns: 1fr; /* Single column for panels */
+        padding: var(--spacing-md);
+    }
+
+    .panel {
+        padding: var(--spacing-lg); /* Larger padding inside panels */
+    }
+
+    .panel-header {
+        font-size: var(--font-size-md);
+        margin-bottom: var(--spacing-lg);
+    }
+
+    .data-table th,
+    .data-table td {
+        padding: var(--spacing-md); /* Larger cell padding for tap targets */
+    }
+
+    .btn {
+        padding: var(--spacing-md) var(--spacing-lg); /* Oversized buttons */
+        font-size: var(--font-size-base);
+    }
+
+    .agent-card-grid {
+        grid-template-columns: 1fr; /* Single column agent cards */
+    }
+
+    .command-palette {
+        width: 95vw; /* Wider command palette */
+        padding: var(--spacing-md);
+    }
+
+    .terminal-input {
+        padding: var(--spacing-md);
+        font-size: var(--font-size-base);
+    }
+}
+
