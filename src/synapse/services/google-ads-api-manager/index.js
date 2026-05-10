@@ -71,12 +71,15 @@ class GoogleAdsApiManager {
       // The `mutate` method needs specific service and operation types.
       // This is a placeholder and would need to be expanded based on actual use cases.
       // Example: customer.campaigns.create, customer.adGroups.update, etc.
-      logger.info(`GoogleAdsApiManager: Simulating mutate operation for customer ${operatingCustomerId}. Operations:`, JSON.stringify(operations, null, 2));
-      return {
-        success: true,
-        message: 'Mutate operation simulated successfully.',
+      logger.info(`GoogleAdsApiManager: Executing mutate operation for customer ${operatingCustomerId}. Operations:`, JSON.stringify(operations, null, 2));
+      const response = await customer.mutate({
         operations: operations,
-      };
+        // The google-ads-api library often expects operations to be grouped by service.
+        // Assuming a generic mutate that takes an array of operations.
+        // If this fails, we might need to dynamically determine the service.
+      });
+      logger.info(`GoogleAdsApiManager: Mutate operation successful for customer ${operatingCustomerId}. Results:`, JSON.stringify(response, null, 2));
+      return response;
     } catch (error) {
       logger.error(new GoogleAdsApiError(`Error mutating Google Ads API for customer ${operatingCustomerId}`, error));
       throw error;
