@@ -4,9 +4,10 @@ const db = require('../../common/db'); // Import common db
 const { GoogleAdsApiError } = require('../../common/errors');
 
 class PersuasionArchitect {
-  constructor(googleAdsApiManager) {
+  constructor(googleAdsApiManager, model = 'gemini-3.1-pro-preview') {
+    this.model = model;
     this.apiKey = process.env.GEMINI_API_KEY;
-    this.geminiApiEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${this.apiKey}`;
+    this.geminiApiEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/${this.model}:generateContent?key=${this.apiKey}`;
 
     if (!this.apiKey) {
       logger.warn('PersuasionArchitect: GEMINI_API_KEY not set in environment variables. The agent will not be able to rewrite ad copy.');

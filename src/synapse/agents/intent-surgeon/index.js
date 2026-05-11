@@ -1,28 +1,68 @@
+const axios = require('axios');
 const logger = require('../../common/logger');
 const db = require('../../common/db'); // Import common db
 const { GoogleAdsApiError, DatabaseError } = require('../../common/errors');
 
 class IntentSurgeon {
-  constructor(googleAdsApiManager) {
+  constructor(googleAdsApiManager, model = 'gemini-3-flash-preview') {
     if (!googleAdsApiManager) {
       logger.error('IntentSurgeon: GoogleAdsApiManager not provided.');
       throw new Error('GoogleAdsApiManager is required.');
     }
     this.googleAdsApiManager = googleAdsApiManager;
+    this.model = model;
+    this.apiKey = process.env.GEMINI_API_KEY;
+    this.geminiApiEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/${this.model}:generateContent?key=${this.apiKey}`;
+
+    if (!this.apiKey) {
+      logger.warn('IntentSurgeon: GEMINI_API_KEY not set in environment variables. AI analysis will not be available.');
+    }
   }
 
-  // Remove initialize method as it's no longer needed for SQLite
-  // async initialize() {
-  //   if (!this.dbInitialized) {
-  //     try {
-  //       await initDb();
-  //       this.dbInitialized = true;
-  //       logger.info('IntentSurgeon: Database initialized.');
-  //     } catch (error) {
-  //       throw new DatabaseError('Failed to initialize IntentSurgeon database', error);
-  //     }
-  //   }
-  // }
+  async identifyNegativeKeywordsWithAI(searchTerm, clicks, cost, isEscalated = false) {
+    if (!this.apiKey) {
+      logger.warn('IntentSurgeon: Skipping AI analysis, GEMINI_API_KEY is not set.');
+      return false;
+    }
+
+    const currentModel = isEscalated ? 'gemini-3.1-pro-preview' : this.model;
+    const currentEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/${currentModel}:generateContent?key=${this.apiKey}`;
+    const modelTag = isEscalated ? 'Pro (escalated)' : 'Flash';
+    logger.info(`IntentSurgeon: Analyzing "${searchTerm}" with ${modelTag} model.`);
+
+    const prompt = `Given the search term "${searchTerm}", with ${clicks} clicks and a cost of $${cost}, should this be added as a negative keyword? Consider if it's irrelevant or too broad, leading to wasted spend. Respond with ONLY 'YES' or 'NO'.`;
+
+    try {
+      const response = await axios.post(currentEndpoint, {
+        contents: [
+          {
+            parts: [
+              { text: prompt },
+            ],
+          },
+        ],
+        generationConfig: {
+          temperature: isEscalated ? 0.3 : 0.1, // Slightly higher temp for Pro for more nuanced reasoning
+          topP: 0.95,
+          topK: 40,
+        },
+      }, {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const geminiResponse = response.data.candidates[0].content.parts[0].text.trim().toUpperCase();
+      return geminiResponse === 'YES';
+    } catch (error) {
+      logger.error(`IntentSurgeon: AI analysis failed for "${searchTerm}" with ${modelTag} model: ${error.message}`);
+      if (!isEscalated) {
+        logger.info(`IntentSurgeon: Escalating analysis for "${searchTerm}" to Pro model.`);
+        return this.identifyNegativeKeywordsWithAI(searchTerm, clicks, cost, true);
+      }
+      return false; // Default to not adding as negative keyword on escalated AI failure
+    }
+  }
 
   async fetchSearchTermReport(campaignId, operatingCustomerId) {
     logger.info(`IntentSurgeon: Fetching search term report for campaign ${campaignId} (Customer: ${operatingCustomerId})`);
@@ -75,7 +115,9 @@ class IntentSurgeon {
     // Simple analysis: identify search terms with 0 conversions and a significant number of clicks or cost
     // This is a basic rule; real-world logic would be more sophisticated.
     for (const term of searchTerms) {
-      if (term.conversions === 0 && (term.clicks > 5 || term.cost > 2.0)) { // Example threshold
+      const shouldBeNegative = await this.identifyNegativeKeywordsWithAI(term.searchTerm, term.clicks, term.cost);
+
+      if (shouldBeNegative) {
         logger.warn(`IntentSurgeon: Identified potential negative keyword: "${term.searchTerm}" (Clicks: ${term.clicks}, Cost: $${term.cost})`);
 
         let logId;

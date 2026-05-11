@@ -1,15 +1,85 @@
+const axios = require('axios');
 const logger = require('../../common/logger');
 const db = require('../../common/db'); // Import db
 const { GoogleAdsApiError } = require('../../common/errors');
 
 class RoiSentry {
-  constructor(googleAdsApiManager) {
+  constructor(googleAdsApiManager, model = 'gemini-3-flash-preview') {
     logger.info('ROI Sentry: Initializing...');
     if (!googleAdsApiManager) {
       logger.error('RoiSentry: GoogleAdsApiManager not provided.');
       throw new Error('GoogleAdsApiManager is required.');
     }
     this.googleAdsApiManager = googleAdsApiManager;
+    this.model = model;
+    this.apiKey = process.env.GEMINI_API_KEY;
+    this.geminiApiEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/${this.model}:generateContent?key=${this.apiKey}`;
+
+    if (!this.apiKey) {
+      logger.warn('RoiSentry: GEMINI_API_KEY not set in environment variables. AI budget analysis will not be available.');
+    }
+  }
+
+  async analyzeBudgetWithAI(campaignId, budget, performance, spendPercentage, isEscalated = false) {
+    if (!this.apiKey) {
+      logger.warn('RoiSentry: Skipping AI budget analysis, GEMINI_API_KEY is not set.');
+      return { status: 'OK', message: 'Skipped AI analysis due to missing API key.' };
+    }
+
+    const currentModel = isEscalated ? 'gemini-3.1-pro-preview' : this.model;
+    const currentEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/${currentModel}:generateContent?key=${this.apiKey}`;
+    const modelTag = isEscalated ? 'Pro (escalated)' : 'Flash';
+    logger.info(`RoiSentry: Analyzing budget for campaign ${campaignId} with ${modelTag} model.`);
+
+    const prompt = `Campaign ID: ${campaignId}. Current Spend: $${performance.cost.toFixed(2)}. Daily Budget: $${budget.amount.toFixed(2)}. Spend Percentage: ${spendPercentage.toFixed(2)}%.
+Based on this data, provide a budget status (OK, ALERT, CRITICAL) and a brief message. If it's ALERT or CRITICAL, suggest an action (e.g., 'REVIEW_BUDGET_OR_PAUSE', 'INCREASE_BUDGET', 'CONTINUE_MONITORING').
+Format your response as a JSON object with 'status', 'message', and 'actionRecommended' fields.`;
+
+    try {
+      const response = await axios.post(currentEndpoint, {
+        contents: [
+          {
+            parts: [
+              { text: prompt },
+            ],
+          },
+        ],
+        generationConfig: {
+          temperature: isEscalated ? 0.4 : 0.2, // Slightly higher temp for Pro for more nuanced reasoning
+          topP: 0.95,
+          topK: 40,
+        },
+      }, {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const geminiResponseText = response.data.candidates[0].content.parts[0].text;
+      const geminiResponse = JSON.parse(geminiResponseText);
+      return geminiResponse;
+    } catch (error) {
+      logger.error(`RoiSentry: AI budget analysis failed for campaign ${campaignId} with ${modelTag} model: ${error.message}`);
+      if (!isEscalated) {
+        logger.info(`RoiSentry: Escalating budget analysis for campaign ${campaignId} to Pro model.`);
+        return this.analyzeBudgetWithAI(campaignId, budget, performance, spendPercentage, true);
+      }
+      // Fallback to basic logic on escalated AI failure
+      if (spendPercentage >= 80) {
+        return {
+          campaignId: campaignId,
+          status: 'ALERT',
+          message: `Budget nearing limit: ${spendPercentage.toFixed(2)}% spent (AI analysis failed, fallback).`,
+          actionRecommended: 'REVIEW_BUDGET_OR_PAUSE',
+        };
+      } else {
+        return {
+          campaignId: campaignId,
+          status: 'OK',
+          message: 'Budget within limits (AI analysis failed, fallback).',
+        };
+      }
+    }
   }
 
   async fetchCampaignBudgetAndPerformance(campaignId, operatingCustomerId) {
@@ -76,23 +146,9 @@ class RoiSentry {
     const spendPercentage = (performance.cost / budget.amount) * 100;
     logger.info(`ROI Sentry: Campaign ${campaignId} - Current Spend: $${performance.cost}, Budget: $${budget.amount}, Spend Percentage: ${spendPercentage.toFixed(2)}%`);
 
-    // Simple budget monitoring logic: if spend exceeds 80% of budget, flag for attention
-    if (spendPercentage >= 80) {
-      logger.warn(`ROI Sentry: WARNING! Campaign ${campaignId} has exceeded 80% of its budget.`);
-      result = {
-        campaignId: campaignId,
-        status: 'ALERT',
-        message: `Budget nearing limit: ${spendPercentage.toFixed(2)}% spent.`,
-        actionRecommended: 'REVIEW_BUDGET_OR_PAUSE',
-      };
-    } else {
-      logger.info(`ROI Sentry: Campaign ${campaignId} budget is within limits.`);
-      result = {
-        campaignId: campaignId,
-        status: 'OK',
-        message: 'Budget within limits.',
-      };
-    }
+    // Use AI for budget monitoring
+    result = await this.analyzeBudgetWithAI(campaignId, budget, performance, spendPercentage);
+
 
     // Log to roi_sentry_logs table
     try {

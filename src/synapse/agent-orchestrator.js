@@ -5,14 +5,16 @@ const GoogleAdsApiManager = require('../services/google-ads-api-manager');
 const IntentSurgeon = require('./agents/intent-surgeon');
 const PersuasionArchitect = require('./agents/persuasion-architect');
 const RoiSentry = require('./agents/roi-sentry');
+const WeeklyAuditor = require('./agents/weekly-auditor');
 
 class AgentOrchestrator {
   constructor() {
     logger.info('AgentOrchestrator: Initializing...');
     this.googleAdsApiManager = new GoogleAdsApiManager();
-    this.intentSurgeon = new IntentSurgeon(this.googleAdsApiManager);
-    this.persuasionArchitect = new PersuasionArchitect(this.googleAdsApiManager);
-    this.roiSentry = new RoiSentry(this.googleAdsApiManager);
+    this.intentSurgeon = new IntentSurgeon(this.googleAdsApiManager, 'gemini-3-flash-preview');
+    this.persuasionArchitect = new PersuasionArchitect(this.googleAdsApiManager, 'gemini-3.1-pro-preview');
+    this.roiSentry = new RoiSentry(this.googleAdsApiManager, 'gemini-3-flash-preview');
+    this.weeklyAuditor = new WeeklyAuditor(this.googleAdsApiManager, 'gemini-3.1-pro-preview');
     logger.info('AgentOrchestrator: All agents initialized.');
   }
 
@@ -108,6 +110,10 @@ class AgentOrchestrator {
         logger.info(`AgentOrchestrator: No ad groups to process for campaign ${campaignId}.`);
       }
 
+      // 4. Weekly Auditor: Perform deep analysis
+      logger.info(`--- Running Weekly Auditor for Campaign ${campaignId} ---`);
+      await this.weeklyAuditor.analyzeCampaignDeeply(campaignId, customerId, agentRunId);
+
       // Update agent run status to completed
       if (agentRunId) {
         const updateRunQuery = `
@@ -120,7 +126,18 @@ class AgentOrchestrator {
       }
 
     } catch (error) {
-      logger.error(`AgentOrchestrator: An error occurred during the operation cycle: ${error.message}`, error);
+      let errorMessage = error.message;
+      let errorStack = error.stack;
+      let logDetails = { error: errorMessage, stack: errorStack };
+
+      // Heuristic to identify potential "zero data" scenarios
+      if (errorMessage.includes('not found') || errorMessage.includes('no data available') || errorMessage.includes('No active') || errorMessage.includes('No enabled')) {
+        logger.warn(`AgentOrchestrator: Encountered a data-related issue for campaign ${campaignId || 'N/A'}: ${errorMessage}`);
+        errorMessage = `Data issue: ${errorMessage}`;
+      } else {
+        logger.error(`AgentOrchestrator: An unexpected error occurred during the operation cycle for campaign ${campaignId || 'N/A'}: ${errorMessage}`, error);
+      }
+
       // Update agent run status to failed
       if (agentRunId) {
         const updateRunQuery = `
@@ -128,7 +145,7 @@ class AgentOrchestrator {
           SET status = $1, details = $2
           WHERE id = $3;
         `;
-        await db.query(updateRunQuery, ['failed', { error: error.message, stack: error.stack }, agentRunId]);
+        await db.query(updateRunQuery, ['failed', logDetails, agentRunId]);
         logger.info(`AgentOrchestrator: Agent run ${agentRunId} marked as failed.`);
       }
     } finally {
@@ -141,6 +158,7 @@ class AgentOrchestrator {
     await this.intentSurgeon.shutdown();
     await this.persuasionArchitect.shutdown();
     await this.roiSentry.shutdown();
+    await this.weeklyAuditor.shutdown();
     logger.info('AgentOrchestrator: Shutdown complete.');
   }
 }
