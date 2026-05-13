@@ -3,27 +3,53 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Ops Console</title>
+    <title>AI Ops Console | Synapse</title>
     <link rel="stylesheet" href="style.css">
-    <!-- Optionally include Google Fonts for 'Inter' and 'Roboto Mono' -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <!-- Google Fonts: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body>
     <div id="app-container">
         <!-- Persistent Side Navigation -->
         <aside id="sidebar">
             <div class="logo-area">
-                <h1>AI OPS</h1>
+                <h1>SYNAPSE</h1>
             </div>
             <nav class="main-nav">
-                <a href="#" class="nav-item active" data-panel="overview">Overview</a>
-                <a href="#" class="nav-item" data-panel="orchestration">Orchestration</a>
-                <a href="#" class="nav-item" data-panel="workflows">Workflows</a>
-                <a href="#" class="nav-item" data-panel="timeline">Timeline</a>
-                <a href="#" class="nav-item" data-panel="logs">Logs</a>
-                <a href="#" class="nav-item" data-panel="files">Files</a>
-                <a href="#" class="nav-item" data-panel="integrations">Integrations</a>
-                <a href="#" class="nav-item" data-panel="settings">Settings</a>
+                <a href="#" class="nav-item active" data-panel="overview">
+                    <i data-lucide="layout-dashboard"></i>
+                    <span>Overview</span>
+                </a>
+                <a href="#" class="nav-item" data-panel="orchestration">
+                    <i data-lucide="cpu"></i>
+                    <span>Orchestration</span>
+                </a>
+                <a href="#" class="nav-item" data-panel="workflows">
+                    <i data-lucide="workflow"></i>
+                    <span>Workflows</span>
+                </a>
+                <a href="#" class="nav-item" data-panel="timeline">
+                    <i data-lucide="activity"></i>
+                    <span>Timeline</span>
+                </a>
+                <a href="#" class="nav-item" data-panel="logs">
+                    <i data-lucide="terminal"></i>
+                    <span>Logs</span>
+                </a>
+                <a href="#" class="nav-item" data-panel="files">
+                    <i data-lucide="folder-open"></i>
+                    <span>Files</span>
+                </a>
+                <a href="#" class="nav-item" data-panel="integrations">
+                    <i data-lucide="blocks"></i>
+                    <span>Integrations</span>
+                </a>
+                <a href="#" class="nav-item" data-panel="settings">
+                    <i data-lucide="settings"></i>
+                    <span>Settings</span>
+                </a>
             </nav>
         </aside>
 
@@ -31,35 +57,28 @@
         <main id="main-content">
             <!-- Top Bar for Context/Actions -->
             <header id="top-bar">
-                <h2>Workspace: Agent Status</h2>
+                <h2 id="workspace-title">Workspace: Overview</h2>
             </header>
 
             <!-- Workspace Area for Modular Panels -->
             <section id="workspace-area">
-                <!-- Example Panels - these will be dynamically loaded/managed by JS -->
-                <div class="panel" data-panel-id="agent-status">
-                    <div class="panel-header">Agent Status</div>
-                    <div class="panel-content">
-                        <!-- Content for Agent Status -->
-                        <p>Loading agent status...</p>
-                    </div>
-                </div>
-                <div class="panel" data-panel-id="recent-activities">
-                    <div class="panel-header">Recent Activities</div>
-                    <div class="panel-content">
-                        <!-- Content for Recent Activities -->
-                        <p>No recent activities.</p>
-                    </div>
-                </div>
+                <!-- Panels are dynamically injected by script.js -->
             </section>
         </main>
     </div>
 
     <script src="script.js"></script>
+    <script>
+      // Initialize icons after page load
+      lucide.createIcons();
+    </script>
 
     <!-- Floating Command Palette -->
     <div id="command-palette" class="command-palette">
-        <input type="text" id="command-input" class="terminal-input" placeholder="Enter command..." />
+        <div class="palette-inner">
+            <i data-lucide="search" class="search-icon"></i>
+            <input type="text" id="command-input" class="terminal-input" placeholder="Type a command or search..." />
+        </div>
     </div>
 </body>
 </html>
