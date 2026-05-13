@@ -184,6 +184,24 @@ app.get('/dashboard/status', async (req, res) => {
     res.json(status);
 });
 
+const { spawn } = require('child_process');
+
+app.post('/dashboard/trigger-agent/:id', async (req, res) => {
+    const { id } = req.params;
+    try {
+        // Run AgentOrchestrator in a background process to avoid blocking the server
+        const child = spawn('node', ['src/synapse/agent-orchestrator.js', id], {
+            detached: true,
+            stdio: 'ignore'
+        });
+        child.unref();
+        res.json({ success: true, message: `Agent run triggered for config ID ${id}` });
+    } catch (error) {
+        console.error('Error triggering agent:', error);
+        res.status(500).json({ success: false, message: 'Failed to trigger agent.' });
+    }
+});
+
 app.listen(port, () => {
   console.log(`Server running at http://localhost:${port}`);
 });

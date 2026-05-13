@@ -215,13 +215,26 @@ pipeline:
                                 </div>
                                 <div style="font-size:0.875rem; color:var(--muted-foreground)">Target Campaign: ${cfg.campaign_id}</div>
                                 <div style="display:flex; gap:0.5rem; margin-top:auto">
-                                    <button class="btn btn-primary" style="flex:1">Run Now</button>
+                                    <button class="btn btn-primary btn-run" data-id="${cfg.id}" style="flex:1">Run Now</button>
                                     <button class="btn">Edit</button>
                                 </div>
                             </div>
                         `).join('')}
                     </div>
                 `;
+                container.querySelectorAll('.btn-run').forEach(btn => {
+                    btn.onclick = () => {
+                        btn.disabled = true;
+                        btn.textContent = 'Triggering...';
+                        fetch(`/dashboard/trigger-agent/${btn.dataset.id}`, { method: 'POST' })
+                            .then(res => res.json())
+                            .then(data => {
+                                alert(data.message);
+                                btn.disabled = false;
+                                btn.textContent = 'Run Now';
+                            });
+                    };
+                });
                 lucide.createIcons();
             });
     }
