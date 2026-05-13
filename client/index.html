@@ -15,18 +15,18 @@
     <div id="app-container">
         <!-- Mobile Header -->
         <header id="mobile-header">
-            <button class="menu-toggle" id="menu-open">
+            <button class="menu-toggle" id="menu-open" aria-label="Open Menu">
                 <i data-lucide="menu"></i>
             </button>
-            <div class="mobile-logo" style="font-weight: 800; color: var(--primary);">SYNAPSE</div>
-            <div style="width: 40px;"></div> <!-- Spacer for balance -->
+            <div class="mobile-logo">SYNAPSE</div>
+            <div style="width: 40px;"></div> <!-- Spacer -->
         </header>
 
-        <!-- Persistent Side Navigation -->
+        <!-- Sidebar Navigation -->
         <aside id="sidebar">
-            <div class="logo-area" style="display: flex; justify-content: space-between; align-items: center;">
+            <div class="logo-area">
                 <h1>SYNAPSE</h1>
-                <button class="menu-toggle" id="menu-close" style="display: none;">
+                <button class="menu-toggle" id="menu-close" style="display: none;" aria-label="Close Menu">
                     <i data-lucide="x"></i>
                 </button>
             </div>
@@ -51,6 +51,10 @@
                     <i data-lucide="terminal"></i>
                     <span>Logs</span>
                 </a>
+                <a href="#" class="nav-item" data-panel="reports">
+                    <i data-lucide="pie-chart"></i>
+                    <span>Reports</span>
+                </a>
                 <a href="#" class="nav-item" data-panel="integrations">
                     <i data-lucide="blocks"></i>
                     <span>Integrations</span>
@@ -62,32 +66,30 @@
             </nav>
         </aside>
 
-        <!-- Main Content Area -->
+        <!-- Main Content -->
         <main id="main-content">
-            <!-- Top Bar for Context/Actions -->
             <header id="top-bar">
                 <h2 id="workspace-title">Workspace: Overview</h2>
             </header>
 
-            <!-- Workspace Area for Modular Panels -->
             <section id="workspace-area">
-                <!-- Panels are dynamically injected by script.js -->
+                <!-- Dynamic content injected here -->
             </section>
         </main>
     </div>
 
-    <script src="script.js"></script>
-    <script>
-      // Initialize icons after page load
-      lucide.createIcons();
-    </script>
-
-    <!-- Floating Command Palette -->
+    <!-- Command Palette -->
     <div id="command-palette" class="command-palette">
         <div class="palette-inner">
-            <i data-lucide="search" class="search-icon"></i>
-            <input type="text" id="command-input" class="terminal-input" placeholder="Type a command or search..." />
+            <i data-lucide="search" style="color: var(--muted-foreground);"></i>
+            <input type="text" id="command-input" class="terminal-input" placeholder="Search operations or agents..." autocomplete="off">
         </div>
     </div>
+
+    <script src="script.js"></script>
+    <script>
+      // Global Lucide init
+      lucide.createIcons();
+    </script>
 </body>
 </html>

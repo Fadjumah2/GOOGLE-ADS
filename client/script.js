@@ -1,19 +1,44 @@
+/**
+ * Synapse Master Grade Dashboard Controller
+ */
 document.addEventListener('DOMContentLoaded', () => {
-    const sidebar = document.getElementById('sidebar');
-    const mainContent = document.getElementById('main-content');
-    const workspaceArea = document.getElementById('workspace-area');
-    const navItems = document.querySelectorAll('.nav-item');
-    const workspaceTitle = document.getElementById('workspace-title');
+    const UI = {
+        sidebar: document.getElementById('sidebar'),
+        sidebarOverlay: document.getElementById('sidebar-overlay'),
+        workspaceArea: document.getElementById('workspace-area'),
+        workspaceTitle: document.getElementById('workspace-title'),
+        navItems: document.querySelectorAll('.nav-item'),
+        menuOpen: document.getElementById('menu-open'),
+        menuClose: document.getElementById('menu-close'),
+        palette: document.getElementById('command-palette'),
+        commandInput: document.getElementById('command-input')
+    };
 
-    // --- Utility Functions ---
+    // --- State Management ---
+    let currentPanel = 'overview';
+
+    // --- Core UI Logic ---
+
     function setWorkspaceTitle(title) {
-        workspaceTitle.textContent = `Workspace: ${title}`;
+        UI.workspaceTitle.textContent = `Workspace: ${title}`;
+    }
+
+    function toggleSidebar(show) {
+        if (show) {
+            UI.sidebar.classList.add('open');
+            UI.sidebarOverlay.classList.add('visible');
+            UI.menuClose.style.display = 'block';
+        } else {
+            UI.sidebar.classList.remove('open');
+            UI.sidebarOverlay.classList.remove('visible');
+            UI.menuClose.style.display = 'none';
+        }
     }
 
     function createKpiCard(label, value, delta, iconName) {
         const up = delta >= 0;
         const card = document.createElement('div');
-        card.className = 'kpi-card';
+        card.className = 'kpi-card fade-in';
         card.innerHTML = `
             <div class="label">${label}</div>
             <div class="value">${value}</div>
@@ -21,7 +46,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <i data-lucide="${up ? 'arrow-up-right' : 'arrow-down-right'}"></i>
                 ${Math.abs(delta).toFixed(1)}%
             </div>
-            <div style="position: absolute; right: 1.25rem; top: 1.25rem; opacity: 0.1;">
+            <div style="position: absolute; right: 1.5rem; top: 1.5rem; opacity: 0.1; color: var(--primary);">
                 <i data-lucide="${iconName}" size="32"></i>
             </div>
         `;
@@ -43,327 +68,284 @@ document.addEventListener('DOMContentLoaded', () => {
         const contentDiv = document.createElement('div');
         contentDiv.className = 'panel-content';
         if (content) {
-            if (typeof content === 'string') {
-                contentDiv.innerHTML = content;
-            } else {
-                contentDiv.appendChild(content);
-            }
+            if (typeof content === 'string') contentDiv.innerHTML = content;
+            else contentDiv.appendChild(content);
         }
         panel.appendChild(contentDiv);
         return panel;
     }
 
-    // --- Workspace Rendering ---
-    function renderWorkspace(panelName) {
-        workspaceArea.innerHTML = ''; 
+    async function renderWorkspace(panelName) {
+        currentPanel = panelName;
+        UI.workspaceArea.innerHTML = '';
         setWorkspaceTitle(panelName.charAt(0).toUpperCase() + panelName.slice(1));
 
-        let contentPanel;
-        switch (panelName) {
-            case 'overview':
-                const overviewWrapper = document.createElement('div');
-                overviewWrapper.innerHTML = `
-                    <div class="dashboard-grid" id="kpi-container"></div>
-                    <div id="campaign-list-container"></div>
-                `;
-                fetchCampaigns(overviewWrapper);
-                contentPanel = createPanel('overview-panel', 'Platform Performance', overviewWrapper);
-                break;
-            case 'orchestration':
-                const orchWrapper = document.createElement('div');
-                orchWrapper.id = 'agent-configs-container';
-                fetchAgentConfigs(orchWrapper);
-                contentPanel = createPanel('orchestration-panel', 'Synapse Agent Orchestration', orchWrapper);
-                break;
-            case 'workflows':
-                contentPanel = createPanel('workflows-panel', 'Workflow Engine', '<p>Feature currently in development. Please check back later for updates.</p>');
-                break;
-            case 'timeline':
-                const timelineWrapper = document.createElement('div');
-                timelineWrapper.id = 'timeline-container';
-                fetchAgentRuns(timelineWrapper);
-                contentPanel = createPanel('timeline-panel', 'Agent Execution History', timelineWrapper);
-                break;
-            case 'logs':
-                const logsWrapper = document.createElement('div');
-                logsWrapper.id = 'logs-container';
-                fetchSystemLogs(logsWrapper);
-                contentPanel = createPanel('logs-panel', 'Live System Output', logsWrapper);
-                break;
-            case 'reports':
-                const reportsWrapper = document.createElement('div');
-                reportsWrapper.id = 'reports-container';
-                fetchReports(reportsWrapper);
-                contentPanel = createPanel('reports-panel', 'Analytics Reports', reportsWrapper);
-                break;
-            case 'integrations':
-                const intWrapper = document.createElement('div');
-                intWrapper.id = 'integrations-container';
-                fetchIntegrations(intWrapper);
-                contentPanel = createPanel('integrations-panel', 'System Health', intWrapper);
-                break;
-            case 'settings':
-                const settingsWrapper = document.createElement('div');
-                settingsWrapper.id = 'settings-container';
-                fetchSettings(settingsWrapper);
-                contentPanel = createPanel('settings-panel', 'Core Configuration', settingsWrapper);
-                break;
-            default:
-                contentPanel = createPanel('unknown-panel', 'Module Pending', '<p>Feature in development.</p>');
-                break;
+        // Loading state
+        UI.workspaceArea.innerHTML = '<div class="loading">Synchronizing with core...</div>';
+
+        try {
+            let contentPanel;
+            switch (panelName) {
+                case 'overview':
+                    contentPanel = await getOverviewPanel();
+                    break;
+                case 'orchestration':
+                    contentPanel = await getOrchestrationPanel();
+                    break;
+                case 'workflows':
+                    contentPanel = createPanel('workflows-v2', 'Workflow Intelligence', '<p>Neural pipeline engine is currently in training. Expected deployment in next cycle.</p>');
+                    break;
+                case 'timeline':
+                    contentPanel = await getTimelinePanel();
+                    break;
+                case 'logs':
+                    contentPanel = await getLogsPanel();
+                    break;
+                case 'reports':
+                    contentPanel = await getReportsPanel();
+                    break;
+                case 'integrations':
+                    contentPanel = await getIntegrationsPanel();
+                    break;
+                case 'settings':
+                    contentPanel = getSettingsPanel();
+                    break;
+                default:
+                    contentPanel = createPanel('404', 'Module Not Found', '<p>The requested operations module is offline or missing.</p>');
+            }
+            UI.workspaceArea.innerHTML = '';
+            UI.workspaceArea.appendChild(contentPanel);
+            lucide.createIcons();
+        } catch (error) {
+            console.error('Render Error:', error);
+            UI.workspaceArea.innerHTML = `<div class="panel" style="border-color: var(--destructive);"><div class="panel-header">System Fault</div><p>Failed to initialize module: ${error.message}</p></div>`;
         }
+    }
+
+    // --- Panel Builders (Data Integrated) ---
+
+    async function getOverviewPanel() {
+        const res = await fetch('/dashboard/campaigns');
+        const campaigns = await res.json();
         
-        workspaceArea.appendChild(contentPanel);
-        lucide.createIcons();
-    }
+        const wrapper = document.createElement('div');
+        wrapper.style.display = 'flex';
+        wrapper.style.flexDirection = 'column';
+        wrapper.style.gap = '2rem';
 
-    // --- Data Fetching & Rendering Helpers ---
-
-    function fetchCampaigns(container) {
-        const kpiContainer = container.querySelector('#kpi-container');
-        const tableContainer = container.querySelector('#campaign-list-container');
-        tableContainer.innerHTML = '<p class="loading">Fetching data streams...</p>';
-
-        fetch('/dashboard/campaigns')
-            .then(res => res.json())
-            .then(data => {
-                renderOverviewData(data, kpiContainer, tableContainer);
-                lucide.createIcons();
-            })
-            .catch(() => tableContainer.textContent = 'Connection failed.');
-    }
-
-    function renderOverviewData(campaigns, kpis, table) {
-        let clicks = 0, imps = 0, cost = 0, active = 0;
+        // KPIs
+        const grid = document.createElement('div');
+        grid.className = 'dashboard-grid';
+        let clicks = 0, cost = 0, active = 0;
         campaigns.forEach(c => {
-            if (c.campaign.status === 2) active++;
             clicks += c.metrics.clicks || 0;
-            imps += c.metrics.impressions || 0;
             cost += (c.metrics.cost_micros / 1000000) || 0;
+            if (c.campaign.status === 2) active++;
         });
+        
+        grid.appendChild(createKpiCard('Aggregated Clicks', clicks.toLocaleString(), 14.2, 'mouse-pointer-2'));
+        grid.appendChild(createKpiCard('Total Investment', `$${cost.toFixed(2)}`, 5.7, 'dollar-sign'));
+        grid.appendChild(createKpiCard('Active Nodes', active.toString(), 0, 'target'));
+        wrapper.appendChild(grid);
 
-        kpis.appendChild(createKpiCard('Total Clicks', clicks.toLocaleString(), 12.5, 'mouse-pointer-2'));
-        kpis.appendChild(createKpiCard('Total Impressions', imps.toLocaleString(), -2.4, 'eye'));
-        kpis.appendChild(createKpiCard('Total Spend', `$${cost.toFixed(2)}`, 8.1, 'dollar-sign'));
-        kpis.appendChild(createKpiCard('Active Campaigns', active.toString(), 0, 'target'));
-
-        const tPanel = createPanel('campaign-table', 'Campaign Catalog');
-        tPanel.querySelector('.panel-content').innerHTML = `
+        // Table
+        const tablePanel = createPanel('campaign-catalog', 'Real-time Campaign Stream');
+        tablePanel.querySelector('.panel-content').innerHTML = `
             <table class="data-table">
-                <thead>
-                    <tr><th>Name</th><th>Status</th><th>Clicks</th><th>Spend</th><th style="text-align:right">Action</th></tr>
-                </thead>
+                <thead><tr><th>Identifier</th><th>Status</th><th>Interactions</th><th>Cost</th><th style="text-align:right">Control</th></tr></thead>
                 <tbody>
                     ${campaigns.map(c => `
                         <tr>
                             <td style="font-weight:600">${c.campaign.name}</td>
-                            <td><span class="status-dot" style="background:${c.campaign.status === 2 ? '#28a745':'#888'}"></span> ${c.campaign.status === 2 ? 'Active':'Paused'}</td>
+                            <td><span class="status-dot" style="background:${c.campaign.status === 2 ? 'var(--success)':'#555'}"></span> ${c.campaign.status === 2 ? 'ACTIVE':'PAUSED'}</td>
                             <td>${c.metrics.clicks.toLocaleString()}</td>
                             <td>$${(c.metrics.cost_micros/1000000).toFixed(2)}</td>
-                            <td style="text-align:right"><button class="btn btn-action" data-id="${c.campaign.id}" data-action="${c.campaign.status === 2 ? 'pause':'enable'}"><i data-lucide="${c.campaign.status === 2 ? 'pause':'play'}"></i></button></td>
+                            <td style="text-align:right">
+                                <button class="btn btn-action" data-id="${c.campaign.id}" data-action="${c.campaign.status === 2 ? 'pause':'enable'}">
+                                    <i data-lucide="${c.campaign.status === 2 ? 'pause':'play'}"></i>
+                                </button>
+                            </td>
                         </tr>
                     `).join('')}
                 </tbody>
             </table>
         `;
-        table.appendChild(tPanel);
-        table.querySelectorAll('.btn-action').forEach(btn => btn.onclick = () => {
-            fetch(`/dashboard/campaigns/${btn.dataset.id}/${btn.dataset.action}`, {method:'POST'}).then(() => renderWorkspace('overview'));
+        wrapper.appendChild(tablePanel);
+        
+        // Listeners
+        wrapper.querySelectorAll('.btn-action').forEach(btn => {
+            btn.onclick = async () => {
+                btn.disabled = true;
+                await fetch(`/dashboard/campaigns/${btn.dataset.id}/${btn.dataset.action}`, {method:'POST'});
+                renderWorkspace('overview');
+            };
         });
+
+        return wrapper;
     }
 
-    function fetchAgentConfigs(container) {
-        container.innerHTML = '<p class="loading">Loading configurations...</p>';
-        fetch('/dashboard/agent-configurations')
-            .then(res => res.json())
-            .then(configs => {
-                container.innerHTML = `
-                    <div class="agent-card-grid">
-                        ${configs.map(cfg => `
-                            <div class="agent-card">
-                                <div style="display:flex; gap:1rem; align-items:center;">
-                                    <div style="padding:0.5rem; background:var(--muted); border-radius:0.5rem; color:var(--primary);"><i data-lucide="settings"></i></div>
-                                    <div>
-                                        <div style="font-weight:700">${cfg.config_name}</div>
-                                        <div style="font-size:0.75rem; color:var(--muted-foreground)">CID: ${cfg.customer_id}</div>
-                                    </div>
-                                </div>
-                                <div style="font-size:0.875rem; color:var(--muted-foreground)">Target Campaign: ${cfg.campaign_id}</div>
-                                <div style="display:flex; gap:0.5rem; margin-top:auto">
-                                    <button class="btn btn-primary btn-run" data-id="${cfg.id}" style="flex:1">Run Now</button>
-                                    <button class="btn">Edit</button>
-                                </div>
-                            </div>
-                        `).join('')}
-                    </div>
-                `;
-                container.querySelectorAll('.btn-run').forEach(btn => {
-                    btn.onclick = () => {
-                        btn.disabled = true;
-                        btn.textContent = 'Triggering...';
-                        fetch(`/dashboard/trigger-agent/${btn.dataset.id}`, { method: 'POST' })
-                            .then(res => res.json())
-                            .then(data => {
-                                alert(data.message);
-                                btn.disabled = false;
-                                btn.textContent = 'Run Now';
-                            });
-                    };
-                });
-                lucide.createIcons();
-            });
-    }
-
-    function fetchAgentRuns(container) {
-        container.innerHTML = '<p class="loading">Fetching run history...</p>';
-        fetch('/dashboard/agent-runs')
-            .then(res => res.json())
-            .then(runs => {
-                container.innerHTML = `
-                    <table class="data-table">
-                        <thead><tr><th>Timestamp</th><th>Config</th><th>Status</th><th>Details</th></tr></thead>
-                        <tbody>
-                            ${runs.map(r => `
-                                <tr>
-                                    <td>${new Date(r.run_timestamp).toLocaleString()}</td>
-                                    <td>${r.config_name || 'N/A'}</td>
-                                    <td><span style="color:${r.status === 'completed' ? '#28a745':'#dc3545'}">${r.status.toUpperCase()}</span></td>
-                                    <td>${JSON.stringify(r.details)}</td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-                `;
-            });
-    }
-
-    function fetchSystemLogs(container) {
-        container.innerHTML = '<p class="loading">Connecting to log stream...</p>';
-        fetch('/dashboard/system-logs')
-            .then(res => res.text())
-            .then(logs => {
-                container.innerHTML = `<div class="terminal-like-area"><pre><code>${logs}</code></pre></div>`;
-            });
-    }
-
-    function fetchReports(container) {
-        container.innerHTML = '<p class="loading">Compiling report data...</p>';
-        fetch('/dashboard/reports/campaigns')
-            .then(res => res.json())
-            .then(data => {
-                container.innerHTML = `
-                    <table class="data-table">
-                        <thead><tr><th>Date</th><th>Campaign</th><th>Clicks</th><th>Impressions</th><th>Cost</th></tr></thead>
-                        <tbody>
-                            ${data.map(r => `
-                                <tr>
-                                    <td>${r.segments.date}</td>
-                                    <td>${r.campaign.name}</td>
-                                    <td>${r.metrics.clicks.toLocaleString()}</td>
-                                    <td>${r.metrics.impressions.toLocaleString()}</td>
-                                    <td>$${(r.metrics.cost_micros/1000000).toFixed(2)}</td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-                `;
-            });
-    }
-
-    function fetchIntegrations(container) {
-        fetch('/dashboard/status')
-            .then(res => res.json())
-            .then(data => {
-                container.innerHTML = `
-                    <div style="display:grid; gap:1rem;">
-                        ${Object.entries(data).map(([k, v]) => `
-                            <div class="panel">
-                                <div style="display:flex; justify-content:space-between; align-items:center;">
-                                    <div style="display:flex; gap:1rem; align-items:center;">
-                                        <i data-lucide="${k === 'database' ? 'database' : k === 'googleAds' ? 'cloud' : 'activity'}"></i>
-                                        <div><div style="font-weight:600; text-transform:capitalize">${k}</div><div style="font-size:0.75rem; color:${v === 'Connected' || v === 'Active' ? '#28a745':'#dc3545'}">${v}</div></div>
-                                    </div>
-                                    <button class="btn">Check</button>
-                                </div>
-                            </div>
-                        `).join('')}
-                    </div>
-                `;
-                lucide.createIcons();
-            });
-    }
-
-    function fetchSettings(container) {
-        container.innerHTML = `
-            <div style="max-width:600px;">
-                <div class="panel">
-                    <div style="display:flex; flex-direction:column; gap:1.5rem;">
-                        <div>
-                            <label style="display:block; font-size:0.75rem; color:var(--muted-foreground); margin-bottom:0.5rem;">DEVELOPER TOKEN</label>
-                            <input type="password" value="****************" class="terminal-input" readonly />
-                        </div>
-                        <div>
-                            <label style="display:block; font-size:0.75rem; color:var(--muted-foreground); margin-bottom:0.5rem;">LOG LEVEL</label>
-                            <select class="terminal-input"><option>INFO</option><option>DEBUG</option></select>
-                        </div>
-                        <button class="btn btn-primary">Save Settings</button>
+    async function getOrchestrationPanel() {
+        const res = await fetch('/dashboard/agent-configurations');
+        const configs = await res.json();
+        
+        const grid = document.createElement('div');
+        grid.className = 'agent-card-grid';
+        grid.innerHTML = configs.map(cfg => `
+            <div class="agent-card">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <div style="display:flex; gap:1rem; align-items:center;">
+                        <div style="padding:0.6rem; background:rgba(0,123,255,0.1); border-radius:0.6rem; color:var(--primary);"><i data-lucide="zap"></i></div>
+                        <div><div style="font-weight:700">${cfg.config_name}</div><div style="font-size:0.75rem; color:var(--muted-foreground)">CID: ${cfg.customer_id}</div></div>
                     </div>
                 </div>
+                <p style="font-size:0.85rem;">Autonomous optimization cycle targeting campaign <code>${cfg.campaign_id}</code>.</p>
+                <div style="display:flex; gap:0.5rem; margin-top:auto">
+                    <button class="btn btn-primary btn-run" data-id="${cfg.id}" style="flex:1">Execute Now</button>
+                    <button class="btn"><i data-lucide="edit-3"></i></button>
+                </div>
+            </div>
+        `).join('');
+
+        grid.querySelectorAll('.btn-run').forEach(btn => {
+            btn.onclick = async () => {
+                btn.disabled = true;
+                btn.textContent = 'Executing...';
+                const r = await fetch(`/dashboard/trigger-agent/${btn.dataset.id}`, {method:'POST'});
+                const data = await r.json();
+                alert(data.message);
+                btn.disabled = false;
+                btn.textContent = 'Execute Now';
+            };
+        });
+
+        return createPanel('orch-v2', 'Synapse Operation Nodes', grid);
+    }
+
+    async function getTimelinePanel() {
+        const res = await fetch('/dashboard/agent-runs');
+        const runs = await res.json();
+        const table = `
+            <table class="data-table">
+                <thead><tr><th>Phase Timestamp</th><th>Operation</th><th>Status</th><th>Payload</th></tr></thead>
+                <tbody>
+                    ${runs.map(r => `
+                        <tr>
+                            <td style="color:var(--muted-foreground)">${new Date(r.run_timestamp).toLocaleString()}</td>
+                            <td style="font-weight:600">${r.config_name || 'Generic Run'}</td>
+                            <td><span style="color:${r.status === 'completed' ? 'var(--success)':'var(--destructive)'}">${r.status.toUpperCase()}</span></td>
+                            <td style="font-family:var(--font-mono); font-size:0.8rem; color:var(--muted-foreground)">${JSON.stringify(r.details).substring(0, 50)}...</td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        `;
+        return createPanel('timeline-v2', 'System Execution History', table);
+    }
+
+    async function getLogsPanel() {
+        const res = await fetch('/dashboard/system-logs');
+        const text = await res.text();
+        const area = document.createElement('div');
+        area.className = 'terminal-like-area';
+        area.innerHTML = `<pre><code>${text}</code></pre>`;
+        return createPanel('logs-v2', 'Kernel Operation Stream', area);
+    }
+
+    async function getReportsPanel() {
+        const res = await fetch('/dashboard/reports/campaigns');
+        const data = await res.json();
+        const table = `
+            <table class="data-table">
+                <thead><tr><th>Date</th><th>Node Name</th><th>Clicks</th><th>Impressions</th><th>Cost</th></tr></thead>
+                <tbody>
+                    ${data.map(r => `
+                        <tr>
+                            <td>${r.segments.date}</td>
+                            <td style="font-weight:600">${r.campaign.name}</td>
+                            <td>${r.metrics.clicks.toLocaleString()}</td>
+                            <td>${r.metrics.impressions.toLocaleString()}</td>
+                            <td>$${(r.metrics.cost_micros/1000000).toFixed(2)}</td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        `;
+        return createPanel('reports-v2', 'Performance Intelligence', table);
+    }
+
+    async function getIntegrationsPanel() {
+        const res = await fetch('/dashboard/status');
+        const data = await res.json();
+        const grid = document.createElement('div');
+        grid.style.display = 'grid';
+        grid.style.gap = '1.5rem';
+        grid.innerHTML = Object.entries(data).map(([k, v]) => `
+            <div class="panel" style="margin-bottom:0;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <div style="display:flex; gap:1.25rem; align-items:center;">
+                        <div style="color:var(--primary)"><i data-lucide="${k==='database'?'database':k==='googleAds'?'cloud':'activity'}" size="24"></i></div>
+                        <div><div style="font-weight:700; text-transform:capitalize;">${k.replace(/([A-Z])/g, ' $1')}</div><div style="font-size:0.85rem; color:${v.includes('Connected')||v.includes('Active')||v.includes('Configured')?'var(--success)':'var(--destructive)'}">${v}</div></div>
+                    </div>
+                    <button class="btn">Verify</button>
+                </div>
+            </div>
+        `).join('');
+        return createPanel('status-v2', 'Core Infrastructure Health', grid);
+    }
+
+    function getSettingsPanel() {
+        const form = `
+            <div style="max-width:600px; display:flex; flex-direction:column; gap:2rem;">
+                <div>
+                    <label style="display:block; font-size:0.75rem; font-weight:700; color:var(--muted-foreground); margin-bottom:0.75rem; text-transform:uppercase; letter-spacing:0.05em;">Developer Credentials</label>
+                    <div style="display:flex; gap:0.5rem;">
+                        <input type="password" value="************************" class="terminal-input" style="flex:1; border:1px solid var(--border); padding:0.75rem; border-radius:var(--radius-sm);" readonly />
+                        <button class="btn"><i data-lucide="eye"></i></button>
+                    </div>
+                </div>
+                <div>
+                    <label style="display:block; font-size:0.75rem; font-weight:700; color:var(--muted-foreground); margin-bottom:0.75rem; text-transform:uppercase; letter-spacing:0.05em;">Log Verbosity</label>
+                    <select class="terminal-input" style="width:100%; border:1px solid var(--border); padding:0.75rem; border-radius:var(--radius-sm); background:var(--background);">
+                        <option>INFO</option>
+                        <option>DEBUG</option>
+                        <option>VERBOSE</option>
+                    </select>
+                </div>
+                <button class="btn btn-primary" style="align-self:flex-start;">Commit Configuration</button>
             </div>
         `;
+        return createPanel('settings-v2', 'Kernel Parameters', form);
     }
 
-    // --- Mobile Navigation ---
-    const menuOpen = document.getElementById('menu-open');
-    const menuClose = document.getElementById('menu-close');
-    const sidebarOverlay = document.getElementById('sidebar-overlay');
+    // --- Interaction Listeners ---
 
-    function toggleSidebar(show) {
-        if (show) {
-            sidebar.classList.add('open');
-            sidebarOverlay.classList.add('visible');
-            menuClose.style.display = 'block';
-        } else {
-            sidebar.classList.remove('open');
-            sidebarOverlay.classList.remove('visible');
-            menuClose.style.display = 'none';
-        }
-    }
+    UI.menuOpen.onclick = () => toggleSidebar(true);
+    UI.menuClose.onclick = () => toggleSidebar(false);
+    UI.sidebarOverlay.onclick = () => toggleSidebar(false);
 
-    menuOpen.addEventListener('click', () => toggleSidebar(true));
-    menuClose.addEventListener('click', () => toggleSidebar(false));
-    sidebarOverlay.addEventListener('click', () => toggleSidebar(false));
-
-    // --- Navigation & Initial Load ---
-    navItems.forEach(item => {
+    UI.navItems.forEach(item => {
         item.addEventListener('click', (e) => {
             e.preventDefault();
-            navItems.forEach(n => n.classList.remove('active'));
+            UI.navItems.forEach(n => n.classList.remove('active'));
             item.classList.add('active');
             renderWorkspace(item.dataset.panel);
-            
-            // Auto-close sidebar on mobile after selection
-            if (window.innerWidth <= 1024) {
-                toggleSidebar(false);
-            }
+            if (window.innerWidth <= 1024) toggleSidebar(false);
         });
     });
 
-    renderWorkspace('overview');
-
-    // --- Command Palette ---
-    const palette = document.getElementById('command-palette');
-    const input = document.getElementById('command-input');
-
+    // Command Palette
     document.addEventListener('keydown', (e) => {
         if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
             e.preventDefault();
-            palette.style.display = 'block';
-            setTimeout(() => { palette.classList.add('is-visible'); input.focus(); }, 10);
+            UI.palette.style.display = 'block';
+            setTimeout(() => { UI.palette.classList.add('is-visible'); UI.commandInput.focus(); }, 10);
         }
         if (e.key === 'Escape') {
-            palette.classList.remove('is-visible');
-            setTimeout(() => palette.style.display = 'none', 200);
+            UI.palette.classList.remove('is-visible');
+            setTimeout(() => UI.palette.style.display = 'none', 300);
         }
     });
+
+    // Initial Load
+    renderWorkspace('overview');
 });
