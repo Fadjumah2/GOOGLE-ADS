@@ -5,9 +5,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const navItems = document.querySelectorAll('.nav-item');
     const workspaceTitle = document.getElementById('workspace-title');
 
-    // Store references to the actual content elements
-    const panelContentCache = {};
-
     // --- Utility Functions ---
     function setWorkspaceTitle(title) {
         workspaceTitle.textContent = `Workspace: ${title}`;
@@ -66,29 +63,24 @@ document.addEventListener('DOMContentLoaded', () => {
             case 'overview':
                 const overviewWrapper = document.createElement('div');
                 overviewWrapper.innerHTML = `
-                    <div class="dashboard-grid" id="kpi-container">
-                        <!-- KPI Cards will be injected here -->
-                    </div>
-                    <div id="campaign-list-container">
-                        <!-- Campaigns table will be rendered here -->
-                    </div>
+                    <div class="dashboard-grid" id="kpi-container"></div>
+                    <div id="campaign-list-container"></div>
                 `;
                 fetchCampaigns(overviewWrapper);
                 contentPanel = createPanel('overview-panel', 'Platform Performance', overviewWrapper);
                 break;
             case 'orchestration':
-                const orchestrationWrapper = document.createElement('div');
-                orchestrationWrapper.className = 'agent-card-grid';
-                renderAgentCards(orchestrationWrapper);
-                contentPanel = createPanel('orchestration-panel', 'Active Agents', orchestrationWrapper);
+                const orchWrapper = document.createElement('div');
+                orchWrapper.id = 'agent-configs-container';
+                fetchAgentConfigs(orchWrapper);
+                contentPanel = createPanel('orchestration-panel', 'Synapse Agent Orchestration', orchWrapper);
                 break;
             case 'workflows':
                 contentPanel = createPanel('workflows-panel', 'Workflow Engine', `
                     <div class="terminal-like-area">
                         <pre><code>
 # Synapse Autonomous Workflow
-name: "Intelligent ROI Optimization"
-schedule: "00:00 UTC Daily"
+# Configured via campaign_configurations table
 
 pipeline:
   - id: monitor
@@ -96,41 +88,26 @@ pipeline:
     action: "audit_spend"
   - id: optimize
     agent: "IntentSurgeon"
-    depends_on: monitor
     condition: "spend_waste > 5%"
   - id: creative
     agent: "PersuasionArchitect"
     action: "refresh_copy"
                         </code></pre>
-                        <button class="btn btn-primary" style="margin-top: 1rem;">Deploy Pipeline</button>
+                        <button class="btn btn-primary" style="margin-top: 1rem;">Deploy New Pipeline</button>
                     </div>
                 `);
                 break;
             case 'timeline':
-                contentPanel = createPanel('timeline-panel', 'Live Execution Stream', `
-                    <div class="terminal-like-area">
-                        <pre><code>
-[SYSTEM] 09:30:00 - Initializing Synapse Core...
-[AGENT]  09:30:05 - ROISentry started analysis on Campaign Q2_Growth
-[API]    09:30:15 - Fetched metrics for 12 active campaigns
-[AGENT]  09:30:20 - IntentSurgeon identified 5 high-waste search terms
-[MUTATE] 09:30:35 - Successfully injected 3 negative keywords
-[AGENT]  09:31:00 - PersuasionArchitect generating new ad headlines...
-                        </code></pre>
-                    </div>
-                `);
+                const timelineWrapper = document.createElement('div');
+                timelineWrapper.id = 'timeline-container';
+                fetchAgentRuns(timelineWrapper);
+                contentPanel = createPanel('timeline-panel', 'Agent Execution History', timelineWrapper);
                 break;
             case 'logs':
-                contentPanel = createPanel('logs-panel', 'System Logs', `
-                    <div class="terminal-like-area">
-                        <pre><code>
-INFO  [ROISentry] Audit complete. No budget anomalies found.
-DEBUG [GoogleAds] GAQL: SELECT campaign.name, metrics.ctr FROM campaign...
-WARN  [IntentSurgeon] High CPA detected in 'Discovery_Spring'.
-SUCCESS [PersuasionArchitect] Ad copy updated for Group 'Summer_Deals'.
-                        </code></pre>
-                    </div>
-                `);
+                const logsWrapper = document.createElement('div');
+                logsWrapper.id = 'logs-container';
+                fetchSystemLogs(logsWrapper);
+                contentPanel = createPanel('logs-panel', 'Live System Output', logsWrapper);
                 break;
             case 'reports':
                 const reportsWrapper = document.createElement('div');
@@ -139,88 +116,25 @@ SUCCESS [PersuasionArchitect] Ad copy updated for Group 'Summer_Deals'.
                 contentPanel = createPanel('reports-panel', 'Analytics Reports', reportsWrapper);
                 break;
             case 'files':
-                contentPanel = createPanel('files-panel', 'System Assets', `
-                    <div class="panel">
-                        <div class="panel-content">
-                            <div style="display: flex; flex-direction: column; gap: 0.75rem;">
-                                <div style="display: flex; align-items: center; gap: 0.75rem; padding: 0.5rem; border-radius: 0.5rem; background: rgba(255,255,255,0.02); border: 1px solid var(--border);">
-                                    <i data-lucide="folder" style="color: var(--primary);"></i>
-                                    <span>config/</span>
-                                </div>
-                                <div style="display: flex; align-items: center; gap: 0.75rem; padding: 0.5rem; border-radius: 0.5rem; background: rgba(255,255,255,0.02); border: 1px solid var(--border);">
-                                    <i data-lucide="file-json" style="color: var(--primary);"></i>
-                                    <span>agent_config.json</span>
-                                </div>
-                                <div style="display: flex; align-items: center; gap: 0.75rem; padding: 0.5rem; border-radius: 0.5rem; background: rgba(255,255,255,0.02); border: 1px solid var(--border);">
-                                    <i data-lucide="file-text" style="color: var(--primary);"></i>
-                                    <span>deployment_strategy.md</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                `);
+                const filesWrapper = document.createElement('div');
+                filesWrapper.id = 'files-container';
+                fetchFiles(filesWrapper);
+                contentPanel = createPanel('files-panel', 'Project Assets', filesWrapper);
                 break;
             case 'integrations':
-                contentPanel = createPanel('integrations-panel', 'External Connectors', `
-                    <div style="display: grid; gap: 1rem;">
-                        <div class="panel">
-                            <div style="display: flex; justify-content: space-between; align-items: center;">
-                                <div style="display: flex; gap: 1rem; align-items: center;">
-                                    <i data-lucide="github" size="24"></i>
-                                    <div>
-                                        <div style="font-weight: 600;">GitHub Repository</div>
-                                        <div style="font-size: 0.75rem; color: var(--muted-foreground);">Connected: Fadjumah/GOOGLE-ADS</div>
-                                    </div>
-                                </div>
-                                <button class="btn">Configure</button>
-                            </div>
-                        </div>
-                        <div class="panel">
-                            <div style="display: flex; justify-content: space-between; align-items: center;">
-                                <div style="display: flex; gap: 1rem; align-items: center;">
-                                    <i data-lucide="database" size="24"></i>
-                                    <div>
-                                        <div style="font-weight: 600;">PostgreSQL Instance</div>
-                                        <div style="font-size: 0.75rem; color: var(--muted-foreground);">Status: Healthy (12ms latency)</div>
-                                    </div>
-                                </div>
-                                <button class="btn">Monitor</button>
-                            </div>
-                        </div>
-                    </div>
-                `);
+                const intWrapper = document.createElement('div');
+                intWrapper.id = 'integrations-container';
+                fetchIntegrations(intWrapper);
+                contentPanel = createPanel('integrations-panel', 'System Health', intWrapper);
                 break;
             case 'settings':
-                contentPanel = createPanel('settings-panel', 'Core Configuration', `
-                    <div style="max-width: 600px;">
-                        <div class="panel">
-                            <div style="display: flex; flex-direction: column; gap: 1.5rem;">
-                                <div>
-                                    <label style="display: block; font-size: 0.75rem; font-weight: 600; color: var(--muted-foreground); margin-bottom: 0.5rem; text-transform: uppercase;">Google Ads Developer Token</label>
-                                    <div style="display: flex; gap: 0.5rem;">
-                                        <input type="password" value="****************" class="terminal-input" style="flex: 1;" readonly />
-                                        <button class="btn">Reveal</button>
-                                    </div>
-                                </div>
-                                <div>
-                                    <label style="display: block; font-size: 0.75rem; font-weight: 600; color: var(--muted-foreground); margin-bottom: 0.5rem; text-transform: uppercase;">System Log Level</label>
-                                    <select class="terminal-input">
-                                        <option>DEBUG</option>
-                                        <option selected>INFO</option>
-                                        <option>WARN</option>
-                                        <option>ERROR</option>
-                                    </select>
-                                </div>
-                                <div style="padding-top: 1rem; border-top: 1px solid var(--border);">
-                                    <button class="btn btn-primary">Save Configuration</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                `);
+                const settingsWrapper = document.createElement('div');
+                settingsWrapper.id = 'settings-container';
+                fetchSettings(settingsWrapper);
+                contentPanel = createPanel('settings-panel', 'Core Configuration', settingsWrapper);
                 break;
             default:
-                contentPanel = createPanel('unknown-panel', 'Module Pending', '<p>This feature is currently in development.</p>');
+                contentPanel = createPanel('unknown-panel', 'Module Pending', '<p>Feature in development.</p>');
                 break;
         }
         
@@ -228,178 +142,208 @@ SUCCESS [PersuasionArchitect] Ad copy updated for Group 'Summer_Deals'.
         lucide.createIcons();
     }
 
-    // --- Agent Card Rendering ---
-    function renderAgentCards(container) {
-        const agents = [
-            { id: 'roi-sentry', name: 'ROI Sentry', description: 'Real-time budget monitoring and ROI optimization.', status: 'enabled', icon: 'trending-up' },
-            { id: 'intent-surgeon', name: 'Intent Surgeon', description: 'Precise search term analysis and negative keyword injection.', status: 'enabled', icon: 'scissors' },
-            { id: 'persuasion-architect', name: 'Persuasion Architect', description: 'Generative ad copy rewriting for maximum engagement.', status: 'paused', icon: 'pen-tool' },
-            { id: 'weekly-auditor', name: 'Weekly Auditor', description: 'Deep campaign audits and strategic performance reviews.', status: 'enabled', icon: 'calendar' }
-        ];
+    // --- Data Fetching & Rendering Helpers ---
 
-        agents.forEach(agent => {
-            const card = document.createElement('div');
-            card.className = 'agent-card';
-            card.innerHTML = `
-                <div style="display: flex; justify-content: space-between; align-items: start;">
-                    <div style="display: flex; gap: 0.75rem; align-items: center;">
-                        <div style="padding: 0.5rem; background: var(--muted); border-radius: 0.5rem; color: var(--primary);">
-                            <i data-lucide="${agent.icon}"></i>
-                        </div>
-                        <div>
-                            <div style="font-weight: 700; font-size: 1rem;">${agent.name}</div>
-                            <span class="agent-card-status" style="background: ${agent.status === 'enabled' ? 'rgba(40,167,69,0.1)' : 'rgba(255,193,7,0.1)'}; color: ${agent.status === 'enabled' ? '#28a745' : '#ffc107'}">
-                                ${agent.status.toUpperCase()}
-                            </span>
-                        </div>
-                    </div>
-                </div>
-                <p style="font-size: 0.875rem; color: var(--muted-foreground); line-height: 1.5;">${agent.description}</p>
-                <div style="display: flex; gap: 0.5rem; margin-top: auto;">
-                    <button class="btn" style="flex: 1;">Configure</button>
-                    <button class="btn" style="padding: 0.5rem;"><i data-lucide="more-horizontal"></i></button>
-                </div>
-            `;
-            container.appendChild(card);
-        });
-    }
-
-    // --- Data Fetching ---
     function fetchCampaigns(container) {
         const kpiContainer = container.querySelector('#kpi-container');
         const tableContainer = container.querySelector('#campaign-list-container');
-        
-        tableContainer.innerHTML = '<p style="color: var(--muted-foreground);">Loading data streams...</p>';
+        tableContainer.innerHTML = '<p class="loading">Fetching data streams...</p>';
 
         fetch('/dashboard/campaigns')
-            .then(response => response.json())
-            .then(campaigns => {
-                renderOverviewData(campaigns, kpiContainer, tableContainer);
+            .then(res => res.json())
+            .then(data => {
+                renderOverviewData(data, kpiContainer, tableContainer);
                 lucide.createIcons();
             })
-            .catch(error => {
-                console.error('Fetch error:', error);
-                tableContainer.textContent = 'Connection failed. Verify system status.';
-            });
+            .catch(() => tableContainer.textContent = 'Connection failed.');
     }
 
-    function renderOverviewData(campaigns, kpiContainer, tableContainer) {
-        // Aggregate Metrics
-        let totalClicks = 0;
-        let totalImpressions = 0;
-        let totalCost = 0;
-        let activeCount = 0;
-
+    function renderOverviewData(campaigns, kpis, table) {
+        let clicks = 0, imps = 0, cost = 0, active = 0;
         campaigns.forEach(c => {
-            if (c.campaign.status === 2) activeCount++;
-            totalClicks += c.metrics.clicks || 0;
-            totalImpressions += c.metrics.impressions || 0;
-            totalCost += (c.metrics.cost_micros / 1000000) || 0;
+            if (c.campaign.status === 2) active++;
+            clicks += c.metrics.clicks || 0;
+            imps += c.metrics.impressions || 0;
+            cost += (c.metrics.cost_micros / 1000000) || 0;
         });
 
-        // KPI Cards
-        kpiContainer.appendChild(createKpiCard('Total Clicks', totalClicks.toLocaleString(), 12.5, 'mouse-pointer-2'));
-        kpiContainer.appendChild(createKpiCard('Total Impressions', totalImpressions.toLocaleString(), -2.4, 'eye'));
-        kpiContainer.appendChild(createKpiCard('Total Spend', `$${totalCost.toFixed(2)}`, 8.1, 'dollar-sign'));
-        kpiContainer.appendChild(createKpiCard('Active Campaigns', activeCount.toString(), 0, 'target'));
+        kpis.appendChild(createKpiCard('Total Clicks', clicks.toLocaleString(), 12.5, 'mouse-pointer-2'));
+        kpis.appendChild(createKpiCard('Total Impressions', imps.toLocaleString(), -2.4, 'eye'));
+        kpis.appendChild(createKpiCard('Total Spend', `$${cost.toFixed(2)}`, 8.1, 'dollar-sign'));
+        kpis.appendChild(createKpiCard('Active Campaigns', active.toString(), 0, 'target'));
 
-        // Table
-        const tablePanel = createPanel('campaign-table', 'Campaign Catalog');
-        const table = document.createElement('table');
-        table.className = 'data-table';
-        table.innerHTML = `
-            <thead>
-                <tr>
-                    <th>Campaign Name</th>
-                    <th>Status</th>
-                    <th>Clicks</th>
-                    <th>Impressions</th>
-                    <th>Cost</th>
-                    <th style="text-align: right;">Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                ${campaigns.map(c => `
-                    <tr>
-                        <td style="font-weight: 500;">${c.campaign.name}</td>
-                        <td>
-                            <span style="display: inline-flex; align-items: center; gap: 0.375rem; font-size: 0.75rem; font-weight: 600;">
-                                <span style="width: 0.5rem; height: 0.5rem; border-radius: 50%; background: ${c.campaign.status === 2 ? '#28a745' : '#888'}"></span>
-                                ${c.campaign.status === 2 ? 'Active' : 'Paused'}
-                            </span>
-                        </td>
-                        <td>${c.metrics.clicks.toLocaleString()}</td>
-                        <td>${c.metrics.impressions.toLocaleString()}</td>
-                        <td>$${(c.metrics.cost_micros / 1000000).toFixed(2)}</td>
-                        <td style="text-align: right;">
-                            <button class="btn btn-action" data-id="${c.campaign.id}" data-action="${c.campaign.status === 2 ? 'pause' : 'enable'}">
-                                <i data-lucide="${c.campaign.status === 2 ? 'pause' : 'play'}" size="14"></i>
-                            </button>
-                        </td>
-                    </tr>
-                `).join('')}
-            </tbody>
+        const tPanel = createPanel('campaign-table', 'Campaign Catalog');
+        tPanel.querySelector('.panel-content').innerHTML = `
+            <table class="data-table">
+                <thead>
+                    <tr><th>Name</th><th>Status</th><th>Clicks</th><th>Spend</th><th style="text-align:right">Action</th></tr>
+                </thead>
+                <tbody>
+                    ${campaigns.map(c => `
+                        <tr>
+                            <td style="font-weight:600">${c.campaign.name}</td>
+                            <td><span class="status-dot" style="background:${c.campaign.status === 2 ? '#28a745':'#888'}"></span> ${c.campaign.status === 2 ? 'Active':'Paused'}</td>
+                            <td>${c.metrics.clicks.toLocaleString()}</td>
+                            <td>$${(c.metrics.cost_micros/1000000).toFixed(2)}</td>
+                            <td style="text-align:right"><button class="btn btn-action" data-id="${c.campaign.id}" data-action="${c.campaign.status === 2 ? 'pause':'enable'}"><i data-lucide="${c.campaign.status === 2 ? 'pause':'play'}"></i></button></td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
         `;
-        tablePanel.querySelector('.panel-content').appendChild(table);
-        tableContainer.innerHTML = '';
-        tableContainer.appendChild(tablePanel);
-
-        // Event Listeners
-        table.querySelectorAll('.btn-action').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const id = btn.dataset.id;
-                const action = btn.dataset.action;
-                fetch(`/dashboard/campaigns/${id}/${action}`, { method: 'POST' })
-                    .then(() => renderWorkspace('overview'));
-            });
+        table.appendChild(tPanel);
+        table.querySelectorAll('.btn-action').forEach(btn => btn.onclick = () => {
+            fetch(`/dashboard/campaigns/${btn.dataset.id}/${btn.dataset.action}`, {method:'POST'}).then(() => renderWorkspace('overview'));
         });
     }
 
-    function fetchReports(targetElement) {
-        targetElement.innerHTML = '<p style="color: var(--muted-foreground);">Compiling report data...</p>';
-        fetch('/dashboard/reports/campaigns')
-            .then(response => response.json())
-            .then(reports => {
-                renderReports(reports, targetElement);
+    function fetchAgentConfigs(container) {
+        container.innerHTML = '<p class="loading">Loading configurations...</p>';
+        fetch('/dashboard/agent-configurations')
+            .then(res => res.json())
+            .then(configs => {
+                container.innerHTML = `
+                    <div class="agent-card-grid">
+                        ${configs.map(cfg => `
+                            <div class="agent-card">
+                                <div style="display:flex; gap:1rem; align-items:center;">
+                                    <div style="padding:0.5rem; background:var(--muted); border-radius:0.5rem; color:var(--primary);"><i data-lucide="settings"></i></div>
+                                    <div>
+                                        <div style="font-weight:700">${cfg.config_name}</div>
+                                        <div style="font-size:0.75rem; color:var(--muted-foreground)">CID: ${cfg.customer_id}</div>
+                                    </div>
+                                </div>
+                                <div style="font-size:0.875rem; color:var(--muted-foreground)">Target Campaign: ${cfg.campaign_id}</div>
+                                <div style="display:flex; gap:0.5rem; margin-top:auto">
+                                    <button class="btn btn-primary" style="flex:1">Run Now</button>
+                                    <button class="btn">Edit</button>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
                 lucide.createIcons();
-            })
-            .catch(error => {
-                console.error('Report fetch error:', error);
-                targetElement.textContent = 'Report generation failed.';
             });
     }
 
-    function renderReports(reports, targetElement) {
-        const table = document.createElement('table');
-        table.className = 'data-table';
-        table.innerHTML = `
-            <thead>
-                <tr>
-                    <th>Date</th>
-                    <th>Campaign</th>
-                    <th>Clicks</th>
-                    <th>Impressions</th>
-                    <th>Cost</th>
-                </tr>
-            </thead>
-            <tbody>
-                ${reports.map(r => `
-                    <tr>
-                        <td>${r.segments.date}</td>
-                        <td style="font-weight: 500;">${r.campaign.name}</td>
-                        <td>${r.metrics.clicks.toLocaleString()}</td>
-                        <td>${r.metrics.impressions.toLocaleString()}</td>
-                        <td>$${(r.metrics.cost_micros / 1000000).toFixed(2)}</td>
-                    </tr>
-                `).join('')}
-            </tbody>
-        `;
-        targetElement.innerHTML = '';
-        targetElement.appendChild(table);
+    function fetchAgentRuns(container) {
+        container.innerHTML = '<p class="loading">Fetching run history...</p>';
+        fetch('/dashboard/agent-runs')
+            .then(res => res.json())
+            .then(runs => {
+                container.innerHTML = `
+                    <table class="data-table">
+                        <thead><tr><th>Timestamp</th><th>Config</th><th>Status</th><th>Details</th></tr></thead>
+                        <tbody>
+                            ${runs.map(r => `
+                                <tr>
+                                    <td>${new Date(r.run_timestamp).toLocaleString()}</td>
+                                    <td>${r.config_name || 'N/A'}</td>
+                                    <td><span style="color:${r.status === 'completed' ? '#28a745':'#dc3545'}">${r.status.toUpperCase()}</span></td>
+                                    <td>${JSON.stringify(r.details)}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+            });
     }
 
+    function fetchSystemLogs(container) {
+        container.innerHTML = '<p class="loading">Connecting to log stream...</p>';
+        fetch('/dashboard/system-logs')
+            .then(res => res.text())
+            .then(logs => {
+                container.innerHTML = `<div class="terminal-like-area"><pre><code>${logs}</code></pre></div>`;
+            });
+    }
 
-    // --- Navigation ---
+    function fetchReports(container) {
+        container.innerHTML = '<p class="loading">Compiling report data...</p>';
+        fetch('/dashboard/reports/campaigns')
+            .then(res => res.json())
+            .then(data => {
+                container.innerHTML = `
+                    <table class="data-table">
+                        <thead><tr><th>Date</th><th>Campaign</th><th>Clicks</th><th>Impressions</th><th>Cost</th></tr></thead>
+                        <tbody>
+                            ${data.map(r => `
+                                <tr>
+                                    <td>${r.segments.date}</td>
+                                    <td>${r.campaign.name}</td>
+                                    <td>${r.metrics.clicks.toLocaleString()}</td>
+                                    <td>${r.metrics.impressions.toLocaleString()}</td>
+                                    <td>$${(r.metrics.cost_micros/1000000).toFixed(2)}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+            });
+    }
+
+    function fetchFiles(container) {
+        fetch('/dashboard/files')
+            .then(res => res.json())
+            .then(files => {
+                container.innerHTML = `
+                    <div style="display:grid; gap:0.5rem;">
+                        ${files.map(f => `
+                            <div style="display:flex; align-items:center; gap:0.75rem; padding:0.5rem; background:var(--muted); border-radius:0.5rem;">
+                                <i data-lucide="${f.type === 'folder' ? 'folder':'file-text'}" style="color:var(--primary)"></i>
+                                <span style="font-size:0.875rem">${f.path}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+                lucide.createIcons();
+            });
+    }
+
+    function fetchIntegrations(container) {
+        fetch('/dashboard/status')
+            .then(res => res.json())
+            .then(data => {
+                container.innerHTML = `
+                    <div style="display:grid; gap:1rem;">
+                        ${Object.entries(data).map(([k, v]) => `
+                            <div class="panel">
+                                <div style="display:flex; justify-content:space-between; align-items:center;">
+                                    <div style="display:flex; gap:1rem; align-items:center;">
+                                        <i data-lucide="${k === 'database' ? 'database' : k === 'googleAds' ? 'cloud' : 'activity'}"></i>
+                                        <div><div style="font-weight:600; text-transform:capitalize">${k}</div><div style="font-size:0.75rem; color:${v === 'Connected' || v === 'Active' ? '#28a745':'#dc3545'}">${v}</div></div>
+                                    </div>
+                                    <button class="btn">Check</button>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+                lucide.createIcons();
+            });
+    }
+
+    function fetchSettings(container) {
+        container.innerHTML = `
+            <div style="max-width:600px;">
+                <div class="panel">
+                    <div style="display:flex; flex-direction:column; gap:1.5rem;">
+                        <div>
+                            <label style="display:block; font-size:0.75rem; color:var(--muted-foreground); margin-bottom:0.5rem;">DEVELOPER TOKEN</label>
+                            <input type="password" value="****************" class="terminal-input" readonly />
+                        </div>
+                        <div>
+                            <label style="display:block; font-size:0.75rem; color:var(--muted-foreground); margin-bottom:0.5rem;">LOG LEVEL</label>
+                            <select class="terminal-input"><option>INFO</option><option>DEBUG</option></select>
+                        </div>
+                        <button class="btn btn-primary">Save Settings</button>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    // --- Navigation & Initial Load ---
     navItems.forEach(item => {
         item.addEventListener('click', (e) => {
             e.preventDefault();
@@ -409,25 +353,21 @@ SUCCESS [PersuasionArchitect] Ad copy updated for Group 'Summer_Deals'.
         });
     });
 
-    // Initial load
     renderWorkspace('overview');
 
     // --- Command Palette ---
-    const commandPalette = document.getElementById('command-palette');
-    const commandInput = document.getElementById('command-input');
+    const palette = document.getElementById('command-palette');
+    const input = document.getElementById('command-input');
 
     document.addEventListener('keydown', (e) => {
         if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
             e.preventDefault();
-            commandPalette.style.display = 'block';
-            setTimeout(() => {
-                commandPalette.classList.add('is-visible');
-                commandInput.focus();
-            }, 10);
+            palette.style.display = 'block';
+            setTimeout(() => { palette.classList.add('is-visible'); input.focus(); }, 10);
         }
         if (e.key === 'Escape') {
-            commandPalette.classList.remove('is-visible');
-            setTimeout(() => commandPalette.style.display = 'none', 200);
+            palette.classList.remove('is-visible');
+            setTimeout(() => palette.style.display = 'none', 200);
         }
     });
 });
