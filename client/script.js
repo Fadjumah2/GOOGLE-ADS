@@ -356,6 +356,27 @@ pipeline:
         `;
     }
 
+    // --- Mobile Navigation ---
+    const menuOpen = document.getElementById('menu-open');
+    const menuClose = document.getElementById('menu-close');
+    const sidebarOverlay = document.getElementById('sidebar-overlay');
+
+    function toggleSidebar(show) {
+        if (show) {
+            sidebar.classList.add('open');
+            sidebarOverlay.classList.add('visible');
+            menuClose.style.display = 'block';
+        } else {
+            sidebar.classList.remove('open');
+            sidebarOverlay.classList.remove('visible');
+            menuClose.style.display = 'none';
+        }
+    }
+
+    menuOpen.addEventListener('click', () => toggleSidebar(true));
+    menuClose.addEventListener('click', () => toggleSidebar(false));
+    sidebarOverlay.addEventListener('click', () => toggleSidebar(false));
+
     // --- Navigation & Initial Load ---
     navItems.forEach(item => {
         item.addEventListener('click', (e) => {
@@ -363,6 +384,11 @@ pipeline:
             navItems.forEach(n => n.classList.remove('active'));
             item.classList.add('active');
             renderWorkspace(item.dataset.panel);
+            
+            // Auto-close sidebar on mobile after selection
+            if (window.innerWidth <= 1024) {
+                toggleSidebar(false);
+            }
         });
     });
 

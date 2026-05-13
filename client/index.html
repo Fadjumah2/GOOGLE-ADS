@@ -11,11 +11,24 @@
     <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body>
+    <div id="sidebar-overlay"></div>
     <div id="app-container">
+        <!-- Mobile Header -->
+        <header id="mobile-header">
+            <button class="menu-toggle" id="menu-open">
+                <i data-lucide="menu"></i>
+            </button>
+            <div class="mobile-logo" style="font-weight: 800; color: var(--primary);">SYNAPSE</div>
+            <div style="width: 40px;"></div> <!-- Spacer for balance -->
+        </header>
+
         <!-- Persistent Side Navigation -->
         <aside id="sidebar">
-            <div class="logo-area">
+            <div class="logo-area" style="display: flex; justify-content: space-between; align-items: center;">
                 <h1>SYNAPSE</h1>
+                <button class="menu-toggle" id="menu-close" style="display: none;">
+                    <i data-lucide="x"></i>
+                </button>
             </div>
             <nav class="main-nav">
                 <a href="#" class="nav-item active" data-panel="overview">
