@@ -154,30 +154,6 @@ app.get('/dashboard/system-logs', async (req, res) => {
     }
 });
 
-app.get('/dashboard/files', async (req, res) => {
-    try {
-        const getFiles = async (dir, fileList = []) => {
-            const files = await fs.readdir(dir);
-            for (const file of files) {
-                const name = path.join(dir, file);
-                const stat = await fs.stat(name);
-                if (stat.isDirectory()) {
-                    if (!['node_modules', '.git', 'temp_dashboard'].includes(file)) {
-                        fileList.push({ name: file, type: 'folder', path: name.replace(__dirname, '') });
-                        await getFiles(name, fileList);
-                    }
-                } else {
-                    fileList.push({ name: file, type: 'file', path: name.replace(__dirname, '') });
-                }
-            }
-            return fileList;
-        };
-        res.json(await getFiles(__dirname));
-    } catch (error) {
-        res.status(500).send('File list error.');
-    }
-});
-
 app.get('/dashboard/status', async (req, res) => {
     const status = { googleAds: 'Connected', database: 'Connected', synapse: 'Active' };
     try { await db.query('SELECT 1'); } catch (e) { status.database = 'Error'; }

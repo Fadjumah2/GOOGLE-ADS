@@ -76,26 +76,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 contentPanel = createPanel('orchestration-panel', 'Synapse Agent Orchestration', orchWrapper);
                 break;
             case 'workflows':
-                contentPanel = createPanel('workflows-panel', 'Workflow Engine', `
-                    <div class="terminal-like-area">
-                        <pre><code>
-# Synapse Autonomous Workflow
-# Configured via campaign_configurations table
-
-pipeline:
-  - id: monitor
-    agent: "ROISentry"
-    action: "audit_spend"
-  - id: optimize
-    agent: "IntentSurgeon"
-    condition: "spend_waste > 5%"
-  - id: creative
-    agent: "PersuasionArchitect"
-    action: "refresh_copy"
-                        </code></pre>
-                        <button class="btn btn-primary" style="margin-top: 1rem;">Deploy New Pipeline</button>
-                    </div>
-                `);
+                contentPanel = createPanel('workflows-panel', 'Workflow Engine', '<p>Feature currently in development. Please check back later for updates.</p>');
                 break;
             case 'timeline':
                 const timelineWrapper = document.createElement('div');
@@ -114,12 +95,6 @@ pipeline:
                 reportsWrapper.id = 'reports-container';
                 fetchReports(reportsWrapper);
                 contentPanel = createPanel('reports-panel', 'Analytics Reports', reportsWrapper);
-                break;
-            case 'files':
-                const filesWrapper = document.createElement('div');
-                filesWrapper.id = 'files-container';
-                fetchFiles(filesWrapper);
-                contentPanel = createPanel('files-panel', 'Project Assets', filesWrapper);
                 break;
             case 'integrations':
                 const intWrapper = document.createElement('div');
@@ -292,24 +267,6 @@ pipeline:
                         </tbody>
                     </table>
                 `;
-            });
-    }
-
-    function fetchFiles(container) {
-        fetch('/dashboard/files')
-            .then(res => res.json())
-            .then(files => {
-                container.innerHTML = `
-                    <div style="display:grid; gap:0.5rem;">
-                        ${files.map(f => `
-                            <div style="display:flex; align-items:center; gap:0.75rem; padding:0.5rem; background:var(--muted); border-radius:0.5rem;">
-                                <i data-lucide="${f.type === 'folder' ? 'folder':'file-text'}" style="color:var(--primary)"></i>
-                                <span style="font-size:0.875rem">${f.path}</span>
-                            </div>
-                        `).join('')}
-                    </div>
-                `;
-                lucide.createIcons();
             });
     }
 
