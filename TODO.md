@@ -43,6 +43,7 @@ This document outlines the tasks for transforming the Google Ads MVP into a prod
 
 - [x] **Resolved Repository Access**: GitHub PAT permissions confirmed, `.env` purged from Git history.
 - [x] **Code Push**: `mvp-development` branch pushed to remote repository.
+- [x] **Dashboard Bug Fixes Implemented**: Addressed issues in timeline, logs, and integration sections (standardized error responses, fixed "Verify" button, enabled server-side logging, ensured DB schema initialization).
 - [x] **Vercel Deployment Strategy Outlined**:
     - [x] Adapted `server.js` for Vercel serverless functions.
     - [x] Frontend (`client/`) reviewed for relative API calls.
