@@ -17,7 +17,7 @@ The application is built on a Node.js backend, leveraging a PostgreSQL database 
 
 *   **PostgreSQL Database:** Acts as the central data repository, storing campaign configurations, agent-specific settings, and detailed logs of all agent activities and proposed/executed changes.
 *   **Google Ads API Manager (`GoogleAdsApiManager`):** This critical component abstracts all interactions with the Google Ads API. It handles authentication, executes queries to retrieve real-time campaign data (e.g., performance metrics, search terms), and performs mutations (creating/updating/removing campaign elements).
-*   **Agent Orchestrator (`AgentOrchestrator`):** The "brain" of the Synapse system. It reads predefined campaign configurations from the database and intelligently schedules and triggers the execution of various specialized agents.
+*   **Agent Orchestrator (`AgentOrchestrator`):** The "brain" of the Synapse system. It reads predefined campaign configurations from the database and intelligently schedules and triggers the execution of various specializ*   **Supervisor (`Supervisor`):** A centralized management layer that provides a RESTful API to trigger and monitor agent workflows, bridging the gap between the web dashboard and the autonomous agents.
 
 ### Agent-Based Optimization Cycle:
 
@@ -28,6 +28,7 @@ The Synapse system operates through a cycle involving several specialized AI age
     *   **ROISentry:** Monitors financial metrics (budget, cost, conversions) to ensure campaigns are on track and identify areas for cost efficiency or increased ROI.
     *   **IntentSurgeon:** Analyzes search terms to pinpoint irrelevant or underperforming queries, identifying candidates for negative keywords to prevent wasteful spending.
     *   **PersuasionArchitect:** Focuses on creative optimization, potentially using generative AI techniques to re-write or suggest improvements to ad headlines, descriptions, and other ad copy elements.
+    *   **LocationSentry:** Manages geographic-specific optimizations, such as adjusting bids based on proximity to target locations and prioritizing high-conversion ad types like Call-Only ads.
 3.  **Action Proposal & Execution:** Based on its analysis, an agent formulates concrete actions. These actions are passed to the `GoogleAdsApiManager`'s `mutate` method.
     *   **Previously (Simulated):** The `mutate` method merely logged these actions and simulated a successful API call, acting as a proposal engine.
     *   **Currently (Real-Time):** With recent enhancements, the `mutate` method now sends these actions directly to the Google Ads API, allowing agents to *actually implement* changes (e.g., adding negative keywords, updating ad copy) within the Google Ads account.
@@ -43,3 +44,5 @@ In this application, an "agent" refers to a specialized, autonomous software mod
 *   Are orchestrated by the `AgentOrchestrator` to work synergistically towards overall campaign optimization.
 
 By automating these processes, the application aims to continuously enhance Google Ads campaign effectiveness and free up human marketers to focus on higher-level strategy.
+It's a win today Fahadd
+git config --global
