@@ -67,7 +67,7 @@ To set up and run this project, you will need to configure your environment with
 *   Node.js (LTS recommended) and npm
 *   A Google Cloud Project with the Google Ads API enabled.
 *   Access to the Google Ads API with a Developer Token, Client ID, Client Secret, and Refresh Token. You can find more information on setting up Google Ads API access [here](https://developers.google.com/google-ads/api/docs/guides/get-started).
-*   A Google AI Studio (Gemini API) key.
+*   A Google AI Studio (Gemini API) key for AI-driven optimizations.
 
 ### Environment Variables
 
