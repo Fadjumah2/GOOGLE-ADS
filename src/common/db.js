@@ -2,7 +2,17 @@ const { Pool } = require('pg');
 const logger = require('./logger'); // Assuming logger is available
 
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL || process.env.POSTGRES_URL, // Vercel Postgres provides POSTGRES_URL by default
+  connectionString: (() => {
+    let connStr = process.env.DATABASE_URL || process.env.POSTGRES_URL;
+    if (connStr) {
+      if (connStr.includes('?')) {
+        connStr = connStr.includes('sslmode=') ? connStr.replace(/sslmode=[^&]+/, 'sslmode=verify-full') : connStr + '&sslmode=verify-full';
+      } else {
+        connStr += '?sslmode=verify-full';
+      }
+    }
+    return connStr;
+  })(),
   ssl: {
     rejectUnauthorized: false // Required for some Vercel Postgres configurations
   }

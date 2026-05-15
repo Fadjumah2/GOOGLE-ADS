@@ -5,11 +5,6 @@ const pino = require('pino');
 const transport = pino.transport({
   targets: [
     {
-      target: 'pino/file',
-      options: { destination: './server.log' },
-      level: process.env.LOG_LEVEL || 'info'
-    },
-    {
       target: 'pino-pretty', // Logs to console (stdout)
       options: {
         colorize: true,

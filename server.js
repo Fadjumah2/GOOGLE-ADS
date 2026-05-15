@@ -148,12 +148,7 @@ app.get('/dashboard/agent-configurations', async (req, res) => {
 });
 
 app.get('/dashboard/system-logs', async (req, res) => {
-    try {
-        const logContent = await fs.readFile(path.join(__dirname, 'server.log'), 'utf8');
-        res.send(logContent.split('\n').slice(-100).join('\n'));
-    } catch (error) {
-        res.status(500).json({ error: 'Logs unavailable.' });
-    }
+    res.json({ message: 'File-based logging is disabled in this environment.' });
 });
 
 app.get('/dashboard/status', async (req, res) => {
@@ -180,13 +175,22 @@ app.post('/dashboard/trigger-agent/:id', async (req, res) => {
     }
 });
 
-initializeDatabase().then(() => {
-  app.listen(port, () => {
-    logger.info(`Server running at http://localhost:${port}`);
-  });
-}).catch(err => {
-  logger.error('Failed to initialize database:', err);
-  process.exit(1);
+// Initialize database once globally
+let dbInitialized = false;
+
+// Middleware to ensure DB is initialized before handling requests
+app.use(async (req, res, next) => {
+  if (!dbInitialized) {
+    try {
+      await initializeDatabase();
+      dbInitialized = true;
+      logger.info('Database initialized successfully.');
+    } catch (err) {
+      logger.error('Failed to initialize database:', err);
+      return res.status(500).json({ error: 'Database initialization failed.' });
+    }
+  }
+  next();
 });
 
 module.exports = app;
