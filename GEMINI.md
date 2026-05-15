@@ -44,5 +44,3 @@ In this application, an "agent" refers to a specialized, autonomous software mod
 *   Are orchestrated by the `AgentOrchestrator` to work synergistically towards overall campaign optimization.
 
 By automating these processes, the application aims to continuously enhance Google Ads campaign effectiveness and free up human marketers to focus on higher-level strategy.
-It's a win today Fahadd
-git config --global

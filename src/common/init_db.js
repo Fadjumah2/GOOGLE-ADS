@@ -54,7 +54,7 @@ CREATE TABLE IF NOT EXISTS persuasion_architect_logs (
     gemini_response JSONB
 );
 
--- Add a trigger to update `updated_at` column automatically
+-- Add a trigger to update updated_at column automatically
 CREATE OR REPLACE FUNCTION update_timestamp()
 RETURNS TRIGGER AS $$
 BEGIN
