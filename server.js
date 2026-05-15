@@ -5,6 +5,8 @@ const { GoogleAdsApi } = require('google-ads-api');
 const path = require('path');
 const fs = require('fs').promises;
 const db = require('./src/common/db');
+const logger = require('./src/common/logger'); // Import the logger
+const initializeDatabase = require('./src/common/init_db'); // Import init_db
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -67,9 +69,9 @@ app.get('/auth/google/callback', async (req, res) => {
     console.log('Refresh Token:', tokens.refresh_token);
     res.send('Authentication successful! Refresh token logged to console.');
   } catch (error) {
-    res.status(500).send('Authentication failed.');
-  }
-});
+    logger.error('Authentication failed:', error);
+    res.status(500).json({ error: 'Authentication failed.' });
+  }});
 
 // Google Ads Data Endpoints
 app.get('/dashboard/campaigns', async (req, res) => {
@@ -132,7 +134,7 @@ app.get('/dashboard/agent-runs', async (req, res) => {
             ORDER BY ar.run_timestamp DESC LIMIT 50`);
         res.json(rows);
     } catch (error) {
-        res.status(500).send('Error fetching runs.');
+        res.status(500).json({ error: 'Error fetching runs.' });
     }
 });
 
@@ -141,7 +143,7 @@ app.get('/dashboard/agent-configurations', async (req, res) => {
         const { rows } = await db.query('SELECT * FROM campaign_configurations ORDER BY id');
         res.json(rows);
     } catch (error) {
-        res.status(500).send('Error fetching configs.');
+        res.status(500).json({ error: 'Error fetching configs.' });
     }
 });
 
@@ -150,7 +152,7 @@ app.get('/dashboard/system-logs', async (req, res) => {
         const logContent = await fs.readFile(path.join(__dirname, 'server.log'), 'utf8');
         res.send(logContent.split('\n').slice(-100).join('\n'));
     } catch (error) {
-        res.status(500).send('Logs unavailable.');
+        res.status(500).json({ error: 'Logs unavailable.' });
     }
 });
 
@@ -173,13 +175,18 @@ app.post('/dashboard/trigger-agent/:id', async (req, res) => {
         child.unref();
         res.json({ success: true, message: `Agent run triggered for config ID ${id}` });
     } catch (error) {
-        console.error('Error triggering agent:', error);
+        logger.error('Error triggering agent:', error);
         res.status(500).json({ success: false, message: 'Failed to trigger agent.' });
     }
 });
 
-app.listen(port, () => {
-  console.log(`Server running at http://localhost:${port}`);
+initializeDatabase().then(() => {
+  app.listen(port, () => {
+    logger.info(`Server running at http://localhost:${port}`);
+  });
+}).catch(err => {
+  logger.error('Failed to initialize database:', err);
+  process.exit(1);
 });
 
 module.exports = app;

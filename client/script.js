@@ -286,10 +286,22 @@ document.addEventListener('DOMContentLoaded', () => {
                         <div style="color:var(--primary)"><i data-lucide="${k==='database'?'database':k==='googleAds'?'cloud':'activity'}" size="24"></i></div>
                         <div><div style="font-weight:700; text-transform:capitalize;">${k.replace(/([A-Z])/g, ' $1')}</div><div style="font-size:0.85rem; color:${v.includes('Connected')||v.includes('Active')||v.includes('Configured')?'var(--success)':'var(--destructive)'}">${v}</div></div>
                     </div>
-                    <button class="btn">Verify</button>
+                    <button class="btn verify-btn">Verify</button>
                 </div>
             </div>
         `).join('');
+
+        // Add event listeners to the new verify buttons
+        grid.querySelectorAll('.verify-btn').forEach(button => {
+            button.addEventListener('click', async () => {
+                button.disabled = true;
+                const originalText = button.textContent;
+                button.textContent = 'Verifying...';
+                await renderWorkspace('integrations'); // Re-render the entire integrations panel
+                button.textContent = originalText;
+                button.disabled = false;
+            });
+        });
         return createPanel('status-v2', 'Core Infrastructure Health', grid);
     }
 
