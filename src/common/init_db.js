@@ -76,13 +76,7 @@ async function initializeDatabase() {
     logger.info('Database schema initialized successfully.');
   } catch (error) {
     logger.error('Error initializing database schema:', error);
-    process.exit(1);
-  } finally {
-    // End the pool if this script is run standalone
-    if (require.main === module) {
-        db.getClient().then(client => client.release()); // Release the client
-        logger.info('Database connection pool ended.');
-    }
+    throw error;
   }
 }
 
