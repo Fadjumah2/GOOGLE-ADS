@@ -218,7 +218,7 @@ app.post('/dashboard/chat', async (req, res) => {
         const reply = response.data.candidates[0].content.parts[0].text;
         res.json({ response: reply });
     } catch (error) {
-        logger.error('Chat AI error:', error);
+        logger.error('Chat AI error:', error.response ? error.response.data : error.message);
         res.status(500).json({ response: 'Sorry, I am having trouble connecting to my neural core. Please try again later.' });
     }
 });

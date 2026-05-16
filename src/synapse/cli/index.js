@@ -4,7 +4,7 @@
 const axios = require('axios');
 const yargs = require('yargs/yargs');
 const { hideBin } = require('yargs/helpers');
-const logger = require('../../common/logger'); // Centralized logger
+const logger = require('../../../common/logger'); // Centralized logger
 
 const SUPERVISOR_BASE_URL = process.env.SUPERVISOR_URL || 'http://localhost:3001';
 

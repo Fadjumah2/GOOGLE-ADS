@@ -1,5 +1,5 @@
-const logger = require('../../common/logger');
-const { GoogleAdsApiError } = require('../../common/errors');
+const logger = require('../../../common/logger');
+const { GoogleAdsApiError } = require('../../../common/errors');
 
 class LocationSentry {
   constructor(googleAdsApiManager) {

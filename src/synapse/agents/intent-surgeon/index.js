@@ -1,7 +1,7 @@
 const axios = require('axios');
-const logger = require('../../common/logger');
-const db = require('../../common/db'); // Import common db
-const { GoogleAdsApiError, DatabaseError } = require('../../common/errors');
+const logger = require('../../../common/logger');
+const db = require('../../../common/db'); // Import common db
+const { GoogleAdsApiError, DatabaseError } = require('../../../common/errors');
 
 class IntentSurgeon {
   constructor(googleAdsApiManager, model = 'gemini-3-flash-preview') {

@@ -1,6 +1,6 @@
 const express = require('express');
-const logger = require('../../common/logger');
-const { SynapseError } = require('../../common/errors');
+const logger = require('../../../common/logger');
+const { SynapseError } = require('../../../common/errors');
 
 // Current Inter-Service Communication Model:
 // Agents are instantiated directly within the Supervisor process.

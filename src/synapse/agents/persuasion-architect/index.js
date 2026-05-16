@@ -1,7 +1,7 @@
 const axios = require('axios');
-const logger = require('../../common/logger');
-const db = require('../../common/db'); // Import common db
-const { GoogleAdsApiError } = require('../../common/errors');
+const logger = require('../../../common/logger');
+const db = require('../../../common/db'); // Import common db
+const { GoogleAdsApiError } = require('../../../common/errors');
 
 class PersuasionArchitect {
   constructor(googleAdsApiManager, model = 'gemini-3.1-pro-preview') {
