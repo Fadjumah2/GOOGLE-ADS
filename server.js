@@ -151,6 +151,47 @@ app.get('/dashboard/system-logs', async (req, res) => {
     res.json({ message: 'File-based logging is disabled in this environment.' });
 });
 
+app.get('/dashboard/prepared-actions', async (req, res) => {
+    try {
+        const { rows } = await db.query(`
+            SELECT 'IntentSurgeon' as agent, search_term as action_description, campaign_id, status
+            FROM intent_surgeon_logs
+            WHERE status = 'identified'
+            ORDER BY injected_at DESC
+        `);
+        res.json(rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Error fetching prepared actions.' });
+    }
+});
+
+app.get('/dashboard/mode', async (req, res) => {
+    try {
+        const { rows } = await db.query("SELECT value FROM system_settings WHERE key = 'operational_mode'");
+        res.json({ mode: rows[0].value });
+    } catch (error) {
+        res.status(500).json({ error: 'Error fetching mode.' });
+    }
+});
+
+app.post('/dashboard/mode', async (req, res) => {
+    const { mode } = req.body;
+    try {
+        await db.query("UPDATE system_settings SET value = $1 WHERE key = 'operational_mode'", [mode]);
+        res.json({ success: true, mode });
+    } catch (error) {
+        res.status(500).json({ error: 'Error updating mode.' });
+    }
+});
+
+app.post('/dashboard/chat', async (req, res) => {
+    const { message } = req.body;
+    logger.info(`Chat command received: ${message}`);
+    // Simplified logic: Just log the command for now. 
+    // Real implementation would parse the command and call googleAdsClient.
+    res.json({ response: `Command received: "${message}". Functionality pending further integration.` });
+});
+
 app.get('/dashboard/status', async (req, res) => {
     const status = { googleAds: 'Connected', database: 'Connected', synapse: 'Active' };
     try { await db.query('SELECT 1'); } catch (e) { status.database = 'Error'; }

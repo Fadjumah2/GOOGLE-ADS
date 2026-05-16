@@ -59,6 +59,10 @@
                     <i data-lucide="blocks"></i>
                     <span>Integrations</span>
                 </a>
+                <a href="#" class="nav-item" data-panel="chat">
+                    <i data-lucide="message-square"></i>
+                    <span>Command Center</span>
+                </a>
                 <a href="#" class="nav-item" data-panel="settings">
                     <i data-lucide="settings"></i>
                     <span>Settings</span>
@@ -69,7 +73,9 @@
         <!-- Main Content -->
         <main id="main-content">
             <header id="top-bar">
-                <h2 id="workspace-title">Workspace: Overview</h2>
+                <div id="header" style="display:flex; justify-content:space-between; align-items:center; width: 100%;">
+                    <h2 id="workspace-title">Workspace: Overview</h2>
+                </div>
             </header>
 
             <section id="workspace-area">
@@ -90,6 +96,8 @@
     <script>
       // Global Lucide init
       lucide.createIcons();
+      // Initialize Mode Toggle on load
+      window.renderModeToggle();
     </script>
 </body>
 </html>

@@ -19,6 +19,71 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Core UI Logic ---
 
+    // Add Mode Toggle Switch
+    async function updateMode(mode) {
+        await fetch('/dashboard/mode', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ mode })
+        });
+        renderModeToggle();
+    }
+
+    async function renderModeToggle() {
+        const res = await fetch('/dashboard/mode');
+        const { mode } = await res.json();
+        const header = document.getElementById('header-right') || document.createElement('div');
+        header.id = 'header-right';
+        header.style.display = 'flex';
+        header.style.alignItems = 'center';
+        header.style.gap = '1rem';
+        
+        header.innerHTML = `
+            <span>Mode: <strong>${mode.toUpperCase()}</strong></span>
+            <button id="toggle-mode" class="btn">${mode === 'manual' ? 'Enable Autonomous' : 'Enable Manual'}</button>
+        `;
+        document.getElementById('header').appendChild(header);
+
+        document.getElementById('toggle-mode').onclick = () => {
+            updateMode(mode === 'manual' ? 'autonomous' : 'manual');
+        };
+    }
+    window.renderModeToggle = renderModeToggle;
+
+    // Add Chat Interface
+    function createChatPanel() {
+        const panel = createPanel('chat', 'Interactive Command Center', `
+            <div id="chat-box" style="height: 300px; overflow-y: auto; border: 1px solid #ccc; padding: 1rem; margin-bottom: 1rem;"></div>
+            <div style="display: flex; gap: 0.5rem;">
+                <input id="chat-input" type="text" style="flex: 1; padding: 0.5rem;" placeholder="Command the agent...">
+                <button id="chat-send" class="btn btn-primary">Send</button>
+            </div>
+        `);
+        
+        const chatBox = panel.querySelector('#chat-box');
+        const chatInput = panel.querySelector('#chat-input');
+        const chatSend = panel.querySelector('#chat-send');
+
+        chatSend.onclick = async () => {
+            const message = chatInput.value;
+            if (!message) return;
+            
+            chatBox.innerHTML += `<p><strong>You:</strong> ${message}</p>`;
+            chatInput.value = '';
+            
+            const res = await fetch('/dashboard/chat', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ message })
+            });
+            const data = await res.json();
+            chatBox.innerHTML += `<p><strong>Synapse:</strong> ${data.response}</p>`;
+            chatBox.scrollTop = chatBox.scrollHeight;
+        };
+
+        return panel;
+    }
+
     function setWorkspaceTitle(title) {
         UI.workspaceTitle.textContent = `Workspace: ${title}`;
     }
@@ -93,7 +158,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     contentPanel = await getOrchestrationPanel();
                     break;
                 case 'workflows':
-                    contentPanel = createPanel('workflows-v2', 'Workflow Intelligence', '<p>Neural pipeline engine is currently in training. Expected deployment in next cycle.</p>');
+                    contentPanel = await getWorkflowsPanel();
                     break;
                 case 'timeline':
                     contentPanel = await getTimelinePanel();
@@ -109,6 +174,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     break;
                 case 'settings':
                     contentPanel = getSettingsPanel();
+                    break;
+                case 'chat':
+                    contentPanel = createChatPanel();
                     break;
                 default:
                     contentPanel = createPanel('404', 'Module Not Found', '<p>The requested operations module is offline or missing.</p>');
@@ -219,6 +287,25 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         return createPanel('orch-v2', 'Synapse Operation Nodes', grid);
+    }
+
+    async function getWorkflowsPanel() {
+        const res = await fetch('/dashboard/prepared-actions');
+        const actions = await res.json();
+        
+        if (actions.length === 0) {
+            return createPanel('workflows-v2', 'Workflow Intelligence', '<p>No pending agent actions found.</p>');
+        }
+
+        const table = `
+            <table class="data-table">
+                <thead><tr><th>Agent</th><th>Action Description</th><th>Campaign ID</th><th>Status</th></tr></thead>
+                <tbody>
+                    ${actions.map(a => `<tr><td>${a.agent}</td><td>${a.action_description}</td><td>${a.campaign_id}</td><td>${a.status}</td></tr>`).join('')}
+                </tbody>
+            </table>
+        `;
+        return createPanel('workflows-v2', 'Workflow Intelligence', table);
     }
 
     async function getTimelinePanel() {

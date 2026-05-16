@@ -54,6 +54,13 @@ CREATE TABLE IF NOT EXISTS persuasion_architect_logs (
     gemini_response JSONB
 );
 
+CREATE TABLE IF NOT EXISTS system_settings (
+    key VARCHAR(50) PRIMARY KEY,
+    value VARCHAR(50) NOT NULL
+);
+
+INSERT INTO system_settings (key, value) VALUES ('operational_mode', 'manual') ON CONFLICT (key) DO NOTHING;
+
 -- Add a trigger to update updated_at column automatically
 CREATE OR REPLACE FUNCTION update_timestamp()
 RETURNS TRIGGER AS $$
