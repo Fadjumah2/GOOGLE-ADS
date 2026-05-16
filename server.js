@@ -93,6 +93,18 @@ app.get('/dashboard/campaigns', async (req, res) => {
   }
 });
 
+app.post('/dashboard/campaigns/:id/bid', async (req, res) => {
+    const { id } = req.params;
+    const { bidAmount } = req.body;
+    try {
+        await db.query('UPDATE campaign_configurations SET bid_amount = $1 WHERE id = $2', [bidAmount, id]);
+        res.json({ success: true, message: `Bid amount updated to ${bidAmount} for config ID ${id}` });
+    } catch (error) {
+        logger.error(`Error updating bid amount: ${error.message}`);
+        res.status(500).json({ success: false, message: 'Failed to update bid amount.' });
+    }
+});
+
 app.post('/dashboard/campaigns/:id/:action', async (req, res) => {
     const { id, action } = req.params;
     const customerId = process.env.CUSTOMER_ID;

@@ -267,12 +267,29 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                 </div>
                 <p style="font-size:0.85rem;">Autonomous optimization cycle targeting campaign <code>${cfg.campaign_id}</code>.</p>
+                <div style="margin-bottom: 0.5rem;">
+                    <label style="font-size: 0.75rem; color: var(--muted-foreground);">Bid Amount ($):</label>
+                    <input type="number" class="bid-input" data-id="${cfg.id}" value="${cfg.bid_amount || 0}" step="0.01" style="width: 100%; padding: 0.25rem;">
+                </div>
                 <div style="display:flex; gap:0.5rem; margin-top:auto">
                     <button class="btn btn-primary btn-run" data-id="${cfg.id}" style="flex:1">Execute Now</button>
-                    <button class="btn"><i data-lucide="edit-3"></i></button>
+                    <button class="btn btn-save-bid" data-id="${cfg.id}"><i data-lucide="save"></i></button>
                 </div>
             </div>
         `).join('');
+
+        grid.querySelectorAll('.btn-save-bid').forEach(btn => {
+            btn.onclick = async () => {
+                const id = btn.dataset.id;
+                const bidAmount = grid.querySelector(`.bid-input[data-id="${id}"]`).value;
+                await fetch(`/dashboard/campaigns/${id}/bid`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ bidAmount })
+                });
+                alert('Bid updated successfully');
+            };
+        });
 
         grid.querySelectorAll('.btn-run').forEach(btn => {
             btn.onclick = async () => {
