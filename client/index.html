@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Ops Console | Synapse</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+    <title>Synapse · AI Ops Console</title>
     <link rel="stylesheet" href="style.css">
     <!-- Google Fonts: Inter -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -11,26 +11,20 @@
     <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body>
-    <div id="sidebar-overlay"></div>
     <div id="app-container">
-        <!-- Mobile Header -->
-        <header id="mobile-header">
-            <button class="menu-toggle" id="menu-open" aria-label="Open Menu">
-                <i data-lucide="menu"></i>
-            </button>
-            <div class="mobile-logo">SYNAPSE</div>
-            <div style="width: 40px;"></div> <!-- Spacer -->
-        </header>
+        <!-- Backdrop for Sidebar Overlay -->
+        <div id="sidebar-backdrop"></div>
 
-        <!-- Sidebar Navigation -->
+        <!-- Floating Sidebar Navigation -->
         <aside id="sidebar">
             <div class="logo-area">
                 <h1>SYNAPSE</h1>
-                <button class="menu-toggle" id="menu-close" style="display: none;" aria-label="Close Menu">
+                <button class="menu-toggle" id="menu-close" aria-label="Close Menu">
                     <i data-lucide="x"></i>
                 </button>
             </div>
             <nav class="main-nav">
+                <div style="font-size: 0.7rem; font-weight: 700; color: var(--muted-foreground); text-transform: uppercase; letter-spacing: 0.1em; padding: 1rem 1.2rem 0.5rem;">Core</div>
                 <a href="#" class="nav-item active" data-panel="overview">
                     <i data-lucide="layout-dashboard"></i>
                     <span>Overview</span>
@@ -43,6 +37,12 @@
                     <i data-lucide="workflow"></i>
                     <span>Workflows</span>
                 </a>
+                
+                <div style="font-size: 0.7rem; font-weight: 700; color: var(--muted-foreground); text-transform: uppercase; letter-spacing: 0.1em; padding: 1.5rem 1.2rem 0.5rem;">Analytics</div>
+                <a href="#" class="nav-item" data-panel="reports">
+                    <i data-lucide="pie-chart"></i>
+                    <span>Reports</span>
+                </a>
                 <a href="#" class="nav-item" data-panel="timeline">
                     <i data-lucide="activity"></i>
                     <span>Timeline</span>
@@ -51,10 +51,8 @@
                     <i data-lucide="terminal"></i>
                     <span>Logs</span>
                 </a>
-                <a href="#" class="nav-item" data-panel="reports">
-                    <i data-lucide="pie-chart"></i>
-                    <span>Reports</span>
-                </a>
+
+                <div style="font-size: 0.7rem; font-weight: 700; color: var(--muted-foreground); text-transform: uppercase; letter-spacing: 0.1em; padding: 1.5rem 1.2rem 0.5rem;">System</div>
                 <a href="#" class="nav-item" data-panel="integrations">
                     <i data-lucide="blocks"></i>
                     <span>Integrations</span>
@@ -73,8 +71,13 @@
         <!-- Main Content -->
         <main id="main-content">
             <header id="top-bar">
-                <div id="header" style="display:flex; justify-content:space-between; align-items:center; width: 100%;">
-                    <h2 id="workspace-title">Workspace: Overview</h2>
+                <button class="menu-toggle" id="menu-open" aria-label="Open Menu">
+                    <i data-lucide="menu"></i>
+                </button>
+                <div class="header-logo">SYNAPSE</div>
+                <h2 id="workspace-title">Workspace: Overview</h2>
+                <div id="header" style="display:flex; justify-content:flex-end; align-items:center; flex: 1; gap: 1rem;">
+                    <!-- Mode toggle will be injected here -->
                 </div>
             </header>
 
@@ -86,9 +89,9 @@
 
     <!-- Command Palette -->
     <div id="command-palette" class="command-palette">
-        <div class="palette-inner">
+        <div style="display: flex; align-items: center; gap: 1rem; background: #050505; padding: 0.75rem 1.25rem; border-radius: var(--radius-sm); border: 1px solid var(--border);">
             <i data-lucide="search" style="color: var(--muted-foreground);"></i>
-            <input type="text" id="command-input" class="terminal-input" placeholder="Search operations or agents..." autocomplete="off">
+            <input type="text" id="command-input" style="background: none; border: none; outline: none; color: var(--foreground); font-size: 1.1rem; flex: 1; font-family: var(--font-display);" placeholder="Search operations or agents..." autocomplete="off">
         </div>
     </div>
 
@@ -97,7 +100,7 @@
       // Global Lucide init
       lucide.createIcons();
       // Initialize Mode Toggle on load
-      window.renderModeToggle();
+      if (window.renderModeToggle) window.renderModeToggle();
     </script>
 </body>
 </html>
