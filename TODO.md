@@ -9,11 +9,11 @@
 - [x] Migrated Ads agents (`intent-surgeon`, `persuasion-architect`, `roi-sentry`) to `handlers/agent/ads/` and converted to ESM.
 - [x] Ported `Weekly Auditor` and `Location Sentry` agents to ESM.
 - [x] Refactored `AgentOrchestrator` to integrate new ESM agent modules.
+- [x] Finalized unified entry point for all agents (`server.js` update, `handlers/agent/optimize.js`).
+- [x] Implemented Business-Aware Agent (Intelligence Layer scaffold).
 
 ## In Progress
-- [ ] Finalize unified entry point for all agents.
+- [ ] Final verification in production environment (Vercel).
 
 ## Pending
-- [ ] Implement Business-Aware Agent (Intelligence Layer).
-- [ ] Final verification in production environment (Vercel).
 - [ ] Push to GitHub.

@@ -41,7 +41,7 @@ import handleAutoReplyReviews from './handlers/agent/autoReplyReviews.js';
 import handleRunDaily from './handlers/agent/runDaily.js';
 import handleAgentStatus from './handlers/agent/status.js';
 import handleAuditLog from './handlers/agent/auditLog.js';
-import handleCronDaily from './handlers/cron/daily.js';
+import { handleOptimizeCampaign } from './handlers/agent/optimize.js';
 
 import { fileURLToPath } from 'url';
 
@@ -171,6 +171,7 @@ app.get('/api/agent/auditLog', requireApiKey, handleAuditLog);
 app.post('/api/agent/autonomousPost', requireApiKey, handleAutonomousPost);
 app.post('/api/agent/autoReplyReviews', requireApiKey, handleAutoReplyReviews);
 app.post('/api/agent/runDaily', requireApiKey, handleRunDaily);
+app.post('/api/agent/optimize/:campaignId', requireApiKey, handleOptimizeCampaign);
 
 // Vercel Cron entry point — authenticated via CRON_SECRET bearer token,
 // NOT via x-api-key (Vercel Cron can't attach custom headers).
