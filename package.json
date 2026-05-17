@@ -16,15 +16,17 @@
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "express-session": "^1.19.0",
+    "google-ads-api": "^23.0.0",
     "google-auth-library": "^10.6.2",
     "googleapis": "^171.4.0",
     "https-proxy-agent": "^9.0.0",
+    "pg": "^8.20.0",
     "react": "^19.2.5",
     "react-dom": "^19.2.5"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^6.0.1",
-    "vite": "^8.0.10",
-    "esbuild": "^0.28.0"
+    "esbuild": "^0.28.0",
+    "vite": "^8.0.10"
   }
 }
