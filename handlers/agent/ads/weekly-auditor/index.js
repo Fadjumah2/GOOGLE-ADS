@@ -1,7 +1,7 @@
-const logger = require('../../../common/logger');
-const db = require('../../../common/db');
-const { GoogleAdsApiError } = require('../../../common/errors');
-const { generateContent, MODELS } = require('../../../common/gemini');
+import logger from '../../../utils/logger.js';
+import db from '../../../utils/db.js';
+import { GoogleAdsApiError } from '../../../utils/error.js';
+import { generateContent, MODELS } from '../../../utils/geminiClient.js';
 
 class WeeklyAuditor {
   constructor(googleAdsApiManager, model = MODELS.CORE) {
@@ -102,4 +102,4 @@ Goal: Identify trends, anomalies, and suggest copy improvements. Output structur
   }
 }
 
-module.exports = WeeklyAuditor;
+export default WeeklyAuditor;

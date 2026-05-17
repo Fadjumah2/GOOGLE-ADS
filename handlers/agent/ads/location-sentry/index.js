@@ -1,5 +1,5 @@
-const logger = require('../../../common/logger');
-const { GoogleAdsApiError } = require('../../../common/errors');
+import logger from '../../../utils/logger.js';
+import { GoogleAdsApiError } from '../../../utils/error.js';
 
 class LocationSentry {
   constructor(googleAdsApiManager) {
@@ -178,4 +178,4 @@ class LocationSentry {
   }
 }
 
-module.exports = LocationSentry;
+export default LocationSentry;

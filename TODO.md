@@ -7,11 +7,10 @@
 - [x] Ported PostgreSQL schema initialization to `Synapse/utils/init_db.js`.
 - [x] Added `pg` dependency and updated `package.json`.
 - [x] Migrated Ads agents (`intent-surgeon`, `persuasion-architect`, `roi-sentry`) to `handlers/agent/ads/` and converted to ESM.
+- [x] Ported `Weekly Auditor` and `Location Sentry` agents to ESM.
+- [x] Refactored `AgentOrchestrator` to integrate new ESM agent modules.
 
 ## In Progress
-- [ ] Port `Weekly Auditor` agent to ESM.
-- [ ] Port `Location Sentry` agent to ESM.
-- [ ] Refactor `AgentOrchestrator` to integrate new ESM agent modules.
 - [ ] Finalize unified entry point for all agents.
 
 ## Pending
