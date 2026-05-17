@@ -39,6 +39,23 @@ This document outlines the tasks for transforming the Google Ads MVP into a prod
 - [x] **Write Unit and Integration Tests**: Cover all new components and functionalities.
 - [x] **Define Deployment Strategy**: Outline steps for deploying the production-grade application.
 
+## Phase 6: Frontend Bug Fixes & UI Enhancements - COMPLETED
+
+- [x] **Fix Critical Logic Bugs**:
+    - [x] Calculate real KPI deltas or hide hardcoded values.
+    - [x] Fix log panel to parse JSON instead of raw text.
+    - [x] Implement robust error handling for all `fetch` calls.
+- [x] **Optimize Initialization & Performance**:
+    - [x] Consolidate `renderModeToggle` calls.
+    - [x] Scope Lucide icon creation to improved performance.
+- [x] **Enhance UX & Interaction**:
+    - [x] Implement basic search logic for the Command Palette.
+    - [x] Replace `alert()` with a non-blocking notification system.
+    - [x] Add loading indicators for AI chat and agent executions.
+- [x] **Refactor & Cleanup**:
+    - [x] Move inline JS styles to `style.css`.
+    - [x] Finish functional stubs in the Settings panel.
+
 ## Post-MVP Tasks
 
 - [x] **Refactor for Google AI Studio Free Tier Compliance**:

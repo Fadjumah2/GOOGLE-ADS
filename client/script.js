@@ -16,8 +16,44 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- State Management ---
     let currentPanel = 'overview';
+    let currentData = null; // Store data of the current panel for searching
 
     // --- Core UI Logic ---
+
+    // Toast System
+    function showToast(message, type = 'info') {
+        let container = document.getElementById('toast-container');
+        if (!container) {
+            container = document.createElement('div');
+            container.id = 'toast-container';
+            document.body.appendChild(container);
+        }
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        toast.innerHTML = `<i data-lucide="${type === 'success' ? 'check-circle' : type === 'error' ? 'alert-circle' : 'info'}"></i><span>${message}</span>`;
+        container.appendChild(toast);
+        lucide.createIcons({ props: { width: 18, height: 18 }, target: toast });
+
+        setTimeout(() => {
+            toast.classList.add('fade-out');
+            setTimeout(() => toast.remove(), 300);
+        }, 4000);
+    }
+
+    // Robust Fetch Wrapper
+    async function fetchData(url, options = {}) {
+        try {
+            const res = await fetch(url, options);
+            if (!res.ok) {
+                const errorData = await res.json().catch(() => ({}));
+                throw new Error(errorData.error || errorData.message || `System error: ${res.status}`);
+            }
+            return await res.json();
+        } catch (error) {
+            showToast(error.message, 'error');
+            throw error;
+        }
+    }
 
     // Toggle Sidebar Overlay
     function toggleSidebar(show) {
@@ -39,44 +75,47 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Backend Integration Logic ---
 
     async function updateMode(mode) {
-        await fetch('/dashboard/mode', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ mode })
-        });
-        renderModeToggle();
+        try {
+            await fetchData('/dashboard/mode', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ mode })
+            });
+            showToast(`System mode updated to ${mode.toUpperCase()}`, 'success');
+            renderModeToggle();
+        } catch (e) { /* Error handled by fetchData */ }
     }
 
     async function renderModeToggle() {
-        const res = await fetch('/dashboard/mode');
-        const { mode } = await res.json();
-        let headerRight = document.getElementById('header-right');
-        if (!headerRight) {
-            headerRight = document.createElement('div');
-            headerRight.id = 'header-right';
-            headerRight.style.display = 'flex';
-            headerRight.style.alignItems = 'center';
-            headerRight.style.gap = '1rem';
-            const headerContainer = document.getElementById('header');
-            if (headerContainer) headerContainer.appendChild(headerRight);
-        }
-        
-        headerRight.innerHTML = `
-            <span style="font-size: 0.85rem; color: var(--muted-foreground);">Mode: <strong style="color: var(--foreground);">${mode.toUpperCase()}</strong></span>
-            <button id="toggle-mode" class="btn btn-sm" style="padding: 0.4rem 0.8rem;">${mode === 'manual' ? 'Enable Autonomous' : 'Enable Manual'}</button>
-        `;
+        try {
+            const { mode } = await fetchData('/dashboard/mode');
+            let headerRight = document.getElementById('header-right');
+            if (!headerRight) {
+                headerRight = document.createElement('div');
+                headerRight.id = 'header-right';
+                headerRight.className = 'flex-row flex-1 gap-1';
+                headerRight.style.justifyContent = 'flex-end'; // Keep this inline for positioning
+                const headerContainer = document.getElementById('header');
+                if (headerContainer) headerContainer.appendChild(headerRight);
+            }
+            
+            headerRight.innerHTML = `
+                <span style="font-size: 0.85rem; color: var(--muted-foreground);">Mode: <strong style="color: var(--foreground);">${mode.toUpperCase()}</strong></span>
+                <button id="toggle-mode" class="btn btn-sm" style="padding: 0.4rem 0.8rem;">${mode === 'manual' ? 'Enable Autonomous' : 'Enable Manual'}</button>
+            `;
 
-        const toggleBtn = document.getElementById('toggle-mode');
-        if (toggleBtn) {
-            toggleBtn.onclick = () => {
-                updateMode(mode === 'manual' ? 'autonomous' : 'manual');
-            };
-        }
+            const toggleBtn = document.getElementById('toggle-mode');
+            if (toggleBtn) {
+                toggleBtn.onclick = () => {
+                    updateMode(mode === 'manual' ? 'autonomous' : 'manual');
+                };
+            }
+        } catch (e) { /* Error handled by fetchData */ }
     }
     window.renderModeToggle = renderModeToggle;
 
     // Workspace Rendering
-    async function renderWorkspace(panelName) {
+    async function renderWorkspace(panelName, dataOverride = null) {
         currentPanel = panelName;
         UI.workspaceArea.innerHTML = '';
         setWorkspaceTitle(panelName.charAt(0).toUpperCase() + panelName.slice(1));
@@ -87,12 +126,12 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             let contentPanel;
             switch (panelName) {
-                case 'overview': contentPanel = await getOverviewPanel(); break;
-                case 'orchestration': contentPanel = await getOrchestrationPanel(); break;
-                case 'workflows': contentPanel = await getWorkflowsPanel(); break;
-                case 'timeline': contentPanel = await getTimelinePanel(); break;
+                case 'overview': contentPanel = await getOverviewPanel(dataOverride); break;
+                case 'orchestration': contentPanel = await getOrchestrationPanel(dataOverride); break;
+                case 'workflows': contentPanel = await getWorkflowsPanel(dataOverride); break;
+                case 'timeline': contentPanel = await getTimelinePanel(dataOverride); break;
                 case 'logs': contentPanel = await getLogsPanel(); break;
-                case 'reports': contentPanel = await getReportsPanel(); break;
+                case 'reports': contentPanel = await getReportsPanel(dataOverride); break;
                 case 'integrations': contentPanel = await getIntegrationsPanel(); break;
                 case 'settings': contentPanel = getSettingsPanel(); break;
                 case 'chat': contentPanel = createChatPanel(); break;
@@ -101,7 +140,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             UI.workspaceArea.innerHTML = '';
             UI.workspaceArea.appendChild(contentPanel);
-            lucide.createIcons();
+            lucide.createIcons({ target: contentPanel });
         } catch (error) {
             console.error('Render Error:', error);
             UI.workspaceArea.innerHTML = `<div class="panel" style="border-color: var(--destructive);"><div class="panel-header">System Fault</div><p>Failed to initialize module: ${error.message}</p></div>`;
@@ -112,24 +151,31 @@ document.addEventListener('DOMContentLoaded', () => {
         UI.workspaceTitle.textContent = `Workspace: ${title}`;
     }
 
-    // --- Panel Builders (Preserved from original) ---
+    // --- Panel Builders ---
 
-    async function getOverviewPanel() {
-        const res = await fetch('/dashboard/campaigns');
-        const campaigns = await res.json();
+    async function getOverviewPanel(dataOverride = null) {
+        const campaigns = dataOverride || await fetchData('/dashboard/campaigns');
+        if (!dataOverride) currentData = campaigns;
+
         const wrapper = document.createElement('div');
-        wrapper.style.display = 'flex'; wrapper.style.flexDirection = 'column'; wrapper.style.gap = '2rem';
-        const grid = document.createElement('div'); grid.className = 'dashboard-grid';
+        wrapper.className = 'workspace-wrapper';
+        
+        const grid = document.createElement('div');
+        grid.className = 'dashboard-grid';
+        
         let clicks = 0, cost = 0, active = 0;
         campaigns.forEach(c => {
             clicks += c.metrics.clicks || 0;
             cost += (c.metrics.cost_micros / 1000000) || 0;
             if (c.campaign.status === 2) active++;
         });
-        grid.appendChild(createKpiCard('Aggregated Clicks', clicks.toLocaleString(), 14.2, 'mouse-pointer-2'));
-        grid.appendChild(createKpiCard('Total Investment', `$${cost.toFixed(2)}`, 5.7, 'dollar-sign'));
+
+        // Deltas are set to 0 as we don't have historical data yet in this view
+        grid.appendChild(createKpiCard('Aggregated Clicks', clicks.toLocaleString(), 0, 'mouse-pointer-2'));
+        grid.appendChild(createKpiCard('Total Investment', `$${cost.toFixed(2)}`, 0, 'dollar-sign'));
         grid.appendChild(createKpiCard('Active Nodes', active.toString(), 0, 'target'));
         wrapper.appendChild(grid);
+        
         const tablePanel = createPanel('campaign-catalog', 'Real-time Campaign Stream');
         tablePanel.querySelector('.panel-content').innerHTML = `
             <table class="data-table">
@@ -153,30 +199,38 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
         wrapper.appendChild(tablePanel);
         wrapper.querySelectorAll('.btn-action').forEach(btn => {
-            btn.onclick = async () => { btn.disabled = true; await fetch(`/dashboard/campaigns/${btn.dataset.id}/${btn.dataset.action}`, {method:'POST'}); renderWorkspace('overview'); };
+            btn.onclick = async () => { 
+                btn.disabled = true; 
+                try {
+                    await fetchData(`/dashboard/campaigns/${btn.dataset.id}/${btn.dataset.action}`, {method:'POST'}); 
+                    showToast(`Campaign ${btn.dataset.action === 'pause' ? 'paused' : 'enabled'}`, 'success');
+                    renderWorkspace('overview'); 
+                } catch (e) { btn.disabled = false; }
+            };
         });
         return wrapper;
     }
 
-    async function getOrchestrationPanel() {
-        const res = await fetch('/dashboard/agent-configurations');
-        const configs = await res.json();
+    async function getOrchestrationPanel(dataOverride = null) {
+        const configs = dataOverride || await fetchData('/dashboard/agent-configurations');
+        if (!dataOverride) currentData = configs;
+
         const grid = document.createElement('div');
-        grid.style.display = 'grid'; grid.style.gridTemplateColumns = 'repeat(auto-fit, minmax(300px, 1fr))'; grid.style.gap = '1.5rem';
+        grid.className = 'orchestration-grid';
         grid.innerHTML = configs.map(cfg => `
-            <div class="panel" style="height: 100%; display: flex; flex-direction: column;">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 1.5rem;">
-                    <div style="display:flex; gap:1rem; align-items:center;">
+            <div class="panel flex-col">
+                <div class="flex-row gap-1" style="justify-content:space-between; align-items:center; margin-bottom: 1.5rem;">
+                    <div class="flex-row gap-1" style="align-items:center;">
                         <div style="padding:0.6rem; background:rgba(0,123,255,0.1); border-radius:0.6rem; color:var(--primary);"><i data-lucide="zap"></i></div>
                         <div><div style="font-weight:700">${cfg.config_name}</div><div style="font-size:0.75rem; color:var(--muted-foreground)">CID: ${cfg.customer_id}</div></div>
                     </div>
                 </div>
                 <p style="font-size:0.85rem; color: var(--muted-foreground); margin-bottom: 1.5rem;">Autonomous optimization cycle targeting campaign <code>${cfg.campaign_id}</code>.</p>
                 <div style="margin-bottom: 1rem;">
-                    <label style="font-size: 0.75rem; font-weight: 600; color: var(--muted-foreground); text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 0.5rem;">Bid Amount ($)</label>
-                    <input type="number" class="bid-input" data-id="${cfg.id}" value="${cfg.bid_amount || 0}" step="0.01" style="width: 100%; padding: 0.75rem; background: var(--background); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--foreground);">
+                    <label class="form-label">Bid Amount ($)</label>
+                    <input type="number" class="bid-input form-input" data-id="${cfg.id}" value="${cfg.bid_amount || 0}" step="0.01">
                 </div>
-                <div style="display:flex; gap:0.5rem; margin-top:auto">
+                <div class="flex-row gap-1" style="margin-top:auto">
                     <button class="btn btn-primary btn-run" data-id="${cfg.id}" style="flex:1">Execute Now</button>
                     <button class="btn btn-save-bid" data-id="${cfg.id}" title="Save Bid"><i data-lucide="save" style="width:16px;height:16px;"></i></button>
                 </div>
@@ -185,61 +239,76 @@ document.addEventListener('DOMContentLoaded', () => {
         grid.querySelectorAll('.btn-save-bid').forEach(btn => {
             btn.onclick = async () => {
                 const id = btn.dataset.id; const bidAmount = grid.querySelector(`.bid-input[data-id="${id}"]`).value;
-                await fetch(`/dashboard/campaigns/${id}/bid`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ bidAmount }) });
-                alert('Bid updated successfully');
+                try {
+                    await fetchData(`/dashboard/campaigns/${id}/bid`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ bidAmount }) });
+                    showToast('Bid updated successfully', 'success');
+                } catch (e) {}
             };
         });
         grid.querySelectorAll('.btn-run').forEach(btn => {
-            btn.onclick = async () => { btn.disabled = true; btn.textContent = 'Executing...'; const r = await fetch(`/dashboard/trigger-agent/${btn.dataset.id}`, {method:'POST'}); const data = await r.json(); alert(data.message); btn.disabled = false; btn.textContent = 'Execute Now'; };
+            btn.onclick = async () => { 
+                btn.disabled = true; 
+                btn.textContent = 'Executing...'; 
+                try {
+                    const data = await fetchData(`/dashboard/trigger-agent/${btn.dataset.id}`, {method:'POST'}); 
+                    showToast(data.message, 'success');
+                } catch (e) {} finally {
+                    btn.disabled = false; 
+                    btn.textContent = 'Execute Now'; 
+                }
+            };
         });
         return createPanel('orch-v2', 'Synapse Operation Nodes', grid);
     }
 
-    async function getWorkflowsPanel() {
-        const res = await fetch('/dashboard/prepared-actions');
-        const actions = await res.json();
+    async function getWorkflowsPanel(dataOverride = null) {
+        const actions = dataOverride || await fetchData('/dashboard/prepared-actions');
+        if (!dataOverride) currentData = actions;
+
         if (actions.length === 0) return createPanel('workflows-v2', 'Workflow Intelligence', '<p>No pending agent actions found.</p>');
         const table = `<table class="data-table"><thead><tr><th>Agent</th><th>Action Description</th><th>Campaign ID</th><th>Status</th></tr></thead><tbody>${actions.map(a => `<tr><td style="font-weight:600">${a.agent}</td><td>${a.action_description}</td><td>${a.campaign_id}</td><td><span class="delta positive" style="padding:0.2rem 0.5rem;border-radius:0.4rem;font-size:0.75rem">${a.status}</span></td></tr>`).join('')}</tbody></table>`;
         return createPanel('workflows-v2', 'Workflow Intelligence', table);
     }
 
-    async function getTimelinePanel() {
-        const res = await fetch('/dashboard/agent-runs');
-        const runs = await res.json();
+    async function getTimelinePanel(dataOverride = null) {
+        const runs = dataOverride || await fetchData('/dashboard/agent-runs');
+        if (!dataOverride) currentData = runs;
+
         const table = `<table class="data-table"><thead><tr><th>Phase Timestamp</th><th>Operation</th><th>Status</th><th>Payload</th></tr></thead><tbody>${runs.map(r => `<tr><td style="color:var(--muted-foreground); font-size: 0.85rem">${new Date(r.run_timestamp).toLocaleString()}</td><td style="font-weight:600">${r.config_name || 'Generic Run'}</td><td><span style="color:${r.status === 'completed' ? 'var(--success)':'var(--destructive)'}">${r.status.toUpperCase()}</span></td><td style="font-family:var(--font-mono); font-size:0.8rem; color:var(--muted-foreground)">${JSON.stringify(r.details).substring(0, 50)}...</td></tr>`).join('')}</tbody></table>`;
         return createPanel('timeline-v2', 'System Execution History', table);
     }
 
     async function getLogsPanel() {
-        const res = await fetch('/dashboard/system-logs');
-        const text = await res.text();
+        const data = await fetchData('/dashboard/system-logs');
+        const text = data.message || JSON.stringify(data);
         const area = document.createElement('div');
-        area.style.background = '#030608'; area.style.padding = '1rem'; area.style.borderRadius = 'var(--radius-sm)'; area.style.border = '1px solid var(--border)';
-        area.innerHTML = `<pre style="margin:0; font-family:var(--font-mono); font-size:0.85rem; line-height:1.6; color:var(--muted-foreground); overflow-x:auto;"><code>${text}</code></pre>`;
+        area.className = 'log-container';
+        area.innerHTML = `<pre class="log-code"><code>${text}</code></pre>`;
         return createPanel('logs-v2', 'Kernel Operation Stream', area);
     }
 
-    async function getReportsPanel() {
-        const res = await fetch('/dashboard/reports/campaigns');
-        const data = await res.json();
+    async function getReportsPanel(dataOverride = null) {
+        const data = dataOverride || await fetchData('/dashboard/reports/campaigns');
+        if (!dataOverride) currentData = data;
+
         const table = `<table class="data-table"><thead><tr><th>Date</th><th>Node Name</th><th>Clicks</th><th>Impressions</th><th>Cost</th></tr></thead><tbody>${data.map(r => `<tr><td style="font-size:0.85rem; color:var(--muted-foreground)">${r.segments.date}</td><td style="font-weight:600">${r.campaign.name}</td><td>${r.metrics.clicks.toLocaleString()}</td><td>${r.metrics.impressions.toLocaleString()}</td><td>$${(r.metrics.cost_micros/1000000).toFixed(2)}</td></tr>`).join('')}</tbody></table>`;
         return createPanel('reports-v2', 'Performance Intelligence', table);
     }
 
     async function getIntegrationsPanel() {
-        const res = await fetch('/dashboard/status');
-        const data = await res.json();
+        const data = await fetchData('/dashboard/status');
         const grid = document.createElement('div');
-        grid.style.display = 'grid'; grid.style.gap = '1rem';
+        grid.className = 'flex-col gap-1';
         grid.innerHTML = Object.entries(data).map(([k, v]) => `
-            <div class="panel" style="padding: 1.25rem;">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <div style="display:flex; gap:1.25rem; align-items:center;">
-                        <div style="color:var(--primary)"><i data-lucide="${k==='database'?'database':k==='googleAds'?'cloud':'activity'}" style="width:24px;height:24px;"></i></div>
-                        <div><div style="font-weight:700; text-transform:capitalize; font-size:0.95rem;">${k.replace(/([A-Z])/g, ' $1')}</div><div style="font-size:0.8rem; color:${v.includes('Connected')||v.includes('Active')||v.includes('Configured')?'var(--success)':'var(--destructive)'}">${v}</div></div>
+            <div class="panel status-indicator">
+                <div class="status-info">
+                    <div style="color:var(--primary)"><i data-lucide="${k==='database'?'database':k==='googleAds'?'cloud':'activity'}" style="width:24px;height:24px;"></i></div>
+                    <div>
+                        <div class="status-text">${k.replace(/([A-Z])/g, ' $1')}</div>
+                        <div class="status-value ${v.includes('Connected')||v.includes('Active')||v.includes('Configured')?'status-success':'status-error'}">${v}</div>
                     </div>
-                    <button class="btn btn-sm verify-btn">Verify</button>
                 </div>
+                <button class="btn btn-sm verify-btn">Verify</button>
             </div>
         `).join('');
         grid.querySelectorAll('.verify-btn').forEach(button => {
@@ -251,22 +320,69 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function getSettingsPanel() {
-        const form = `<div style="max-width:600px; display:flex; flex-direction:column; gap:2rem;"><div><label style="display:block; font-size:0.7rem; font-weight:700; color:var(--muted-foreground); margin-bottom:0.75rem; text-transform:uppercase; letter-spacing:0.05em;">Developer Credentials</label><div style="display:flex; gap:0.5rem;"><input type="password" value="************************" style="flex:1; background:var(--background); border:1px solid var(--border); padding:0.75rem; border-radius:var(--radius-sm); color:var(--foreground); font-family:var(--font-mono);" readonly /><button class="btn btn-sm"><i data-lucide="eye" style="width:16px;height:16px;"></i></button></div></div><div><label style="display:block; font-size:0.7rem; font-weight:700; color:var(--muted-foreground); margin-bottom:0.75rem; text-transform:uppercase; letter-spacing:0.05em;">Log Verbosity</label><select style="width:100%; background:var(--background); border:1px solid var(--border); padding:0.75rem; border-radius:var(--radius-sm); color:var(--foreground); font-family:var(--font-display);"><option>INFO</option><option>DEBUG</option><option>VERBOSE</option></select></div><button class="btn btn-primary" style="align-self:flex-start;">Commit Configuration</button></div>`;
+        const form = document.createElement('div');
+        form.className = 'settings-form';
+        form.innerHTML = `
+            <div class="form-group">
+                <label class="form-label">Developer Credentials</label>
+                <div class="flex-row gap-1">
+                    <input type="password" value="************************" class="form-input form-input-mono flex-1" readonly />
+                    <button class="btn btn-sm"><i data-lucide="eye" style="width:16px;height:16px;"></i></button>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Log Verbosity</label>
+                <select class="form-input">
+                    <option>INFO</option>
+                    <option>DEBUG</option>
+                    <option>VERBOSE</option>
+                </select>
+            </div>
+            <button class="btn btn-primary" style="align-self:flex-start;" id="commit-settings">Commit Configuration</button>
+        `;
+        form.querySelector('#commit-settings').onclick = () => {
+            showToast('Settings functionality is under synchronization.', 'info');
+        };
         return createPanel('settings-v2', 'Kernel Parameters', form);
     }
 
     function createChatPanel() {
-        const panel = createPanel('chat', 'Interactive Command Center', `<div id="chat-box" style="height: 400px; overflow-y: auto; background: var(--background); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 1.25rem; margin-bottom: 1.25rem; font-size: 0.9rem; line-height: 1.6;"></div><div style="display: flex; gap: 0.75rem;"><input id="chat-input" type="text" style="flex: 1; padding: 0.85rem; background: var(--background); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--foreground); outline: none;" placeholder="Command the agent..."><button id="chat-send" class="btn btn-primary">Send</button></div>`);
-        const chatBox = panel.querySelector('#chat-box'); const chatInput = panel.querySelector('#chat-input'); const chatSend = panel.querySelector('#chat-send');
+        const panel = createPanel('chat', 'Interactive Command Center', `
+            <div class="chat-container">
+                <div id="chat-box" class="chat-box"></div>
+                <div class="chat-input-wrap">
+                    <input id="chat-input" type="text" class="chat-input" placeholder="Command the agent...">
+                    <button id="chat-send" class="btn btn-primary">Send</button>
+                </div>
+            </div>
+        `);
+        const chatBox = panel.querySelector('#chat-box'); 
+        const chatInput = panel.querySelector('#chat-input'); 
+        const chatSend = panel.querySelector('#chat-send');
+        
         chatSend.onclick = async () => {
             const message = chatInput.value; if (!message) return;
-            chatBox.innerHTML += `<div style="margin-bottom:1rem; text-align:right;"><span style="background:var(--primary); color:white; padding:0.6rem 1rem; border-radius:1rem 0.2rem 1rem 1rem; display:inline-block;">${message}</span></div>`;
+            chatBox.innerHTML += `<div class="msg-user-wrap"><span class="msg-user">${message}</span></div>`;
             chatInput.value = '';
-            const res = await fetch('/dashboard/chat', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ message }) });
-            const data = await res.json();
-            chatBox.innerHTML += `<div style="margin-bottom:1rem;"><span style="background:var(--secondary); border:1px solid var(--border); color:var(--foreground); padding:0.6rem 1rem; border-radius:0.2rem 1rem 1rem 1rem; display:inline-block;">${data.response}</span></div>`;
+            
+            const typing = document.createElement('div');
+            typing.className = 'typing-indicator';
+            typing.textContent = 'Synapse is analyzing...';
+            chatBox.appendChild(typing);
+            chatBox.scrollTop = chatBox.scrollHeight;
+
+            try {
+                const data = await fetchData('/dashboard/chat', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ message }) });
+                typing.remove();
+                chatBox.innerHTML += `<div class="msg-ai-wrap"><span class="msg-ai">${data.response}</span></div>`;
+            } catch (e) {
+                typing.remove();
+            }
             chatBox.scrollTop = chatBox.scrollHeight;
         };
+        
+        chatInput.onkeydown = (e) => { if (e.key === 'Enter') chatSend.click(); };
+        
         return panel;
     }
 
@@ -295,7 +411,24 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // Command Palette
+    // Command Palette Logic
+    UI.commandInput.addEventListener('input', (e) => {
+        const term = e.target.value.toLowerCase();
+        if (!term || !currentData) return;
+
+        // Simple filtering logic based on panel type
+        if (currentPanel === 'overview') {
+            const filtered = currentData.filter(c => c.campaign.name.toLowerCase().includes(term));
+            renderWorkspace('overview', filtered);
+        } else if (currentPanel === 'orchestration') {
+            const filtered = currentData.filter(cfg => cfg.config_name.toLowerCase().includes(term));
+            renderWorkspace('orchestration', filtered);
+        } else if (currentPanel === 'workflows') {
+            const filtered = currentData.filter(a => a.action_description.toLowerCase().includes(term));
+            renderWorkspace('workflows', filtered);
+        }
+    });
+
     document.addEventListener('keydown', (e) => {
         if ((e.ctrlKey || e.metaKey) && e.key === 'k') { e.preventDefault(); UI.palette.style.display = 'block'; setTimeout(() => { UI.palette.classList.add('is-visible'); UI.commandInput.focus(); }, 10); }
         if (e.key === 'Escape') { UI.palette.classList.remove('is-visible'); setTimeout(() => UI.palette.style.display = 'none', 300); }

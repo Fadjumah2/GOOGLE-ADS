@@ -232,6 +232,204 @@ html, body {
     gap: 2rem;
 }
 
+.workspace-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.orchestration-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
+
+.flex-col { display: flex; flex-direction: column; }
+.flex-row { display: flex; flex-direction: row; }
+.gap-1 { gap: 1rem; }
+.gap-1-5 { gap: 1.5rem; }
+.gap-2 { gap: 2rem; }
+.w-full { width: 100%; }
+.flex-1 { flex: 1; }
+
+.status-indicator {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.25rem;
+}
+
+.status-info {
+    display: flex;
+    gap: 1.25rem;
+    align-items: center;
+}
+
+.status-text {
+    font-weight: 700;
+    text-transform: capitalize;
+    font-size: 0.95rem;
+}
+
+.status-value {
+    font-size: 0.8rem;
+}
+
+.status-success { color: var(--success); }
+.status-error { color: var(--destructive); }
+
+.log-container {
+    background: #030608;
+    padding: 1rem;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+}
+
+.log-code {
+    margin: 0;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    line-height: 1.6;
+    color: var(--muted-foreground);
+    overflow-x: auto;
+}
+
+.settings-form {
+    max-width: 600px;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.form-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--muted-foreground);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.form-input {
+    width: 100%;
+    background: var(--background);
+    border: 1px solid var(--border);
+    padding: 0.75rem;
+    border-radius: var(--radius-sm);
+    color: var(--foreground);
+    font-family: var(--font-display);
+}
+
+.form-input-mono {
+    font-family: var(--font-mono);
+}
+
+.chat-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.chat-box {
+    height: 400px;
+    overflow-y: auto;
+    background: var(--background);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 1.25rem;
+    margin-bottom: 1.25rem;
+    font-size: 0.9rem;
+    line-height: 1.6;
+}
+
+.chat-input-wrap {
+    display: flex;
+    gap: 0.75rem;
+}
+
+.chat-input {
+    flex: 1;
+    padding: 0.85rem;
+    background: var(--background);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--foreground);
+    outline: none;
+}
+
+.msg-user-wrap { margin-bottom: 1rem; text-align: right; }
+.msg-user {
+    background: var(--primary);
+    color: white;
+    padding: 0.6rem 1rem;
+    border-radius: 1rem 0.2rem 1rem 1rem;
+    display: inline-block;
+}
+
+.msg-ai-wrap { margin-bottom: 1rem; }
+.msg-ai {
+    background: var(--secondary);
+    border: 1px solid var(--border);
+    color: var(--foreground);
+    padding: 0.6rem 1rem;
+    border-radius: 0.2rem 1rem 1rem 1rem;
+    display: inline-block;
+}
+
+.typing-indicator {
+    font-style: italic;
+    font-size: 0.8rem;
+    color: var(--muted-foreground);
+    margin-bottom: 0.5rem;
+}
+
+/* Toast Notifications */
+#toast-container {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    z-index: 2000;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.toast {
+    padding: 1rem 1.5rem;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    color: var(--foreground);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    animation: toastIn 0.3s ease-out;
+    min-width: 250px;
+}
+
+.toast.success { border-left: 4px solid var(--success); }
+.toast.error { border-left: 4px solid var(--destructive); }
+.toast.info { border-left: 4px solid var(--primary); }
+
+@keyframes toastIn {
+    from { opacity: 0; transform: translateX(100%); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+.toast.fade-out {
+    animation: toastOut 0.3s ease-in forwards;
+}
+
+@keyframes toastOut {
+    to { opacity: 0; transform: translateX(100%); }
+}
+
 @media (max-width: 640px) {
     #workspace-area {
         padding: 1.25rem;
