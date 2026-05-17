@@ -91,8 +91,9 @@
     <div id="command-palette" class="command-palette">
         <div style="display: flex; align-items: center; gap: 1rem; background: #050505; padding: 0.75rem 1.25rem; border-radius: var(--radius-sm); border: 1px solid var(--border);">
             <i data-lucide="search" style="color: var(--muted-foreground);"></i>
-            <input type="text" id="command-input" style="background: none; border: none; outline: none; color: var(--foreground); font-size: 1.1rem; flex: 1; font-family: var(--font-display);" placeholder="Search operations or agents..." autocomplete="off">
+            <input type="text" id="command-input" style="background: none; border: none; outline: none; color: var(--foreground); font-size: 1.1rem; flex: 1; font-family: var(--font-display);" placeholder="Search operations or jump to module..." autocomplete="off">
         </div>
+        <div id="command-results"></div>
     </div>
 
     <script src="script.js"></script>

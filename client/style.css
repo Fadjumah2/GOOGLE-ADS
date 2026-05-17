@@ -565,6 +565,53 @@ html, body {
     transform: translate(-50%, 0);
 }
 
+/* Command Palette Suggestions */
+#command-results {
+    margin-top: 1rem;
+    max-height: 300px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.command-result-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 1px solid transparent;
+}
+
+.command-result-item:hover, .command-result-item.selected {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: var(--border);
+    color: var(--primary);
+}
+
+.command-result-item i {
+    width: 16px;
+    height: 16px;
+    color: var(--muted-foreground);
+}
+
+.command-result-item .command-label {
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.command-result-item .command-shortcut {
+    margin-left: auto;
+    font-size: 0.7rem;
+    color: var(--muted-foreground);
+    background: var(--secondary);
+    padding: 0.2rem 0.4rem;
+    border-radius: 4px;
+}
+
 /* Buttons */
 .btn {
     display: inline-flex;

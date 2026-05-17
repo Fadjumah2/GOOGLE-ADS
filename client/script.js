@@ -412,26 +412,110 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Command Palette Logic
+    const navModules = [
+        { label: 'Overview', panel: 'overview', icon: 'layout-dashboard' },
+        { label: 'Orchestration', panel: 'orchestration', icon: 'cpu' },
+        { label: 'Workflows', panel: 'workflows', icon: 'workflow' },
+        { label: 'Reports', panel: 'reports', icon: 'pie-chart' },
+        { label: 'Timeline', panel: 'timeline', icon: 'activity' },
+        { label: 'Logs', panel: 'logs', icon: 'terminal' },
+        { label: 'Integrations', panel: 'integrations', icon: 'blocks' },
+        { label: 'Command Center', panel: 'chat', icon: 'message-square' },
+        { label: 'Settings', panel: 'settings', icon: 'settings' }
+    ];
+
+    function updateCommandResults(term) {
+        const resultsContainer = document.getElementById('command-results');
+        resultsContainer.innerHTML = '';
+        if (!term) return;
+
+        // 1. Module Navigation Suggestions
+        const moduleMatches = navModules.filter(m => m.label.toLowerCase().includes(term));
+        
+        moduleMatches.forEach(match => {
+            const item = document.createElement('div');
+            item.className = 'command-result-item';
+            item.innerHTML = `
+                <i data-lucide="${match.icon}"></i>
+                <span class="command-label">Jump to ${match.label}</span>
+                <span class="command-shortcut">Module</span>
+            `;
+            item.onclick = () => {
+                renderWorkspace(match.panel);
+                closePalette();
+                // Update active state in sidebar
+                UI.navItems.forEach(n => {
+                    n.classList.toggle('active', n.dataset.panel === match.panel);
+                });
+            };
+            resultsContainer.appendChild(item);
+        });
+
+        // 2. Data Filtering (Contextual)
+        if (currentData) {
+            let filteredCount = 0;
+            if (currentPanel === 'overview') {
+                const filtered = currentData.filter(c => c.campaign.name.toLowerCase().includes(term));
+                filteredCount = filtered.length;
+                if (filteredCount > 0 && filteredCount < currentData.length) {
+                    renderWorkspace('overview', filtered);
+                }
+            } else if (currentPanel === 'orchestration') {
+                const filtered = currentData.filter(cfg => cfg.config_name.toLowerCase().includes(term));
+                filteredCount = filtered.length;
+                if (filteredCount > 0 && filteredCount < currentData.length) {
+                    renderWorkspace('orchestration', filtered);
+                }
+            } else if (currentPanel === 'workflows') {
+                const filtered = currentData.filter(a => a.action_description.toLowerCase().includes(term));
+                filteredCount = filtered.length;
+                if (filteredCount > 0 && filteredCount < currentData.length) {
+                    renderWorkspace('workflows', filtered);
+                }
+            }
+
+            if (filteredCount > 0) {
+                const filterItem = document.createElement('div');
+                filterItem.className = 'command-result-item';
+                filterItem.innerHTML = `
+                    <i data-lucide="filter"></i>
+                    <span class="command-label">Filtering ${filteredCount} results in ${currentPanel}...</span>
+                `;
+                resultsContainer.appendChild(filterItem);
+            }
+        }
+
+        lucide.createIcons({ target: resultsContainer, props: { width: 14, height: 14 } });
+    }
+
+    function closePalette() {
+        UI.palette.classList.remove('is-visible');
+        setTimeout(() => {
+            UI.palette.style.display = 'none';
+            UI.commandInput.value = '';
+            document.getElementById('command-results').innerHTML = '';
+        }, 300);
+    }
+
     UI.commandInput.addEventListener('input', (e) => {
         const term = e.target.value.toLowerCase();
-        if (!term || !currentData) return;
-
-        // Simple filtering logic based on panel type
-        if (currentPanel === 'overview') {
-            const filtered = currentData.filter(c => c.campaign.name.toLowerCase().includes(term));
-            renderWorkspace('overview', filtered);
-        } else if (currentPanel === 'orchestration') {
-            const filtered = currentData.filter(cfg => cfg.config_name.toLowerCase().includes(term));
-            renderWorkspace('orchestration', filtered);
-        } else if (currentPanel === 'workflows') {
-            const filtered = currentData.filter(a => a.action_description.toLowerCase().includes(term));
-            renderWorkspace('workflows', filtered);
-        }
+        updateCommandResults(term);
     });
 
     document.addEventListener('keydown', (e) => {
-        if ((e.ctrlKey || e.metaKey) && e.key === 'k') { e.preventDefault(); UI.palette.style.display = 'block'; setTimeout(() => { UI.palette.classList.add('is-visible'); UI.commandInput.focus(); }, 10); }
-        if (e.key === 'Escape') { UI.palette.classList.remove('is-visible'); setTimeout(() => UI.palette.style.display = 'none', 300); }
+        if ((e.ctrlKey || e.metaKey) && e.key === 'k') { 
+            e.preventDefault(); 
+            UI.palette.style.display = 'block'; 
+            setTimeout(() => { 
+                UI.palette.classList.add('is-visible'); 
+                UI.commandInput.focus(); 
+            }, 10); 
+        }
+        if (e.key === 'Escape') { 
+            closePalette();
+            // Restore data if filtering was active
+            if (currentData) renderWorkspace(currentPanel);
+        }
     });
 
     // Initial Load
