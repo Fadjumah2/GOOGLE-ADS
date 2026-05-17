@@ -87,7 +87,7 @@ async function generateContent(prompt, options = {}) {
 module.exports = {
   generateContent,
   MODELS: {
-    CORE: 'gemini-3-flash',
+    CORE: 'gemini-3-flash-preview',
     LITE: 'gemini-3.1-flash-lite-preview'
   }
 };

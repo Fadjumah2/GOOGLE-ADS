@@ -1,8 +1,9 @@
 const { generateContent, MODELS } = require('./src/common/gemini');
-require('dotenv').config();
+require('dotenv').config({ override: true }); // Ensure it overrides session variables
 
 async function test() {
     console.log('--- Testing Gemini Free Tier Compliance ---');
+    console.log('Using Key starting with:', process.env.GEMINI_API_KEY ? process.env.GEMINI_API_KEY.substring(0, 10) : 'MISSING');
     
     try {
         console.log('1. Testing LITE model (Rate Limiting check)...');
