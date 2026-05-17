@@ -1,10 +1,10 @@
-const axios = require('axios');
 const logger = require('../../../common/logger');
 const db = require('../../../common/db'); // Import db
 const { GoogleAdsApiError } = require('../../../common/errors');
+const { generateContent, MODELS } = require('../../../common/gemini');
 
 class RoiSentry {
-  constructor(googleAdsApiManager, model = 'gemini-3-flash-preview') {
+  constructor(googleAdsApiManager, model = MODELS.LITE) {
     logger.info('ROI Sentry: Initializing...');
     if (!googleAdsApiManager) {
       logger.error('RoiSentry: GoogleAdsApiManager not provided.');
@@ -13,7 +13,6 @@ class RoiSentry {
     this.googleAdsApiManager = googleAdsApiManager;
     this.model = model;
     this.apiKey = process.env.GEMINI_API_KEY;
-    this.geminiApiEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/${this.model}:generateContent?key=${this.apiKey}`;
 
     if (!this.apiKey) {
       logger.warn('RoiSentry: GEMINI_API_KEY not set in environment variables. AI budget analysis will not be available.');
@@ -26,42 +25,28 @@ class RoiSentry {
       return { status: 'OK', message: 'Skipped AI analysis due to missing API key.' };
     }
 
-    const currentModel = isEscalated ? 'gemini-3.1-pro-preview' : this.model;
-    const currentEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/${currentModel}:generateContent?key=${this.apiKey}`;
-    const modelTag = isEscalated ? 'Pro (escalated)' : 'Flash';
+    const currentModel = isEscalated ? MODELS.CORE : this.model;
+    const modelTag = isEscalated ? 'Core (escalated)' : 'Lite';
     logger.info(`RoiSentry: Analyzing budget for campaign ${campaignId} with ${modelTag} model.`);
 
-    const prompt = `Campaign ID: ${campaignId}. Current Spend: $${performance.cost.toFixed(2)}. Daily Budget: $${budget.amount.toFixed(2)}. Spend Percentage: ${spendPercentage.toFixed(2)}%.
-Based on this data, provide a budget status (OK, ALERT, CRITICAL) and a brief message. If it's ALERT or CRITICAL, suggest an action (e.g., 'REVIEW_BUDGET_OR_PAUSE', 'INCREASE_BUDGET', 'CONTINUE_MONITORING').
-Format your response as a JSON object with 'status', 'message', and 'actionRecommended' fields.`;
+    // Compact prompt: JSON output enforcement, removing loose prose
+    const prompt = `Analyze budget for Campaign ${campaignId}. 
+Spend: $${performance.cost.toFixed(2)}, Daily Budget: $${budget.amount.toFixed(2)}, Spent: ${spendPercentage.toFixed(2)}%.
+Output: JSON with "status" (OK, ALERT, CRITICAL), "message", and "actionRecommended" (e.g., 'REVIEW_BUDGET_OR_PAUSE', 'INCREASE_BUDGET', 'CONTINUE_MONITORING').`;
 
     try {
-      const response = await axios.post(currentEndpoint, {
-        contents: [
-          {
-            parts: [
-              { text: prompt },
-            ],
-          },
-        ],
-        generationConfig: {
-          temperature: isEscalated ? 0.4 : 0.2, // Slightly higher temp for Pro for more nuanced reasoning
-          topP: 0.95,
-          topK: 40,
-        },
-      }, {
-        headers: {
-          'Content-Type': 'application/json',
-        },
+      const geminiResponseText = await generateContent(prompt, {
+        model: currentModel,
+        temperature: isEscalated ? 0.4 : 0.2,
+        responseMimeType: 'application/json',
       });
 
-      const geminiResponseText = response.data.candidates[0].content.parts[0].text;
       const geminiResponse = JSON.parse(geminiResponseText);
       return geminiResponse;
     } catch (error) {
       logger.error(`RoiSentry: AI budget analysis failed for campaign ${campaignId} with ${modelTag} model: ${error.message}`);
       if (!isEscalated) {
-        logger.info(`RoiSentry: Escalating budget analysis for campaign ${campaignId} to Pro model.`);
+        logger.info(`RoiSentry: Escalating budget analysis for campaign ${campaignId} to Core model.`);
         return this.analyzeBudgetWithAI(campaignId, budget, performance, spendPercentage, true);
       }
       // Fallback to basic logic on escalated AI failure
@@ -69,14 +54,14 @@ Format your response as a JSON object with 'status', 'message', and 'actionRecom
         return {
           campaignId: campaignId,
           status: 'ALERT',
-          message: `Budget nearing limit: ${spendPercentage.toFixed(2)}% spent (AI analysis failed, fallback).`,
+          message: `Budget nearing limit: ${spendPercentage.toFixed(2)}% spent (AI failure fallback).`,
           actionRecommended: 'REVIEW_BUDGET_OR_PAUSE',
         };
       } else {
         return {
           campaignId: campaignId,
           status: 'OK',
-          message: 'Budget within limits (AI analysis failed, fallback).',
+          message: 'Budget within limits (AI failure fallback).',
         };
       }
     }

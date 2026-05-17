@@ -1,10 +1,10 @@
-const axios = require('axios');
 const logger = require('../../../common/logger');
 const db = require('../../../common/db');
 const { GoogleAdsApiError } = require('../../../common/errors');
+const { generateContent, MODELS } = require('../../../common/gemini');
 
 class WeeklyAuditor {
-  constructor(googleAdsApiManager, model = 'gemini-3.1-pro-preview') {
+  constructor(googleAdsApiManager, model = MODELS.CORE) {
     logger.info('WeeklyAuditor: Initializing...');
     if (!googleAdsApiManager) {
       logger.error('WeeklyAuditor: GoogleAdsApiManager not provided.');
@@ -13,7 +13,6 @@ class WeeklyAuditor {
     this.googleAdsApiManager = googleAdsApiManager;
     this.model = model;
     this.apiKey = process.env.GEMINI_API_KEY;
-    this.geminiApiEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/${this.model}:generateContent?key=${this.apiKey}`;
 
     if (!this.apiKey) {
       logger.warn('WeeklyAuditor: GEMINI_API_KEY not set in environment variables. AI analysis will not be available.');
@@ -68,35 +67,18 @@ class WeeklyAuditor {
       return { status: 'error', message: `Failed to fetch performance data: ${error.message}` };
     }
 
-    const prompt = `Perform a deep analysis of the following Google Ads campaign performance data. Focus on conversion psychology, long-horizon data patterns, and suggest ad-copy improvements.
-
-Campaign ID: ${campaignId}
-Performance Data (last 90 days, daily):
-${JSON.stringify(performanceData, null, 2)}
-
-Provide a summary of key insights, identify any trends or anomalies, and suggest concrete ad copy improvements. Be thorough and detailed.`;
+    // Compact prompt: Removing redundant descriptions
+    const prompt = `Task: Deep campaign analysis.
+Campaign: ${campaignId}
+Data (90d): ${JSON.stringify(performanceData)}
+Goal: Identify trends, anomalies, and suggest copy improvements. Output structured text.`;
 
     try {
-      const response = await axios.post(this.geminiApiEndpoint, {
-        contents: [
-          {
-            parts: [
-              { text: prompt },
-            ],
-          },
-        ],
-        generationConfig: {
-          temperature: 0.7,
-          topP: 0.95,
-          topK: 40,
-        },
-      }, {
-        headers: {
-          'Content-Type': 'application/json',
-        },
+      const geminiResponse = await generateContent(prompt, {
+        model: this.model,
+        temperature: 0.7,
       });
 
-      const geminiResponse = response.data.candidates[0].content.parts[0].text;
       logger.info(`WeeklyAuditor: Deep analysis complete for campaign ${campaignId}.`);
 
       await db.query(

@@ -7,14 +7,16 @@ const PersuasionArchitect = require('./agents/persuasion-architect');
 const RoiSentry = require('./agents/roi-sentry');
 const WeeklyAuditor = require('./agents/weekly-auditor');
 
+const { MODELS } = require('../common/gemini');
+
 class AgentOrchestrator {
   constructor() {
     logger.info('AgentOrchestrator: Initializing...');
     this.googleAdsApiManager = new GoogleAdsApiManager();
-    this.intentSurgeon = new IntentSurgeon(this.googleAdsApiManager, 'gemini-3-flash-preview');
-    this.persuasionArchitect = new PersuasionArchitect(this.googleAdsApiManager, 'gemini-3.1-pro-preview');
-    this.roiSentry = new RoiSentry(this.googleAdsApiManager, 'gemini-3-flash-preview');
-    this.weeklyAuditor = new WeeklyAuditor(this.googleAdsApiManager, 'gemini-3.1-pro-preview');
+    this.intentSurgeon = new IntentSurgeon(this.googleAdsApiManager, MODELS.LITE);
+    this.persuasionArchitect = new PersuasionArchitect(this.googleAdsApiManager, MODELS.CORE);
+    this.roiSentry = new RoiSentry(this.googleAdsApiManager, MODELS.LITE);
+    this.weeklyAuditor = new WeeklyAuditor(this.googleAdsApiManager, MODELS.CORE);
     logger.info('AgentOrchestrator: All agents initialized.');
   }
 

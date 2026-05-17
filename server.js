@@ -197,29 +197,23 @@ app.post('/dashboard/mode', async (req, res) => {
     }
 });
 
+const { generateContent, MODELS } = require('./src/common/gemini');
+
 app.post('/dashboard/chat', async (req, res) => {
     const { message } = req.body;
-    const apiKey = process.env.GEMINI_API_KEY;
-    const model = 'gemini-3.1-pro-preview';
-    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
-    const systemInstruction = `You are Synapse, an autonomous Google Ads management assistant. 
-    Your goal is to help the user manage their ads. 
-    You can analyze performance, suggest changes, or explain concepts.
-    If the user asks to perform an action (create, edit, pause, etc.), outline the steps needed or, if autonomous mode is enabled, suggest that you can perform it.`;
+    const systemInstruction = `Task: Synapse Ads Assistant. Goal: Help manage Google Ads. Analyze performance, suggest changes, explain concepts.`;
 
     try {
-        const response = await axios.post(endpoint, {
-            contents: [{ parts: [{ text: `${systemInstruction}\nUser: ${message}` }] }],
-        }, {
-            headers: { 'Content-Type': 'application/json' },
+        const reply = await generateContent(`${systemInstruction}\nUser: ${message}`, {
+            model: MODELS.CORE,
+            temperature: 0.7,
         });
 
-        const reply = response.data.candidates[0].content.parts[0].text;
         res.json({ response: reply });
     } catch (error) {
-        logger.error('Chat AI error:', error.response ? error.response.data : error.message);
-        res.status(500).json({ response: 'Sorry, I am having trouble connecting to my neural core. Please try again later.' });
+        logger.error('Chat AI error:', error.message);
+        res.status(500).json({ response: 'Neural core connection error. Try again later.' });
     }
 });
 

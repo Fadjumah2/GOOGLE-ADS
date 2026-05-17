@@ -34,6 +34,14 @@ The Synapse system operates through a cycle involving several specialized AI age
     *   **Currently (Real-Time):** With recent enhancements, the `mutate` method now sends these actions directly to the Google Ads API, allowing agents to *actually implement* changes (e.g., adding negative keywords, updating ad copy) within the Google Ads account.
 4.  **Logging and Auditing:** Every step of this process—from data analysis to executed mutations—is meticulously logged in the PostgreSQL database, providing a comprehensive audit trail and historical context for agent performance and campaign changes.
 
+## Free Tier Compliance & Optimization
+
+The Synapse system is engineered to operate strictly within the constraints of the Google AI Studio Free Tier API. This is achieved through:
+
+*   **Tiered Intelligence Strategy:** A primary function that automatically selects between 'gemini-3-flash' for core reasoning and 'gemini-3.1-flash-lite-preview' for secondary tasks, ensuring optimal model usage without triggering paywall blocks.
+*   **Defensive Rate Limiting:** A centralized throttling mechanism enforces a 5-second buffer between all Gemini API requests, mathematically guaranteeing compliance with the 15 Requests Per Minute (RPM) threshold.
+*   **Token Compaction:** System prompts are audited and compacted to minimize token usage, and structured JSON output is enforced to maximize predictability and eliminate parsing waste.
+
 ## What is an "Agent" in this Context?
 
 In this application, an "agent" refers to a specialized, autonomous software module designed to perform a specific optimization task within the Google Ads ecosystem. These agents are not general-purpose AI; rather, they are focused, rule-based or AI-enhanced components that:

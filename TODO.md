@@ -41,6 +41,10 @@ This document outlines the tasks for transforming the Google Ads MVP into a prod
 
 ## Post-MVP Tasks
 
+- [x] **Refactor for Google AI Studio Free Tier Compliance**:
+    - [x] Implement Tiered Intelligence Strategy (Model string replacement).
+    - [x] Implement Defensive Free-Tier Rate Limiting (5s request buffer).
+    - [x] Optimize Output & Token Compaction (System prompt audit, JSON enforcement).
 - [x] **Resolved Repository Access**: GitHub PAT permissions confirmed, `.env` purged from Git history.
 - [x] **Code Push**: `mvp-development` branch pushed to remote repository.
 - [x] **Dashboard Bug Fixes Implemented**: Addressed issues in timeline, logs, and integration sections (standardized error responses, fixed "Verify" button, enabled server-side logging, ensured DB schema initialization).

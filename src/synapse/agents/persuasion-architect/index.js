@@ -1,13 +1,12 @@
-const axios = require('axios');
 const logger = require('../../../common/logger');
 const db = require('../../../common/db'); // Import common db
 const { GoogleAdsApiError } = require('../../../common/errors');
+const { generateContent, MODELS } = require('../../../common/gemini');
 
 class PersuasionArchitect {
-  constructor(googleAdsApiManager, model = 'gemini-3.1-pro-preview') {
+  constructor(googleAdsApiManager, model = MODELS.CORE) {
     this.model = model;
     this.apiKey = process.env.GEMINI_API_KEY;
-    this.geminiApiEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/${this.model}:generateContent?key=${this.apiKey}`;
 
     if (!this.apiKey) {
       logger.warn('PersuasionArchitect: GEMINI_API_KEY not set in environment variables. The agent will not be able to rewrite ad copy.');
@@ -82,7 +81,7 @@ class PersuasionArchitect {
     }
   }
 
-  async rewriteAdCopy(adGroupId, operatingCustomerId, agentRunId) { // Add agentRunId here
+  async rewriteAdCopy(adGroupId, operatingCustomerId, agentRunId) {
     logger.info('PersuasionArchitect: Analyzing ad copy for rewriting...');
 
     let adCopy, conversionData;
@@ -113,46 +112,26 @@ class PersuasionArchitect {
     logger.info('Original Ad Copy:', adCopy);
     logger.info('Conversion Data:', conversionData);
 
-    const prompt = `Rewrite the following ad copy to improve its conversion rate, given the following conversion data. Focus on aspects that seem to resonate well with users and address any weaknesses. Make it concise and impactful. The new headline should be max 30 chars, and description max 90 chars.
-
-Original Ad Copy: "${adCopy.headline}" - "${adCopy.description}"
-Conversion Data: ${JSON.stringify(conversionData)}
-
-New Ad Copy (Headline and Description, separated by a pipe '|', e.g., "New Headline | New Description"):`;
+    const prompt = `Task: Rewrite ad copy for higher conversion. 
+Original: "${adCopy.headline}" - "${adCopy.description}"
+Data: ${JSON.stringify(conversionData)}
+Constraints: Headline max 30 chars, Description max 90 chars.
+Output: JSON object with "headline" and "description" keys.`;
 
     try {
-      const response = await axios.post(this.geminiApiEndpoint, {
-        contents: [
-          {
-            parts: [
-              {
-                text: prompt,
-              },
-            ],
-          },
-        ],
-        generationConfig: {
-          temperature: 0.7,
-          topP: 0.95,
-          topK: 40,
-        },
-      }, {
-        headers: {
-          'Content-Type': 'application/json',
-        },
+      const geminiResponseText = await generateContent(prompt, {
+        model: this.model,
+        temperature: 0.7,
+        responseMimeType: 'application/json',
       });
 
-      geminiResponse = response.data.candidates[0].content.parts[0].text;
-      logger.info('PersuasionArchitect: Rewritten Ad Copy (raw):', geminiResponse);
+      geminiResponse = JSON.parse(geminiResponseText);
+      logger.info('PersuasionArchitect: Rewritten Ad Copy (parsed):', geminiResponse);
 
-      const parts = geminiResponse.split('|').map(part => part.trim());
-      newHeadline = parts[0] || '';
-      newDescription = parts[1] || '';
+      newHeadline = (geminiResponse.headline || '').substring(0, 30);
+      newDescription = (geminiResponse.description || '').substring(0, 90);
 
-      newHeadline = newHeadline.substring(0, 30);
-      newDescription = newDescription.substring(0, 90);
-
-      logger.info('PersuasionArchitect: Rewritten Ad Copy (parsed):');
+      logger.info('PersuasionArchitect: Final copy:');
       logger.info('  Headline:', newHeadline);
       logger.info('  Description:', newDescription);
 
@@ -172,7 +151,7 @@ New Ad Copy (Headline and Description, separated by a pipe '|', e.g., "New Headl
         await db.query(
           `INSERT INTO persuasion_architect_logs (agent_run_id, ad_group_id, original_headline, new_headline, original_description, new_description, change_status, applied_at, gemini_response)
            VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), $8)`,
-          [agentRunId, adGroupId, adCopy.headline, newHeadline, adCopy.description, newDescription, changeStatus, geminiResponse]
+          [agentRunId, adGroupId, adCopy.headline, newHeadline, adCopy.description, newDescription, changeStatus, geminiResponseText]
         );
         logger.info(`PersuasionArchitect: Logged ad copy rewrite for ad group ${adGroupId} (Run: ${agentRunId}). Status: ${changeStatus}`);
       } catch (logError) {
@@ -186,7 +165,7 @@ New Ad Copy (Headline and Description, separated by a pipe '|', e.g., "New Headl
           headline: newHeadline,
           description: newDescription,
         },
-        geminiResponse: geminiResponse,
+        geminiResponse: geminiResponseText,
       };
 
     } catch (error) {

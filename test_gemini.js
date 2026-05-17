@@ -1,20 +1,25 @@
-const axios = require('axios');
+const { generateContent, MODELS } = require('./src/common/gemini');
 require('dotenv').config();
 
 async function test() {
-    const apiKey = process.env.GEMINI_API_KEY;
-    const model = 'gemini-3.1-pro-preview';
-    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-
+    console.log('--- Testing Gemini Free Tier Compliance ---');
+    
     try {
-        const response = await axios.post(endpoint, {
-            contents: [{ parts: [{ text: 'Hello' }] }],
-        }, {
-            headers: { 'Content-Type': 'application/json' },
-        });
-        console.log('Success:', response.data.candidates[0].content.parts[0].text);
+        console.log('1. Testing LITE model (Rate Limiting check)...');
+        const start = Date.now();
+        const res1 = await generateContent('Say "Lite Test"', { model: MODELS.LITE });
+        console.log('Res 1:', res1);
+        
+        console.log('2. Testing CORE model (Rate Limiting check)...');
+        const res2 = await generateContent('Say "Core Test"', { model: MODELS.CORE });
+        console.log('Res 2:', res2);
+        
+        const end = Date.now();
+        console.log(`Total time: ${end - start}ms (Should be > 5000ms due to throttle)`);
+        
     } catch (error) {
-        console.error('Error:', error.response ? error.response.data : error.message);
+        console.error('Test failed:', error.message);
     }
 }
+
 test();

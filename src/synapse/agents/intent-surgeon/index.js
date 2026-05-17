@@ -1,10 +1,10 @@
-const axios = require('axios');
 const logger = require('../../../common/logger');
 const db = require('../../../common/db'); // Import common db
-const { GoogleAdsApiError, DatabaseError } = require('../../../common/errors');
+const { GoogleAdsApiError } = require('../../../common/errors');
+const { generateContent, MODELS } = require('../../../common/gemini');
 
 class IntentSurgeon {
-  constructor(googleAdsApiManager, model = 'gemini-3-flash-preview') {
+  constructor(googleAdsApiManager, model = MODELS.LITE) {
     if (!googleAdsApiManager) {
       logger.error('IntentSurgeon: GoogleAdsApiManager not provided.');
       throw new Error('GoogleAdsApiManager is required.');
@@ -12,7 +12,6 @@ class IntentSurgeon {
     this.googleAdsApiManager = googleAdsApiManager;
     this.model = model;
     this.apiKey = process.env.GEMINI_API_KEY;
-    this.geminiApiEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/${this.model}:generateContent?key=${this.apiKey}`;
 
     if (!this.apiKey) {
       logger.warn('IntentSurgeon: GEMINI_API_KEY not set in environment variables. AI analysis will not be available.');
@@ -25,39 +24,24 @@ class IntentSurgeon {
       return false;
     }
 
-    const currentModel = isEscalated ? 'gemini-3.1-pro-preview' : this.model;
-    const currentEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/${currentModel}:generateContent?key=${this.apiKey}`;
-    const modelTag = isEscalated ? 'Pro (escalated)' : 'Flash';
+    const currentModel = isEscalated ? MODELS.CORE : this.model;
+    const modelTag = isEscalated ? 'Core (escalated)' : 'Lite';
     logger.info(`IntentSurgeon: Analyzing "${searchTerm}" with ${modelTag} model.`);
 
-    const prompt = `Given the search term "${searchTerm}", with ${clicks} clicks and a cost of $${cost}, should this be added as a negative keyword? Consider if it's irrelevant or too broad, leading to wasted spend. Respond with ONLY 'YES' or 'NO'.`;
+    // Compact prompt: Removing loose prose, enforcing direct instruction
+    const prompt = `Classify if search term "${searchTerm}" (Clicks: ${clicks}, Cost: $${cost}) is wasteful/irrelevant for ads. Rules: Return ONLY 'YES' or 'NO'.`;
 
     try {
-      const response = await axios.post(currentEndpoint, {
-        contents: [
-          {
-            parts: [
-              { text: prompt },
-            ],
-          },
-        ],
-        generationConfig: {
-          temperature: isEscalated ? 0.3 : 0.1, // Slightly higher temp for Pro for more nuanced reasoning
-          topP: 0.95,
-          topK: 40,
-        },
-      }, {
-        headers: {
-          'Content-Type': 'application/json',
-        },
+      const geminiResponse = await generateContent(prompt, {
+        model: currentModel,
+        temperature: isEscalated ? 0.3 : 0.1,
       });
 
-      const geminiResponse = response.data.candidates[0].content.parts[0].text.trim().toUpperCase();
-      return geminiResponse === 'YES';
+      return geminiResponse.trim().toUpperCase() === 'YES';
     } catch (error) {
       logger.error(`IntentSurgeon: AI analysis failed for "${searchTerm}" with ${modelTag} model: ${error.message}`);
       if (!isEscalated) {
-        logger.info(`IntentSurgeon: Escalating analysis for "${searchTerm}" to Pro model.`);
+        logger.info(`IntentSurgeon: Escalating analysis for "${searchTerm}" to Core model.`);
         return this.identifyNegativeKeywordsWithAI(searchTerm, clicks, cost, true);
       }
       return false; // Default to not adding as negative keyword on escalated AI failure
