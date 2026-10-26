@@ -1,0 +1,53 @@
+name: Deploy dashboard preview to GitHub Pages
+
+on:
+  push:
+    branches: ["mvp-development"]
+    paths:
+      - "client/**"
+      - ".github/workflows/pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Prepare frontend preview
+        run: |
+          mkdir -p _site
+          cp client/index.html client/style.css client/script.js client/pages-preview.js _site/
+          touch _site/.nojekyll
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path("_site/index.html")
+          html = path.read_text()
+          marker = '<script src="script.js"></script>'
+          assert marker in html, "Dashboard script tag was not found"
+          html = html.replace(marker, '<script src="pages-preview.js"></script>\n    ' + marker)
+          path.write_text(html)
+          PY
+          node --check _site/script.js
+          node --check _site/pages-preview.js
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+      - name: Upload frontend only
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4
